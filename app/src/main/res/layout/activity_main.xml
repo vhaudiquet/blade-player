@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        tools:openDrawer="start">
+
+    <include
+            layout="@layout/app_bar_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/mainLinearLayout">
+        <ListView
+                android:id="@+id/libraryList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="55dp"/>
+
+        <RelativeLayout
+                android:id="@+id/currentPlay"
+                app:layout_constraintBottom_toTopOf="parent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="5dp"
+                android:background="@color/colorPrimary"
+                android:visibility="invisible">
+
+            <ImageView
+                    android:id="@+id/element_image"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    app:srcCompat="@drawable/ic_unknown"/>
+
+            <TextView
+                    android:id="@+id/element_title"
+                    android:layout_width="250dp"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/colorAccent"
+                    android:textSize="18sp"
+                    android:layout_alignParentTop="true"
+                    android:layout_toRightOf="@id/element_image"
+                    android:layout_marginLeft="10dp"
+                    android:singleLine="true"
+                    android:text="Titre"
+            />
+            <TextView
+                    android:id="@+id/element_subtitle"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#bdbdbd"
+                    android:textSize="12sp"
+                    android:layout_below="@+id/element_title"
+                    android:layout_toRightOf="@id/element_image"
+                    android:layout_marginLeft="10dp"
+                    android:text="Artiste - Album"/>
+            <ImageView android:id="@+id/element_action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_alignParentRight="true"
+                       android:layout_centerVertical="true"
+                    app:srcCompat="@drawable/ic_play_action"/>
+        </RelativeLayout>
+
+    </LinearLayout>
+
+    <android.support.design.widget.NavigationView
+            android:id="@+id/nav_view"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="start"
+            android:fitsSystemWindows="true"
+            app:headerLayout="@layout/nav_header_main"
+            app:menu="@menu/activity_main_drawer"/>
+
+</android.support.v4.widget.DrawerLayout>
