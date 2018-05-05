@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">Blade</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Paramètres</string>
+    <string name="action_search">Recherche</string>
+
+    <string name="library">Bibliothèque</string>
+    <string name="artists">Artistes</string>
+    <string name="albums">Albums</string>
+    <string name="songs">Titres</string>
+    <string name="playlists">Playlists</string>
+
+    <string name="play">Lire</string>
+    <string name="pause">Pause</string>
+    <string name="next">Suivant</string>
+    <string name="prev">Précédent</string>
+
+    <string name="play_next">Play next</string>
+    <string name="add_to_playlist">Ajouter à la liste</string>
+
+    <string name="title_activity_play">En écoute</string>
+
+    <string name="about">À propos de</string>
+</resources>
