@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity
     private boolean fromArtists = false; // we came to this context from the "artists" view
     private Artist artistFrom;
     private boolean fromAlbum = false; // we came to this context from an album view
+    private boolean fromPlaylists = false; // we came to this context from playlist view
 
     /* currently playing display */
     private RelativeLayout currentPlay;
@@ -139,6 +140,7 @@ public class MainActivity extends AppCompatActivity
                     setContentToSongs(asongs, currentAlbum.getName());
                     break;
                 case CONTEXT_PLAYLISTS:
+                    fromPlaylists = true;
                     Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> psongs = currentPlaylist.getContent();
                     setContentToSongs(psongs, currentPlaylist.getName());
@@ -291,6 +293,11 @@ public class MainActivity extends AppCompatActivity
             fromArtists = false;
             artistFrom = null;
         }
+        else if(fromPlaylists)
+        {
+            setContentToPlaylists();
+            fromPlaylists = false;
+        }
         else
         {
             super.onBackPressed();
@@ -353,25 +360,25 @@ public class MainActivity extends AppCompatActivity
                 break;
 
             case R.id.nav_artists:
-                fromArtists = false; fromAlbum = false; artistFrom = null;
+                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
-                fromArtists = false; fromAlbum = false; artistFrom = null;
+                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with album view
                 setContentToAlbums(UserLibrary.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
-                fromArtists = false; fromAlbum = false; artistFrom = null;
+                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with song list
                 setContentToSongs(UserLibrary.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
-                fromArtists = false; fromAlbum = false; artistFrom = null;
+                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
                 break;
@@ -429,6 +436,9 @@ public class MainActivity extends AppCompatActivity
     {
         this.setTitle(getResources().getString(R.string.artists));
         currentContext = CONTEXT_ARTISTS;
+
+        while(UserLibrary.getArtists() == null) try {wait(100);} catch(InterruptedException e) {}
+
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, UserLibrary.getArtists());
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
