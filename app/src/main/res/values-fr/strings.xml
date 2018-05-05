@@ -17,4 +17,5 @@
     <string name="prev">Précédent</string>
     <string name="songs">Titres</string>
     <string name="title_activity_play">En écoute</string>
+    <string name="about">À propos de</string>
 </resources>

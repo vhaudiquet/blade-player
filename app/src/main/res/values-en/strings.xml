@@ -17,4 +17,5 @@
     <string name="prev">Previous</string>
     <string name="songs">Songs</string>
     <string name="title_activity_play">Playing</string>
+    <string name="about">About</string>
 </resources>
