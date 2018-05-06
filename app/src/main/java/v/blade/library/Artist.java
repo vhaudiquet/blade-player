@@ -39,9 +39,8 @@ public class Artist extends LibraryObject
     {
         int songCount = 0;
 
-        for(int i=0;i<albums.size();i++)
-        {
-            songCount += albums.get(i).getSongs().size();
+        for (Album album : albums) {
+            songCount += album.getSongs().size();
         }
 
         return songCount;

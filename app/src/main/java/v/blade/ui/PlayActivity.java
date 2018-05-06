@@ -26,13 +26,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
-import v.blade.library.LibraryObject;
 import v.blade.library.Song;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 
@@ -297,7 +295,7 @@ public class PlayActivity extends AppCompatActivity
     public void onShuffleClicked(View v)
     {
         boolean shuffle = !PlayerConnection.musicPlayer.isShuffleEnabled();
-        PlayerConnection.musicController.getTransportControls().setShuffleModeEnabled(shuffle);
+        PlayerConnection.musicController.getTransportControls().setShuffleMode(0);
 
         /* manually refresh UI */
         if(shuffle) shuffleAction.setImageResource(R.drawable.ic_action_shuffle_enabled);

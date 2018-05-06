@@ -18,9 +18,15 @@
 package v.blade.player;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
-import android.support.v7.app.NotificationCompat;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.media.app.NotificationCompat.MediaStyle;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
@@ -28,14 +34,13 @@ import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import v.blade.R;
 import v.blade.library.Song;
-import v.blade.ui.MainActivity;
 import v.blade.ui.PlayActivity;
 
 public class PlayerNotification
 {
     public static final int NOTIFICATION_ID = 0x42;
     private static final int REQUEST_CODE = 501;
-    private static final String CHANNEL_ID = "v.blade.channel";
+    private static final String CHANNEL_ID = "v.blade.mediachannel";
 
     private final PlayerService mService;
 
@@ -74,16 +79,17 @@ public class PlayerNotification
 
     private NotificationCompat.Builder buildNotification(int playerState, MediaSessionCompat.Token token, Song playing)
     {
+        if(Build.VERSION.SDK_INT >= 26) createChannel();
+
         boolean isPlaying = (playerState == PlayerMediaPlayer.PLAYER_STATE_PLAYING);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(mService);
-        builder.setChannel(CHANNEL_ID);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(mService, CHANNEL_ID);
 
         Intent openUI = new Intent(mService, PlayActivity.class);
         openUI.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent contentIntent = PendingIntent.getActivity(mService, REQUEST_CODE, openUI, PendingIntent.FLAG_CANCEL_CURRENT);
 
-        android.support.v7.app.NotificationCompat.MediaStyle style = new android.support.v7.app.NotificationCompat.MediaStyle()
+        MediaStyle style = new MediaStyle()
                 .setMediaSession(token)
                 .setShowActionsInCompactView(0, 1, 2)
                 .setShowCancelButton(true)
@@ -107,5 +113,24 @@ public class PlayerNotification
         builder.addAction(mNextAction);
 
         return builder;
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private void createChannel()
+    {
+        NotificationManager mNotificationManager = (NotificationManager) mService.getSystemService(Context.NOTIFICATION_SERVICE);
+        // The id of the channel.
+        String id = CHANNEL_ID;
+        // The user-visible name of the channel.
+        CharSequence name = "Media playback";
+        // The user-visible description of the channel.
+        String description = "Media playback controls";
+        int importance = NotificationManager.IMPORTANCE_LOW;
+        NotificationChannel mChannel = new NotificationChannel(id, name, importance);
+        // Configure the notification channel.
+        mChannel.setDescription(description);
+        mChannel.setShowBadge(false);
+        mChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        mNotificationManager.createNotificationChannel(mChannel);
     }
 }

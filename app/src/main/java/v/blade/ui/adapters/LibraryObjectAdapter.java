@@ -24,7 +24,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
 import v.blade.library.*;
 
@@ -102,11 +101,14 @@ public class LibraryObjectAdapter extends BaseAdapter
             if(moreClickListener != null) more.setOnClickListener(moreClickListener);
             if(moreTouchListener != null) more.setOnTouchListener(moreTouchListener);
             if(moreImageRessource != 0) more.setImageResource(moreImageRessource);
-            more.setTag(obj);
+
 
             convertView.setTag(mViewHolder);
         }
         else mViewHolder = (ViewHolder) convertView.getTag();
+
+        ImageView more = convertView.findViewById(R.id.element_more);
+        more.setTag(obj);
 
         mViewHolder.title.setText(obj.getName());
 
@@ -146,8 +148,6 @@ public class LibraryObjectAdapter extends BaseAdapter
             //set image to default playlist image
             mViewHolder.image.setImageResource(R.drawable.ic_playlists);
         }
-
-
 
         return convertView;
     }

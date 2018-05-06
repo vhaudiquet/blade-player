@@ -273,6 +273,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        PlayerConnection.unregisterCallback(connectionCallbacks);
+        musicCallbacksRegistered = false;
+    }
+
+    @Override
     public void onBackPressed()
     {
         // Handle drawer close
@@ -437,7 +445,7 @@ public class MainActivity extends AppCompatActivity
         this.setTitle(getResources().getString(R.string.artists));
         currentContext = CONTEXT_ARTISTS;
 
-        while(UserLibrary.getArtists() == null) try {wait(100);} catch(InterruptedException e) {}
+        while(UserLibrary.getArtists() == null) try {Thread.sleep(100);} catch(InterruptedException e) {}
 
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, UserLibrary.getArtists());
         adapter.registerMoreClickListener(mainListViewMoreListener);
@@ -482,11 +490,6 @@ public class MainActivity extends AppCompatActivity
     {
         if(!currentPlayShown)
         {
-            //resize list view so that currentPlay can be shown
-            ViewGroup.LayoutParams params = mainListView.getLayoutParams();
-            params.height = mainListView.getHeight() - 180;
-            mainListView.setLayoutParams(params);
-
             //show
             currentPlay.setVisibility(View.VISIBLE);
             currentPlayShown = true;

@@ -21,6 +21,7 @@ import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
@@ -35,6 +36,7 @@ public class PlayerService extends Service
 {
     private static final String TAG = PlayerService.class.getSimpleName();
     private final IBinder binder = new PlayerBinder();
+    private boolean mServiceStarted = false;
 
     private ArrayList<Song> currentPlaylist;
     private int currentPosition;
@@ -75,6 +77,12 @@ public class PlayerService extends Service
             /* update notification */
             if(mNotification == null)
             {
+                if(!mServiceStarted)
+                {
+                    if(Build.VERSION.SDK_INT >= 26) startForegroundService(new Intent(PlayerService.this, PlayerService.class));
+                    else startService(new Intent(PlayerService.this, PlayerService.class));
+                    mServiceStarted = true;
+                }
                 mNotification = mNotificationManager.getNotification(getCurrentSong(), mPlayer.getCurrentState(), mSession.getSessionToken());
                 startForeground(PlayerNotification.NOTIFICATION_ID, mNotification);
             }
@@ -152,9 +160,9 @@ public class PlayerService extends Service
         public void onSetRepeatMode(int repeatMode) {PlayerService.this.repeatMode = repeatMode;}
 
         @Override
-        public void onSetShuffleModeEnabled(boolean enabled)
+        public void onSetShuffleMode(int shuffleMode)
         {
-            PlayerService.this.shuffleMode = enabled;
+            PlayerService.this.shuffleMode = !PlayerService.this.shuffleMode;
         }
     };
 

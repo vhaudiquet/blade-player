@@ -53,7 +53,7 @@ public class UserLibrary
     private static void registerSong(long id, String artist, long artistId, String album, long albumId, int albumTrack, long duration, String name)
     {
         Artist songArtist = null;
-        for(int i = 0;i<artists.size();i++) if(artists.get(i).getName().equals(artist)) songArtist = artists.get(i);
+        for (Artist artist1 : artists) if (artist1.getName().equals(artist)) songArtist = artist1;
         if(songArtist == null) {songArtist = new Artist(artist, artistId); artists.add(songArtist);}
 
         Album songAlbum = null;
@@ -75,6 +75,7 @@ public class UserLibrary
     public static void registerLocalSongs(Context appContext)
     {
         /* init the lists (to make sure they are empty) */
+        if(songs != null) return;
         artists = new ArrayList<Artist>();
         albums = new ArrayList<Album>();
         songs = new ArrayList<Song>();
