@@ -10,15 +10,15 @@
 
     <include layout="@layout/app_bar_main"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="55dp"
             android:id="@+id/include"/>
 
-    <LinearLayout android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:orientation="vertical"
-                  android:layout_marginTop="55dp"
-                  android:background="@color/colorPrimary">
-        <ImageView android:layout_width="match_parent"
+    <RelativeLayout android:layout_marginTop="55dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/colorPrimary">
+        <ImageView android:layout_marginTop="-10dp"
+                   android:layout_width="match_parent"
                    android:layout_height="400dp"
                    app:srcCompat="@drawable/ic_unknown"
                    android:id="@+id/album_display"/>
@@ -29,7 +29,8 @@
                 android:choiceMode="singleChoice"
                 android:id="@+id/playlist_view"
                 app:use_default_controller="false"/>
-        <RelativeLayout android:layout_width="match_parent"
+        <RelativeLayout android:layout_alignParentBottom="true"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@color/colorPrimary">
             <ImageView android:layout_width="45dp"
@@ -139,6 +140,6 @@
                       android:text="0:00"
                       android:id="@+id/song_duration"/>
         </RelativeLayout>
-    </LinearLayout>
+    </RelativeLayout>
 
 </android.support.design.widget.CoordinatorLayout>
