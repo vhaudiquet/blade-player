@@ -180,6 +180,11 @@ public class PlayerMediaPlayer
                         | PlaybackStateCompat.ACTION_PAUSE;
                 playbackState = PlaybackStateCompat.STATE_STOPPED;
                 break;
+
+            case PLAYER_STATE_DO_NOTHING:
+                actions |= PlaybackStateCompat.ACTION_PLAY
+                        | PlaybackStateCompat.ACTION_PAUSE;
+                playbackState = PlaybackStateCompat.STATE_STOPPED;
         }
 
         final PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();

@@ -102,7 +102,8 @@ public class PlayerService extends Service
         @Override
         public void onPlay()
         {
-            if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_DO_NOTHING)
+            if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_DO_NOTHING
+                    || mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_STOPPED)
             {
                 currentPosition = 0;
                 mPlayer.playSong(currentPlaylist.get(currentPosition));

@@ -258,8 +258,6 @@ public class MainActivity extends AppCompatActivity
         });
 
         checkPermission();
-
-        setContentToArtists();
     }
 
     @Override
@@ -428,15 +426,16 @@ public class MainActivity extends AppCompatActivity
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                 }
             }
-            else UserLibrary.registerLocalSongs(this.getApplicationContext());
+            else {UserLibrary.registerLocalSongs(this.getApplicationContext()); setContentToArtists();}
         }
-        else UserLibrary.registerLocalSongs(this.getApplicationContext());
+        else {UserLibrary.registerLocalSongs(this.getApplicationContext()); setContentToArtists();}
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
     {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == EXT_PERM_REQUEST_CODE) UserLibrary.registerLocalSongs(this.getApplicationContext());
+        if(requestCode == EXT_PERM_REQUEST_CODE)
+        {UserLibrary.registerLocalSongs(this.getApplicationContext()); setContentToArtists();}
     }
 
     /* UI Change methods (Artists/Albums/Songs/Playlists...) */
@@ -444,8 +443,6 @@ public class MainActivity extends AppCompatActivity
     {
         this.setTitle(getResources().getString(R.string.artists));
         currentContext = CONTEXT_ARTISTS;
-
-        while(UserLibrary.getArtists() == null) try {Thread.sleep(100);} catch(InterruptedException e) {}
 
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, UserLibrary.getArtists());
         adapter.registerMoreClickListener(mainListViewMoreListener);
