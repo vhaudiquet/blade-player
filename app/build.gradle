@@ -25,7 +25,14 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+    //spotify auth
+    compile 'com.spotify.android:auth:1.0.0-alpha'
+    compile 'com.github.kaaes:spotify-web-api-android:0.4.1'
+
+    //compat libs
     compile 'com.android.support:support-compat:27.1.1'
+    compile 'com.android.support:preference-v7:27.1.1'
     compile 'com.android.support:design:27.1.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'

@@ -40,6 +40,7 @@ import android.widget.*;
 import v.blade.R;
 import v.blade.library.*;
 import v.blade.ui.adapters.LibraryObjectAdapter;
+import v.blade.ui.settings.SettingsActivity;
 
 import java.util.ArrayList;
 
@@ -426,16 +427,16 @@ public class MainActivity extends AppCompatActivity
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                 }
             }
-            else {UserLibrary.registerLocalSongs(this.getApplicationContext()); setContentToArtists();}
+            else {UserLibrary.configureLibrary(this.getApplicationContext()); setContentToArtists();}
         }
-        else {UserLibrary.registerLocalSongs(this.getApplicationContext()); setContentToArtists();}
+        else {UserLibrary.configureLibrary(this.getApplicationContext()); setContentToArtists();}
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
     {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if(requestCode == EXT_PERM_REQUEST_CODE)
-        {UserLibrary.registerLocalSongs(this.getApplicationContext()); setContentToArtists();}
+        {UserLibrary.configureLibrary(this.getApplicationContext()); setContentToArtists();}
     }
 
     /* UI Change methods (Artists/Albums/Songs/Playlists...) */
@@ -487,6 +488,9 @@ public class MainActivity extends AppCompatActivity
     {
         if(!currentPlayShown)
         {
+            //resize list ; DOESN'T WORK FOR SOME REASON WHEN AUTO-ROTATE (//TODO)
+            //mainListView.getLayoutParams().height = (mainListView.getHeight() - currentPlay.getHeight());
+
             //show
             currentPlay.setVisibility(View.VISIBLE);
             currentPlayShown = true;

@@ -5,10 +5,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        tools:context="v.blade.ui.SettingsActivity">
+        tools:context="v.blade.ui.settings.SettingsActivity">
 
-    <include
-            layout="@layout/app_bar_main"
+    <include layout="@layout/app_bar_main"
             android:layout_width="match_parent"
             android:layout_height="55dp"/>
     <TextView android:layout_width="match_parent"
@@ -43,5 +42,13 @@
               android:layout_height="wrap_content"
               android:textSize="15sp"
               android:text="DragSortListView, license Apache v2.0, Copyright 2012 Carl Bauer, github.com/loeschg/drag-sort-listview"/>
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textSize="15sp"
+              android:text="Spotify Android Auth, license Apache v2.0, Copyright 2016 Spotify AB, github.com/spotify/android-auth"/>
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textSize="15sp"
+              android:text="Spotify Web API for Android, license MIT, Copyright 2014 Kasia Drzyzga, github.com/kaaes/spotify-web-api-android"/>
 
 </LinearLayout>

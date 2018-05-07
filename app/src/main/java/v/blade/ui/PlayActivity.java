@@ -33,6 +33,7 @@ import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
 import v.blade.library.Song;
 import v.blade.ui.adapters.LibraryObjectAdapter;
+import v.blade.ui.settings.SettingsActivity;
 
 import java.util.ArrayList;
 

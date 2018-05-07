@@ -104,6 +104,7 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 27 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" name="Gradle: spotify-web-api-android-0.4.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: exposed-instrumentation-api-publish-0.5" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: espresso-idling-resource-2.2.2" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: jsr305-2.0.1" level="project" />
@@ -114,6 +115,7 @@
     <orderEntry type="library" exported="" name="Gradle: design-27.1.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: rules-0.5" level="project" />
     <orderEntry type="library" exported="" name="Gradle: animated-vector-drawable-27.1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: auth-1.0.0-alpha" level="project" />
     <orderEntry type="library" exported="" name="Gradle: constraint-layout-1.0.2" level="project" />
     <orderEntry type="library" exported="" name="Gradle: transition-27.1.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: hamcrest-core-1.3" level="project" />
@@ -126,15 +128,19 @@
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: javawriter-2.1.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: support-annotations-27.1.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: support-media-compat-27.1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: preference-v7-27.1.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: common-1.1.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: 1_Gradle: common-1.1.0" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: hamcrest-library-1.3" level="project" />
     <orderEntry type="library" exported="" name="Gradle: support-compat-27.1.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: appcompat-v7-27.1.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: runner-0.5" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: gson-2.3.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: recyclerview-v7-27.1.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: support-v4-27.1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: customtabs-25.1.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: junit-4.12" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: retrofit-1.9.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: support-core-utils-27.1.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: javax.annotation-api-1.2" level="project" />
     <orderEntry type="library" exported="" name="Gradle: support-fragment-27.1.1" level="project" />

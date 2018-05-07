@@ -17,7 +17,9 @@
  */
 package v.blade.ui.adapters;
 
+import android.app.Activity;
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,13 +28,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import v.blade.R;
 import v.blade.library.*;
+import v.blade.ui.MainActivity;
 
 import java.util.ArrayList;
 
 public class LibraryObjectAdapter extends BaseAdapter
 {
     private ArrayList<LibraryObject> libraryObjects;
-    private Context context;
+    private Activity context;
     private LayoutInflater inflater;
 
     private ImageView.OnClickListener moreClickListener;
@@ -46,11 +49,27 @@ public class LibraryObjectAdapter extends BaseAdapter
         ImageView image;
     }
 
-    public LibraryObjectAdapter(Context context, ArrayList objects)
+    public LibraryObjectAdapter(final Activity context, ArrayList objects)
     {
         this.libraryObjects = (ArrayList<LibraryObject>) objects;
         this.context = context;
         this.inflater = LayoutInflater.from(context);
+
+        UserLibrary.currentCallback = new UserLibrary.UserLibraryCallback()
+        {
+            @Override
+            public void onLibraryChange()
+            {
+                context.runOnUiThread(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        LibraryObjectAdapter.this.notifyDataSetChanged();
+                    }
+                });
+            }
+        };
     }
 
     public void registerMoreClickListener(ImageView.OnClickListener clickListener)
@@ -101,7 +120,6 @@ public class LibraryObjectAdapter extends BaseAdapter
             if(moreClickListener != null) more.setOnClickListener(moreClickListener);
             if(moreTouchListener != null) more.setOnTouchListener(moreTouchListener);
             if(moreImageRessource != 0) more.setImageResource(moreImageRessource);
-
 
             convertView.setTag(mViewHolder);
         }

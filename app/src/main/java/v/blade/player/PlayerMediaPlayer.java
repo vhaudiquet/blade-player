@@ -131,7 +131,7 @@ public class PlayerMediaPlayer
     public void playSong(Song song)
     {
         mediaPlayer.reset();
-        Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, song.getId());
+        Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getId());
 
         try
         {

@@ -134,8 +134,14 @@ public class PlayerService extends Service
         @Override
         public void onSkipToPrevious()
         {
-            currentPosition = currentPosition > 0 ? currentPosition-1 : currentPlaylist.size()-1;
-            mPlayer.playSong(currentPlaylist.get(currentPosition));
+            //if we are in song begin, we skip to previous
+            if(mPlayer.mediaPlayer.getCurrentPosition() < 5000)
+            {
+                currentPosition = currentPosition > 0 ? currentPosition-1 : currentPlaylist.size()-1;
+                mPlayer.playSong(currentPlaylist.get(currentPosition));
+            }
+            //else we seek to the song begin
+            else mPlayer.mediaPlayer.seekTo(0);
         }
 
         @Override
