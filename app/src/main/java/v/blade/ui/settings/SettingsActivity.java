@@ -32,6 +32,10 @@ import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import v.blade.R;
 import v.blade.library.UserLibrary;
 
+import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
+import java.net.URL;
+
 public class SettingsActivity extends AppCompatActivity
 {
     public static final String PREFERENCES_ACCOUNT_FILE_NAME = "accounts";
@@ -57,25 +61,79 @@ public class SettingsActivity extends AppCompatActivity
         if(requestCode == SPOTIFY_REQUEST_CODE)
         {
             AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
-            if(response.getType() == AuthenticationResponse.Type.TOKEN)
+            if(response.getType() == AuthenticationResponse.Type.CODE)
             {
-                UserLibrary.SPOTIFY_USER_TOKEN = response.getAccessToken();
-                SharedPreferences pref = getSharedPreferences(PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = pref.edit();
-                editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
-                editor.commit();
-
-                new Thread()
+                final String code = response.getCode();
+                Thread t = new Thread()
                 {
-                    @Override
                     public void run()
                     {
                         Looper.prepare();
-                        UserLibrary.spotifyApi.setAccessToken(UserLibrary.SPOTIFY_USER_TOKEN);
-                        UserLibrary.registerSpotifySongs();
-                        UserLibrary.sortLibrary();
+                        try
+                        {
+                            URL apiUrl = new URL("https://accounts.spotify.com/api/token");
+                            HttpsURLConnection urlConnection = (HttpsURLConnection) apiUrl.openConnection();
+                            urlConnection.setDoInput(true);
+                            urlConnection.setDoOutput(true);
+                            urlConnection.setRequestMethod("POST");
+
+                            //write POST parameters
+                            OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
+                            BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
+                            writer.write("grant_type=authorization_code&");
+                            writer.write("code=" + code + "&");
+                            writer.write("redirect_uri=" + UserLibrary.SPOTIFY_REDIRECT_URI + "&");
+                            writer.write("client_id=" + UserLibrary.SPOTIFY_CLIENT_ID + "&");
+                            writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
+                            writer.flush();
+                            writer.close();
+                            out.close();
+
+                            urlConnection.connect();
+
+                            System.out.println("[BLADE] [AUTH] Result : " + urlConnection.getResponseCode() + " " + urlConnection.getResponseMessage());
+
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                            String result = reader.readLine();
+                            reader.close();
+                            result = result.substring(1);
+                            result = result.substring(0, result.length()-1);
+                            String[] results = result.split(",");
+                            for(String param : results)
+                            {
+                                if(param.startsWith("\"access_token\":\""))
+                                {
+                                    param = param.replaceFirst("\"access_token\":\"", "");
+                                    param = param.replaceFirst("\"", "");
+                                    UserLibrary.SPOTIFY_USER_TOKEN = param;
+                                    SharedPreferences pref = getSharedPreferences(PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+                                    SharedPreferences.Editor editor = pref.edit();
+                                    editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
+                                    editor.commit();
+                                }
+                                else if(param.startsWith("\"refresh_token\":\""))
+                                {
+                                    param = param.replaceFirst("\"refresh_token\":\"", "");
+                                    param = param.replaceFirst("\"", "");
+                                    UserLibrary.SPOTIFY_REFRESH_TOKEN = param;
+                                    SharedPreferences pref = getSharedPreferences(PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+                                    SharedPreferences.Editor editor = pref.edit();
+                                    editor.putString("spotify_refresh_token", UserLibrary.SPOTIFY_REFRESH_TOKEN);
+                                    editor.commit();
+                                }
+                            }
+
+                            UserLibrary.spotifyApi.setAccessToken(UserLibrary.SPOTIFY_USER_TOKEN);
+                            UserLibrary.registerSpotifySongs();
+                            UserLibrary.sortLibrary();
+                        }
+                        catch(Exception e)
+                        {
+                            e.printStackTrace();
+                        }
                     }
-                }.start();
+                };
+                t.start();
             }
         }
     }
@@ -106,11 +164,20 @@ public class SettingsActivity extends AppCompatActivity
             }
             else if(preference.getKey().equals("spotify_screen"))
             {
-                AuthenticationRequest.Builder builder =
+                /*AuthenticationRequest.Builder builder =
                         new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.TOKEN,
                                 UserLibrary.SPOTIFY_REDIRECT_URI);
                 builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
                 "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
+                AuthenticationRequest request = builder.build();
+                AuthenticationClient.openLoginActivity(getActivity(), SPOTIFY_REQUEST_CODE, request);
+                */
+
+                AuthenticationRequest.Builder builder =
+                        new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
+                                UserLibrary.SPOTIFY_REDIRECT_URI);
+                builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
+                        "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(getActivity(), SPOTIFY_REQUEST_CODE, request);
             }

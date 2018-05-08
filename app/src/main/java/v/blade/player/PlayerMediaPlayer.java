@@ -28,7 +28,6 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
 import com.spotify.sdk.android.player.*;
 import com.spotify.sdk.android.player.Error;
-import kaaes.spotify.webapi.android.SpotifyService;
 import v.blade.library.Song;
 import v.blade.library.UserLibrary;
 
@@ -160,6 +159,7 @@ public class PlayerMediaPlayer
             public void onError(Throwable throwable)
             {
                 System.err.println("Spotify player error : " + throwable.getLocalizedMessage());
+                System.err.println("Caused by : " + throwable.getCause().getLocalizedMessage());
                 spotifyPlayerError = SPOTIFY_ERROR_OTHER;
             }
         });

@@ -34,10 +34,8 @@ import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
 import v.blade.ui.settings.SettingsActivity;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -68,6 +66,7 @@ public class UserLibrary
     public static final String SPOTIFY_CLIENT_ID = "2f95bc7168584e7aa67697418a684bae";
     public static final String SPOTIFY_REDIRECT_URI = "http://valou3433.fr/";
     public static String SPOTIFY_USER_TOKEN;
+    public static String SPOTIFY_REFRESH_TOKEN;
     public static final SpotifyApi spotifyApi = new SpotifyApi();
 
     /* list callbacks */
@@ -109,6 +108,7 @@ public class UserLibrary
         if(SPOTIFY_USER_TOKEN == null)
         {
             SPOTIFY_USER_TOKEN = accountsPrefs.getString("spotify_token", null);
+            SPOTIFY_REFRESH_TOKEN = accountsPrefs.getString("spotify_refresh_token", null);
         }
         if(SPOTIFY_USER_TOKEN != null) spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
 
@@ -353,7 +353,10 @@ public class UserLibrary
             {
                 if(error.getResponse().getStatus() == 401)
                 {
-                    Log.println(Log.ERROR, "[BLADE-SPOTIFY]", "Please actualize token.");
+                    Log.println(Log.INFO, "[BLADE-SPOTIFY]", "Actualizing token.");
+                    refreshSpotifyToken();
+                    registerSpotifySongs();
+                    return;
                 }
 
                 error.printStackTrace();
@@ -362,6 +365,57 @@ public class UserLibrary
                 spotifyError.printStackTrace();
                 System.err.println("SPOTIFY ERROR DETAILS : " + spotifyError.getErrorDetails());
             }
+        }
+    }
+    public static void refreshSpotifyToken()
+    {
+        try
+        {
+            URL apiUrl = new URL("https://accounts.spotify.com/api/token");
+            HttpsURLConnection urlConnection = (HttpsURLConnection) apiUrl.openConnection();
+            urlConnection.setDoInput(true);
+            urlConnection.setDoOutput(true);
+            urlConnection.setRequestMethod("POST");
+
+            //write POST parameters
+            OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
+            BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
+            writer.write("grant_type=refresh_token&");
+            writer.write("refresh_token=" + SPOTIFY_REFRESH_TOKEN + "&");
+            writer.write("client_id=" + UserLibrary.SPOTIFY_CLIENT_ID + "&");
+            writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
+            writer.flush();
+            writer.close();
+            out.close();
+
+            urlConnection.connect();
+
+            System.out.println("[BLADE] [AUTH-REFRESH] Result : " + urlConnection.getResponseCode() + " " + urlConnection.getResponseMessage());
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+            String result = reader.readLine();
+            reader.close();
+            result = result.substring(1);
+            result = result.substring(0, result.length()-1);
+            String[] results = result.split(",");
+            for(String param : results)
+            {
+                if(param.startsWith("\"access_token\":\""))
+                {
+                    param = param.replaceFirst("\"access_token\":\"", "");
+                    param = param.replaceFirst("\"", "");
+                    UserLibrary.SPOTIFY_USER_TOKEN = param;
+                    spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+                    SharedPreferences pref = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = pref.edit();
+                    editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
+                    editor.commit();
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
         }
     }
 
