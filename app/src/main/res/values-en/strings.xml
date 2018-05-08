@@ -18,4 +18,5 @@
     <string name="songs">Songs</string>
     <string name="title_activity_play">Playing</string>
     <string name="about">About</string>
+    <string name="accounts">Accounts</string>
 </resources>

@@ -22,12 +22,12 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 27
     buildToolsVersion '24.0.2'
 
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 24
+        targetSdkVersion 27
         versionCode 1
         versionName '1.0.0'
     }
@@ -61,7 +61,7 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:customtabs:24.2.1'
+    compile 'com.android.support:customtabs:27.1.1'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-core:1.9.5'
@@ -71,7 +71,7 @@ dependencies {
 task javadoc(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    options.links("http://docs.oracle.com/javase/7/docs/api/");
+    options.links("http://docs.oracle.com/javase/7/docs/api/")
     destinationDir = file("../docs/")
     failOnError false
 }
