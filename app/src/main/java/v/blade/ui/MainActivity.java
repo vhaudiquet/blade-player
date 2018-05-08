@@ -19,7 +19,9 @@ package v.blade.ui;
 
 import android.Manifest;
 import android.app.SearchManager;
-import android.content.*;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -35,7 +37,9 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.*;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.*;
 import v.blade.R;
 import v.blade.library.*;
@@ -499,7 +503,7 @@ public class MainActivity extends AppCompatActivity
         // update informations
         currentPlayTitle.setText(song.getTitle());
         currentPlaySubtitle.setText(song.getArtist().getName() + " - " + song.getAlbum().getName());
-        if(song.getAlbum().getAlbumArt() != null) currentPlayImage.setImageBitmap(song.getAlbum().getAlbumArt());
+        if(song.getAlbum().hasAlbumArt()) currentPlayImage.setImageBitmap(song.getAlbum().getAlbumArtMiniature());
         else currentPlayImage.setImageResource(R.drawable.ic_albums);
 
         if(play) currentPlayAction.setImageResource(R.drawable.ic_action_pause);

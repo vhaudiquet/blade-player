@@ -17,12 +17,9 @@
  */
 package v.blade.library;
 
-import android.graphics.Bitmap;
-
 public class LibraryObject
 {
     protected String name;
-    protected Bitmap art;
 
     public String getName() {return this.name;}
     @Override public String toString() {return this.name;}

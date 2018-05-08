@@ -18,14 +18,20 @@
 package v.blade.library;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import java.util.ArrayList;
 
 public class Album extends LibraryObject
 {
+    public static final int minatureSize = 80;
+
     private ArrayList<Song> songs;
     private Artist artist;
     private long id;
+    private Bitmap miniatureArt;
+    private boolean hasArt = false;
+    private String albumArtPath;
 
     public Album(String name, Artist artist, long id)
     {
@@ -38,8 +44,15 @@ public class Album extends LibraryObject
     public ArrayList<Song> getSongs() {return songs;}
     public Artist getArtist() {return artist;}
     public long getId() {return id;}
-    public Bitmap getAlbumArt() {return art;}
+    public Bitmap getAlbumArtMiniature() {return miniatureArt;}
+    public Bitmap getAlbumArt() {return BitmapFactory.decodeFile(albumArtPath);}
+    public boolean hasAlbumArt() {return hasArt;}
 
     public void addSong(Song song) {this.songs.add(song);}
-    public void setAlbumArt(Bitmap b) {this.art = b;}
+    public void setAlbumArt(String path, Bitmap miniatureArt)
+    {
+        this.hasArt = true;
+        this.miniatureArt = miniatureArt;
+        this.albumArtPath = path;
+    }
 }

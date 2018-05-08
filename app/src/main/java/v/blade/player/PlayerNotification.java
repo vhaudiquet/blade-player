@@ -26,9 +26,9 @@ import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.media.app.NotificationCompat.MediaStyle;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.media.app.NotificationCompat.MediaStyle;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -101,7 +101,7 @@ public class PlayerNotification
                 .setColor(ContextCompat.getColor(mService, R.color.colorPrimary))
                 .setSmallIcon(R.drawable.app_icon_notif) //icon that will be displayed in status bar
                 .setContentIntent(contentIntent) //intent that will be sent on notification click
-                .setLargeIcon(playing.getAlbum().getAlbumArt())
+                .setLargeIcon(playing.getAlbum().getAlbumArtMiniature())
                 .setContentTitle(playing.getTitle())
                 .setContentText(playing.getArtist().getName() + " - " + playing.getAlbum().getName())
                 .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(mService, PlaybackStateCompat.ACTION_STOP)) //intent on notification slide ?

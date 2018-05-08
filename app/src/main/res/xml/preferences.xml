@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference android:title="Enregistrer les titres des playlists dans la bibliothèque"
+                        android:key="save_playlist_to_library"
+                        android:defaultValue="false"
+                        android:singleLineTitle="false"/>
     <PreferenceScreen android:title="Spotify" android:key="spotify_screen"/>
     <PreferenceScreen android:title="@string/about" android:key="about_screen"/>
 </PreferenceScreen>

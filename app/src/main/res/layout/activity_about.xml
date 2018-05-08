@@ -20,6 +20,13 @@
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textAlignment="center"
+              android:textColor="#000000"
+              android:textSize="18sp"
+              android:text="Version "
+              android:id="@+id/about_version"/>
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textAlignment="center"
               android:textSize="16sp"
               android:text="Blade est un lecteur de musique pour Android programmé par Valentin HAUDIQUET (@Valou3433). L'objectif du projet est de créer un lecteur permettant de lier la bibliothèque locale, Spotify, Deezer et SoundCloud."/>
     <TextView android:layout_width="match_parent"

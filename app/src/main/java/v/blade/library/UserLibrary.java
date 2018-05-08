@@ -21,16 +21,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
-import android.widget.Toast;
-import com.spotify.sdk.android.authentication.AuthenticationClient;
-import com.spotify.sdk.android.authentication.AuthenticationRequest;
-import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -38,7 +34,10 @@ import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
 import v.blade.ui.settings.SettingsActivity;
 
-import java.net.HttpURLConnection;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -51,6 +50,10 @@ import java.util.HashMap;
 */
 public class UserLibrary
 {
+    /* user preferences */
+    public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
+
+    /* library */
     public static final int SOURCE_LOCAL_LIB = 1;
     public static final int SOURCE_SPOTIFY = 2;
 
@@ -59,7 +62,7 @@ public class UserLibrary
     private static ArrayList<Song> songs;
     private static ArrayList<Playlist> playlists;
 
-    private static HashMap<String, ArrayList<Song>> songsByName = new HashMap<String, ArrayList<Song>>();
+    private static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
     /* spotify specific */
     public static final String SPOTIFY_CLIENT_ID = "2f95bc7168584e7aa67697418a684bae";
@@ -70,6 +73,9 @@ public class UserLibrary
     /* list callbacks */
     public interface UserLibraryCallback{void onLibraryChange();}
     public static UserLibraryCallback currentCallback;
+
+    private static Context appContext;
+    private static File artCacheDir;
 
     public static ArrayList<Artist> getArtists() {return artists;}
     public static ArrayList<Album> getAlbums() {return albums;}
@@ -84,16 +90,25 @@ public class UserLibrary
         /* init the lists (to make sure they are empty) */
         if(songs != null) return;
 
-        artists = new ArrayList<Artist>();
-        albums = new ArrayList<Album>();
-        songs = new ArrayList<Song>();
-        playlists = new ArrayList<Playlist>();
+        artists = new ArrayList<>();
+        albums = new ArrayList<>();
+        songs = new ArrayList<>();
+        playlists = new ArrayList<>();
+
+        //init cache dir
+        UserLibrary.appContext = appContext;
+        artCacheDir = appContext.getCacheDir();
+
+        //get preferences
+        SharedPreferences accountsPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+        SharedPreferences generalPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+
+        SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
 
         //setup spotify api
         if(SPOTIFY_USER_TOKEN == null)
         {
-            SharedPreferences prefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-            SPOTIFY_USER_TOKEN = prefs.getString("spotify_token", null);
+            SPOTIFY_USER_TOKEN = accountsPrefs.getString("spotify_token", null);
         }
         if(SPOTIFY_USER_TOKEN != null) spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
 
@@ -110,7 +125,7 @@ public class UserLibrary
                 System.out.println("[BLADE-DEBUG] Local song registered.");
 
                 //load spotify library
-                registerSpotifySongs(appContext);
+                registerSpotifySongs();
                 System.out.println("[BLADE-DEBUG] Spotify songs registered.");
 
                 sortLibrary();
@@ -174,8 +189,8 @@ public class UserLibrary
     {
         /* get content resolver and init temp sorted arrays */
         final ContentResolver musicResolver = appContext.getContentResolver();
-        LongSparseArray<Album> idsorted_albums = new LongSparseArray<Album>();
-        LongSparseArray<Song> idsorted_songs = new LongSparseArray<Song>();
+        LongSparseArray<Album> idsorted_albums = new LongSparseArray<>();
+        LongSparseArray<Song> idsorted_songs = new LongSparseArray<>();
 
         /* let's get all music files of the user, and register them and their attributes */
         Cursor musicCursor = musicResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null, null, null, null);
@@ -208,6 +223,7 @@ public class UserLibrary
                 if(idsorted_albums.get(albumId) == null) idsorted_albums.put(albumId, s.getAlbum());
             }
             while (musicCursor.moveToNext());
+            musicCursor.close();
         }
 
         /* we also need to get playlists on device */
@@ -223,7 +239,7 @@ public class UserLibrary
                 String thisName = playlistCursor.getString(nameColumn);
 
                 //now we have to resolve the content of this playlist
-                ArrayList<Song> thisList = new ArrayList<Song>();
+                ArrayList<Song> thisList = new ArrayList<>();
                 Cursor thisPlaylistCursor = musicResolver.query(MediaStore.Audio.Playlists.Members.getContentUri("external", thisId), null, null, null, null);
                 if(thisPlaylistCursor!=null && thisPlaylistCursor.moveToFirst())
                 {
@@ -233,12 +249,14 @@ public class UserLibrary
                     {
                         thisList.add(idsorted_songs.get(thisPlaylistCursor.getLong(audioIdColumn)));
                     } while(thisPlaylistCursor.moveToNext());
+                    thisPlaylistCursor.close();
                 }
 
                 Playlist list = new Playlist(thisId, thisName, thisList, SOURCE_LOCAL_LIB);
                 playlists.add(list);
                 if(currentCallback != null) currentCallback.onLibraryChange();
             } while(playlistCursor.moveToNext());
+            playlistCursor.close();
         }
 
         /* now let's get all albumarts */
@@ -254,11 +272,15 @@ public class UserLibrary
                 String path = albumCursor.getString(artCol);
 
                 Album a = idsorted_albums.get(thisId);
-                if(a != null) a.setAlbumArt(BitmapFactory.decodeFile(path));
+                if(a != null)
+                {
+                    loadAlbumArt(a, path, true);
+                }
             } while (albumCursor.moveToNext());
+            albumCursor.close();
         }
     }
-    public static void registerSpotifySongs(Context appContext)
+    public static void registerSpotifySongs()
     {
         if(SPOTIFY_USER_TOKEN != null)
         {
@@ -273,16 +295,10 @@ public class UserLibrary
                     Track t = track.track;
                     Song s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
                             t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
-                    if(s.getAlbum().getAlbumArt() == null)
+                    if(!s.getAlbum().hasAlbumArt())
                     {
                         Image albumImage = t.album.images.get(0);
-                        try
-                        {
-                            URLConnection connection = new URL(albumImage.url).openConnection();
-                            s.getAlbum().setAlbumArt(BitmapFactory.decodeStream(connection.getInputStream()));
-                        }
-                        catch(Exception e)
-                        {Log.println(Log.WARN, "[BLADE-SPOTIFY]", "Exception on decoding album image for album " + s.getAlbum().getName() + " : " + albumImage.url);} //ignored
+                        loadAlbumArt(s.getAlbum(), albumImage.url, false);
                     }
                 }
                 for(SavedAlbum album : userAlbums.items)
@@ -296,25 +312,35 @@ public class UserLibrary
                                 t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
                         if(savedAlbum == null) savedAlbum = s.getAlbum();
                     }
-                    Image albumImage = alb.images.get(0);
 
-                    try
+                    if(!savedAlbum.hasAlbumArt())
                     {
-                        URLConnection connection = new URL(albumImage.url).openConnection();
-                        savedAlbum.setAlbumArt(BitmapFactory.decodeStream(connection.getInputStream()));
+                        Image albumImage = alb.images.get(0);
+                        loadAlbumArt(savedAlbum, albumImage.url, false);
                     }
-                    catch(Exception e)
-                    {Log.println(Log.WARN, "[BLADE-SPOTIFY]", "Exception on decoding album image for album " + alb.name + " : " + albumImage.url);} //ignored
                 }
                 for(PlaylistSimple playlistBase : userPlaylists.items)
                 {
-                    ArrayList<Song> thisList = new ArrayList<Song>();
+                    ArrayList<Song> thisList = new ArrayList<>();
                     Pager<PlaylistTrack> tracks = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id);
                     for(PlaylistTrack pt : tracks.items)
                     {
                         Track t = pt.track;
-                        Song s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
-                                t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                        Song s;
+                        if(SAVE_PLAYLISTS_TO_LIBRARY)
+                            s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
+                                    t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                        else
+                            s = getSongHandle(t.id, t.name, t.album.name, t.artists.get(0).name, t.duration_ms, SOURCE_SPOTIFY,
+                                    t.track_number);
+
+                        //get albumart for this song
+                        if(!s.getAlbum().hasAlbumArt())
+                        {
+                            Image albumImage = t.album.images.get(0);
+                            loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                        }
+
                         thisList.add(s);
                     }
 
@@ -375,7 +401,7 @@ public class UserLibrary
     */
     public static ArrayList<LibraryObject> query(String s)
     {
-        ArrayList<LibraryObject> tr = new ArrayList<LibraryObject>();
+        ArrayList<LibraryObject> tr = new ArrayList<>();
         String q = s.toLowerCase();
 
         for(Song song : songs)
@@ -392,5 +418,101 @@ public class UserLibrary
                 tr.add(playlist);
 
         return tr;
+    }
+
+    private static Song getSongHandle(Object id, String name, String album, String artist, long duration, int source, int track)
+    {
+        //if song is already registered, return song from library
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase());
+        if(snames != null)
+        {
+            //check if the song is already registered
+            for(Song s : snames)
+            {
+                if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+                    return s;
+            }
+        }
+
+        //else create song object
+        Artist songArtist = null;
+        for(Artist art : artists) if(art.getName().equalsIgnoreCase(artist)) songArtist = art;
+        if(songArtist == null) songArtist = new Artist(name, 0);
+
+        Album songAlbum = null;
+        for(Album alb : albums) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;
+        if(songAlbum == null) songAlbum = new Album(album, songArtist, 0);
+
+        return new Song(id, name, songArtist, songAlbum, track, duration, source);
+    }
+
+    private static void loadAlbumArt(Album alb, String path, boolean local)
+    {
+        if(local)
+        {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+
+            //decode file bounds
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(path, options);
+
+            //calculate resize to do
+            int inSampleSize = calculateSampleSize(options, Album.minatureSize, Album.minatureSize);
+
+            //load miniature
+            options.inJustDecodeBounds = false;
+            options.inSampleSize = inSampleSize;
+            Bitmap toSet = BitmapFactory.decodeFile(path, options);
+
+            if(toSet != null) alb.setAlbumArt(path, toSet);
+        }
+        else
+        {
+            File toSave = new File(artCacheDir.getAbsolutePath() + "/" + alb.getName() + ".png");
+            if(!toSave.exists())
+            {
+                try
+                {
+                    URLConnection connection = new URL(path).openConnection();
+                    connection.setUseCaches(true);
+                    OutputStream fos = new FileOutputStream(toSave);
+                    InputStream nis = connection.getInputStream();
+
+                    //copy stream
+                    byte[] buffer = new byte[4096];
+                    while(true)
+                    {
+                        int count = nis.read(buffer, 0, 4096);
+                        if(count == -1) break;
+                        fos.write(buffer, 0, count);
+                    }
+
+                    connection.getInputStream().close();
+                }
+                catch(Exception e)
+                {
+                    Log.println(Log.WARN, "[BLADE]", "Exception on decoding album image for album " + alb.getName() + " : " + path);
+                    return;
+                }
+            }
+            loadAlbumArt(alb, toSave.getPath(), true);
+        }
+    }
+    private static int calculateSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight)
+    {
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if(height > reqHeight || width > reqWidth)
+        {
+            final int halfHeight = height/2;
+            final int halfWidth = width/2;
+
+            while((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth)
+                inSampleSize*=2;
+        }
+
+        return inSampleSize;
     }
 }

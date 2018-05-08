@@ -18,7 +18,6 @@
 package v.blade.ui.adapters;
 
 import android.app.Activity;
-import android.content.Context;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,7 +27,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import v.blade.R;
 import v.blade.library.*;
-import v.blade.ui.MainActivity;
 
 import java.util.ArrayList;
 
@@ -139,8 +137,8 @@ public class LibraryObjectAdapter extends BaseAdapter
             mViewHolder.subtitle.setText(((Song) obj).getArtist().getName());
 
             //set image to song album art
-            if(((Song) obj).getAlbum().getAlbumArt() != null)
-                mViewHolder.image.setImageBitmap(((Song) obj).getAlbum().getAlbumArt());
+            if(((Song) obj).getAlbum().hasAlbumArt())
+                mViewHolder.image.setImageBitmap(((Song) obj).getAlbum().getAlbumArtMiniature());
             else
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
 
@@ -154,7 +152,7 @@ public class LibraryObjectAdapter extends BaseAdapter
             mViewHolder.subtitle.setText(((Album)obj).getArtist().getName());
 
             //set image to art
-            if(((Album) obj).getAlbumArt() != null) mViewHolder.image.setImageBitmap(((Album) obj).getAlbumArt());
+            if(((Album) obj).hasAlbumArt()) mViewHolder.image.setImageBitmap(((Album) obj).getAlbumArtMiniature());
             else mViewHolder.image.setImageResource(R.drawable.ic_albums);
         }
         else if(obj instanceof Artist)

@@ -20,6 +20,7 @@ package v.blade.player;
 import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
@@ -40,6 +41,7 @@ public class PlayerService extends Service
 
     private ArrayList<Song> currentPlaylist;
     private int currentPosition;
+    private Bitmap currentArt;
     private int repeatMode = PlaybackStateCompat.REPEAT_MODE_NONE;
     private boolean shuffleMode = false;
 
@@ -69,8 +71,9 @@ public class PlayerService extends Service
             /* send current playbackstate to mediasession */
             mSession.setPlaybackState(mPlayer.getPlaybackState());
 
+            currentArt = currentPlaylist.get(currentPosition).getAlbum().getAlbumArt();
             MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
-            builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentPlaylist.get(currentPosition).getAlbum().getAlbumArt());
+            builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArt);
             MediaMetadataCompat metadata = builder.build();
             mSession.setMetadata(metadata);
 
@@ -220,6 +223,7 @@ public class PlayerService extends Service
     public int resolveCurrentSongPosition() {return mPlayer.getCurrentPosition();}
     public void seekTo(int position) {mPlayer.seekTo(position);}
     public void updatePosition(int position) {this.currentPosition = position;}
+    public Bitmap getCurrentArt() {return currentArt;}
 
     /* handling MediaSession intents */
     @Override

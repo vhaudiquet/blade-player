@@ -20,11 +20,11 @@ package v.blade.ui.settings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
@@ -35,6 +35,7 @@ import v.blade.library.UserLibrary;
 public class SettingsActivity extends AppCompatActivity
 {
     public static final String PREFERENCES_ACCOUNT_FILE_NAME = "accounts";
+    public static final String PREFERENCES_GENERAL_FILE_NAME = "general";
     private static int SPOTIFY_REQUEST_CODE = 1337;
 
     @Override
@@ -71,7 +72,7 @@ public class SettingsActivity extends AppCompatActivity
                     {
                         Looper.prepare();
                         UserLibrary.spotifyApi.setAccessToken(UserLibrary.SPOTIFY_USER_TOKEN);
-                        UserLibrary.registerSpotifySongs(SettingsActivity.this.getApplicationContext());
+                        UserLibrary.registerSpotifySongs();
                         UserLibrary.sortLibrary();
                     }
                 }.start();
@@ -84,6 +85,8 @@ public class SettingsActivity extends AppCompatActivity
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey)
         {
+            getPreferenceManager().setSharedPreferencesName(PREFERENCES_GENERAL_FILE_NAME);
+
             addPreferencesFromResource(R.xml.preferences);
 
             if(UserLibrary.SPOTIFY_USER_TOKEN != null)
