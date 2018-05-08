@@ -135,13 +135,13 @@ public class PlayerService extends Service
         public void onSkipToPrevious()
         {
             //if we are in song begin, we skip to previous
-            if(mPlayer.mediaPlayer.getCurrentPosition() < 5000)
+            if(mPlayer.getCurrentPosition() < 5000)
             {
                 currentPosition = currentPosition > 0 ? currentPosition-1 : currentPlaylist.size()-1;
                 mPlayer.playSong(currentPlaylist.get(currentPosition));
             }
             //else we seek to the song begin
-            else mPlayer.mediaPlayer.seekTo(0);
+            else mPlayer.seekTo(0);
         }
 
         @Override
@@ -153,14 +153,14 @@ public class PlayerService extends Service
         @Override
         public void onStop()
         {
-            mPlayer.mediaPlayer.stop();
+            mPlayer.stop();
             mSession.setActive(false);
         }
 
         @Override
         public void onSeekTo(long pos)
         {
-            mPlayer.mediaPlayer.seekTo((int) pos);
+            mPlayer.seekTo((int) pos);
         }
 
         @Override
@@ -211,14 +211,14 @@ public class PlayerService extends Service
     public ArrayList<Song> getCurrentPlaylist() {return currentPlaylist;}
     public int getCurrentPosition() {return currentPosition;}
     public Song getCurrentSong() {return currentPlaylist.get(currentPosition);}
-    public boolean isPlaying() {return mPlayer.mediaPlayer.isPlaying();}
+    public boolean isPlaying() {return mPlayer.isPlaying();}
     public boolean isShuffleEnabled() {return shuffleMode;}
     public int getRepeatMode() {return repeatMode;}
     public PlaybackStateCompat getPlayerState() {return mPlayer.getPlaybackState();}
     public MediaSessionCompat.Token getSessionToken() {return mSession.getSessionToken();}
-    public int resolveCurrentSongDuration() {return mPlayer.mediaPlayer.getDuration();}
-    public int resolveCurrentSongPosition() {return mPlayer.mediaPlayer.getCurrentPosition();}
-    public void seekTo(int position) {mPlayer.mediaPlayer.seekTo(position);}
+    public int resolveCurrentSongDuration() {return mPlayer.getDuration();}
+    public int resolveCurrentSongPosition() {return mPlayer.getCurrentPosition();}
+    public void seekTo(int position) {mPlayer.seekTo(position);}
     public void updatePosition(int position) {this.currentPosition = position;}
 
     /* handling MediaSession intents */

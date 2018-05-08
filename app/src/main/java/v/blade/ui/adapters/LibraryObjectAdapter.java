@@ -172,6 +172,10 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             //set image to default playlist image
             mViewHolder.image.setImageResource(R.drawable.ic_playlists);
+
+            if(((Playlist) obj).getSource() == UserLibrary.SOURCE_SPOTIFY)
+                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSpotify));
+            else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
         }
 
         return convertView;

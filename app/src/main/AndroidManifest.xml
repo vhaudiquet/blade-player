@@ -49,6 +49,9 @@
                   android:theme="@style/AppTheme.NoActionBar"
                   android:parentActivityName=".ui.settings.SettingsActivity">
         </activity>
+        <activity
+                android:name="com.spotify.sdk.android.authentication.LoginActivity"
+                android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <service
                 android:name=".player.PlayerService"

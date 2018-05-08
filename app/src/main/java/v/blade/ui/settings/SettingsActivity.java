@@ -20,12 +20,12 @@ package v.blade.ui.settings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.widget.Toast;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -63,6 +63,17 @@ public class SettingsActivity extends AppCompatActivity
                 SharedPreferences.Editor editor = pref.edit();
                 editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
                 editor.commit();
+
+                new Thread()
+                {
+                    @Override
+                    public void run()
+                    {
+                        Looper.prepare();
+                        UserLibrary.registerSpotifySongs(SettingsActivity.this.getApplicationContext());
+                        UserLibrary.sortLibrary();
+                    }
+                }.start();
             }
         }
     }
@@ -88,7 +99,7 @@ public class SettingsActivity extends AppCompatActivity
                 AuthenticationRequest.Builder builder =
                         new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.TOKEN,
                                 UserLibrary.SPOTIFY_REDIRECT_URI);
-                builder.setScopes(new String[]{"user-read-private", "streaming", "user-library-read"});
+                builder.setScopes(new String[]{"user-read-private", "streaming"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(getActivity(), SPOTIFY_REQUEST_CODE, request);
             }

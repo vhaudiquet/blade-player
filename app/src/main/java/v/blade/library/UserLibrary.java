@@ -22,10 +22,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.util.LongSparseArray;
 import android.widget.Toast;
+import com.spotify.sdk.android.authentication.AuthenticationClient;
+import com.spotify.sdk.android.authentication.AuthenticationRequest;
+import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -33,9 +38,13 @@ import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
 import v.blade.ui.settings.SettingsActivity;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 
 /*
 * This class parses and contains the current user library
@@ -50,9 +59,7 @@ public class UserLibrary
     private static ArrayList<Song> songs;
     private static ArrayList<Playlist> playlists;
 
-    /* sorted arrays used only for short amounts of time (cause of their size) */
-    private static LongSparseArray<Album> idsorted_albums;
-    private static LongSparseArray<Song> idsorted_songs;
+    private static HashMap<String, ArrayList<Song>> songsByName = new HashMap<String, ArrayList<Song>>();
 
     /* spotify specific */
     public static final String SPOTIFY_CLIENT_ID = "2f95bc7168584e7aa67697418a684bae";
@@ -61,7 +68,7 @@ public class UserLibrary
     public static final SpotifyApi spotifyApi = new SpotifyApi();
 
     /* list callbacks */
-    public static interface UserLibraryCallback{void onLibraryChange();}
+    public interface UserLibraryCallback{void onLibraryChange();}
     public static UserLibraryCallback currentCallback;
 
     public static ArrayList<Artist> getArtists() {return artists;}
@@ -92,78 +99,13 @@ public class UserLibrary
 
                 //load local library
                 registerLocalSongs(appContext);
-
                 System.out.println("[BLADE-DEBUG] Local song registered.");
 
-                //read spotify info
-                if(SPOTIFY_USER_TOKEN == null)
-                {
-                    SharedPreferences prefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-                    SPOTIFY_USER_TOKEN = prefs.getString("spotify_token", null);
-                }
-                if(SPOTIFY_USER_TOKEN != null)
-                {
-                    spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
-                    SpotifyService service = spotifyApi.getService();
-                    try
-                    {
-                        Pager<SavedTrack> userTracks = service.getMySavedTracks();
-                        Pager<SavedAlbum> userAlbums = service.getMySavedAlbums();
-                        Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
-                        for (SavedTrack track : userTracks.items)
-                        {
-                            Track t = track.track;
-                            registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
-                                    t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
-                        }
-                        for(SavedAlbum album : userAlbums.items)
-                        {
-                            kaaes.spotify.webapi.android.models.Album alb = album.album;
-                            Pager<Track> tracks = service.getAlbumTracks(alb.id);
-                            for(Track t : tracks.items)
-                                registerSong(t.id, t.artists.get(0).name, 0, alb.name, 0,
-                                    t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
-                        }
-                    }
-                    catch (RetrofitError error)
-                    {
-                        error.printStackTrace();
-                        System.err.println("ERROR BODY : " + error.getBody());
-                        SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
-                        spotifyError.printStackTrace();
-                        System.err.println("SPOTIFY ERROR DETAILS : " + spotifyError.getErrorDetails());
-                    }
-                }
-
+                //load spotify library
+                registerSpotifySongs(appContext);
                 System.out.println("[BLADE-DEBUG] Spotify songs registered.");
 
-                /* sort collection by alphabetical order */
-                Collections.sort(songs, new Comparator<Song>(){
-                    public int compare(Song a, Song b){ return a.getTitle().compareTo(b.getTitle()); }
-                });
-                Collections.sort(albums, new Comparator<Album>(){
-                    public int compare(Album a, Album b){ return a.getName().compareTo(b.getName());
-                    }
-                });
-                Collections.sort(artists, new Comparator<Artist>(){
-                    public int compare(Artist a, Artist b){ return a.getName().compareTo(b.getName());
-                    }
-                });
-                Collections.sort(playlists, new Comparator<Playlist>(){
-                    public int compare(Playlist a, Playlist b){ return a.getName().compareTo(b.getName());
-                    }
-                });
-                if(currentCallback != null) currentCallback.onLibraryChange();
-
-                /* sort each album per tracks */
-                for(Album alb : albums)
-                {
-                    Collections.sort(alb.getSongs(), new Comparator<Song>() {
-                        @Override
-                        public int compare(Song o1, Song o2) {return o1.getTrackNumber() - o2.getTrackNumber();}
-                    });
-                }
-                if(currentCallback != null) currentCallback.onLibraryChange();
+                sortLibrary();
             }
         };
         loaderThread.setName("loaderThread");
@@ -173,11 +115,21 @@ public class UserLibrary
 
     /*
     * Registers a song in user library
-    * Care: does not check if the song is already in library
     */
-    private static void registerSong(Object id, String artist, long artistId, String album, long albumId,
+    private static Song registerSong(Object id, String artist, long artistId, String album, long albumId,
                                      int albumTrack, long duration, String name, int source)
     {
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase());
+        if(snames != null)
+        {
+            //check if the song is already registered
+            for(Song s : snames)
+            {
+                if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+                    return s;
+            }
+        }
+
         Artist songArtist = null;
         for (Artist art : artists) if (art.getName().equals(artist)) songArtist = art;
         if(songArtist == null)
@@ -194,26 +146,28 @@ public class UserLibrary
         {
             songAlbum = new Album(album, songArtist, albumId);
             albums.add(songAlbum);
-
-            if(source == SOURCE_LOCAL_LIB) idsorted_albums.put(albumId, songAlbum);
-
             songArtist.addAlbum(songAlbum);
         }
 
         Song song = new Song(id, name, songArtist, songAlbum, albumTrack, duration, source);
         songAlbum.addSong(song);
         songs.add(song);
-        if(source == SOURCE_LOCAL_LIB) idsorted_songs.put((long) id, song);
 
         if(currentCallback != null) currentCallback.onLibraryChange();
+
+        //register song by name
+        if(snames != null) snames.add(song);
+        else {ArrayList<Song> sn = new ArrayList<>(); sn.add(song); songsByName.put(name.toLowerCase(), sn);}
+
+        return song;
     }
 
     private static void registerLocalSongs(Context appContext)
     {
         /* get content resolver and init temp sorted arrays */
         final ContentResolver musicResolver = appContext.getContentResolver();
-        idsorted_albums = new LongSparseArray<Album>();
-        idsorted_songs = new LongSparseArray<Song>();
+        LongSparseArray<Album> idsorted_albums = new LongSparseArray<Album>();
+        LongSparseArray<Song> idsorted_songs = new LongSparseArray<Song>();
 
         /* let's get all music files of the user, and register them and their attributes */
         Cursor musicCursor = musicResolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null, null, null, null);
@@ -241,7 +195,9 @@ public class UserLibrary
                 String thisAlbum = musicCursor.getString(albumColumn);
                 long thisDuration = musicCursor.getLong(songDurationColumn);
 
-                registerSong(thisId, thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, SOURCE_LOCAL_LIB);
+                Song s = registerSong(thisId, thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, SOURCE_LOCAL_LIB);
+                idsorted_songs.put(thisId, s);
+                if(idsorted_albums.get(albumId) == null) idsorted_albums.put(albumId, s.getAlbum());
             }
             while (musicCursor.moveToNext());
         }
@@ -271,11 +227,10 @@ public class UserLibrary
                     } while(thisPlaylistCursor.moveToNext());
                 }
 
-                Playlist list = new Playlist(thisId, thisName, thisList);
+                Playlist list = new Playlist(thisId, thisName, thisList, SOURCE_LOCAL_LIB);
                 playlists.add(list);
                 if(currentCallback != null) currentCallback.onLibraryChange();
             } while(playlistCursor.moveToNext());
-            idsorted_songs = null;
         }
 
         /* now let's get all albumarts */
@@ -294,7 +249,124 @@ public class UserLibrary
                 if(a != null) a.setAlbumArt(BitmapFactory.decodeFile(path));
             } while (albumCursor.moveToNext());
         }
-        idsorted_albums = null;
+    }
+    public static void registerSpotifySongs(Context appContext)
+    {
+        //read spotify info
+        if(SPOTIFY_USER_TOKEN == null)
+        {
+            SharedPreferences prefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+            SPOTIFY_USER_TOKEN = prefs.getString("spotify_token", null);
+        }
+        if(SPOTIFY_USER_TOKEN != null)
+        {
+            spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+            SpotifyService service = spotifyApi.getService();
+            try
+            {
+                Pager<SavedTrack> userTracks = service.getMySavedTracks();
+                Pager<SavedAlbum> userAlbums = service.getMySavedAlbums();
+                Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
+                for (SavedTrack track : userTracks.items)
+                {
+                    Track t = track.track;
+                    Song s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
+                            t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                    if(s.getAlbum().getAlbumArt() == null)
+                    {
+                        Image albumImage = t.album.images.get(0);
+                        try
+                        {
+                            URLConnection connection = new URL(albumImage.url).openConnection();
+                            s.getAlbum().setAlbumArt(BitmapFactory.decodeStream(connection.getInputStream()));
+                        }
+                        catch(Exception e)
+                        {Log.println(Log.WARN, "[BLADE-SPOTIFY]", "Exception on decoding album image for album " + s.getAlbum().getName() + " : " + albumImage.url);} //ignored
+                    }
+                }
+                for(SavedAlbum album : userAlbums.items)
+                {
+                    Album savedAlbum = null;
+                    kaaes.spotify.webapi.android.models.Album alb = album.album;
+                    Pager<Track> tracks = service.getAlbumTracks(alb.id);
+                    for(Track t : tracks.items)
+                    {
+                        Song s = registerSong(t.id, t.artists.get(0).name, 0, alb.name, 0,
+                                t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                        if(savedAlbum == null) savedAlbum = s.getAlbum();
+                    }
+                    Image albumImage = alb.images.get(0);
+
+                    try
+                    {
+                        URLConnection connection = new URL(albumImage.url).openConnection();
+                        savedAlbum.setAlbumArt(BitmapFactory.decodeStream(connection.getInputStream()));
+                    }
+                    catch(Exception e)
+                    {Log.println(Log.WARN, "[BLADE-SPOTIFY]", "Exception on decoding album image for album " + alb.name + " : " + albumImage.url);} //ignored
+                }
+                for(PlaylistSimple playlistBase : userPlaylists.items)
+                {
+                    ArrayList<Song> thisList = new ArrayList<Song>();
+                    Pager<PlaylistTrack> tracks = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id);
+                    for(PlaylistTrack pt : tracks.items)
+                    {
+                        Track t = pt.track;
+                        Song s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
+                                t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                        thisList.add(s);
+                    }
+
+                    Playlist list = new Playlist(playlistBase.id, playlistBase.name, thisList, SOURCE_SPOTIFY);
+                    playlists.add(list);
+                    if(currentCallback != null) currentCallback.onLibraryChange();
+                }
+            }
+            catch (RetrofitError error)
+            {
+                if(error.getResponse().getStatus() == 401)
+                {
+                    Log.println(Log.ERROR, "[BLADE-SPOTIFY]", "Please actualize token.");
+                }
+
+                error.printStackTrace();
+                System.err.println("ERROR BODY : " + error.getBody());
+                SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
+                spotifyError.printStackTrace();
+                System.err.println("SPOTIFY ERROR DETAILS : " + spotifyError.getErrorDetails());
+            }
+        }
+    }
+
+    public static void sortLibrary()
+    {
+        /* sort collection by alphabetical order */
+        Collections.sort(songs, new Comparator<Song>(){
+            public int compare(Song a, Song b){ return a.getTitle().compareTo(b.getTitle()); }
+        });
+        Collections.sort(albums, new Comparator<Album>(){
+            public int compare(Album a, Album b){ return a.getName().compareTo(b.getName());
+            }
+        });
+        Collections.sort(artists, new Comparator<Artist>(){
+            public int compare(Artist a, Artist b){ return a.getName().compareTo(b.getName());
+            }
+        });
+        Collections.sort(playlists, new Comparator<Playlist>(){
+            public int compare(Playlist a, Playlist b){ return a.getName().compareTo(b.getName());
+            }
+        });
+        if(currentCallback != null) currentCallback.onLibraryChange();
+
+        /* sort each album per tracks */
+        for(Album alb : albums)
+        {
+            Collections.sort(alb.getSongs(), new Comparator<Song>() {
+                @Override
+                public int compare(Song o1, Song o2) {return o1.getTrackNumber() - o2.getTrackNumber();}
+            });
+        }
+        if(currentCallback != null) currentCallback.onLibraryChange();
     }
 
     /*

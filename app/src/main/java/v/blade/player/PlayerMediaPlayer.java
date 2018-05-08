@@ -47,9 +47,16 @@ public class PlayerMediaPlayer
     private int currentState = PLAYER_STATE_NONE;
     private final MediaPlayerListener listener;
 
+    private static final int NO_PLAYER_ACTIVE = 0;
+    private static final int LOCAL_PLAYER_ACTIVE = 1;
+    private static final int SPOTIFY_PLAYER_ACTIVE = 2;
+    private int currentActivePlayer = NO_PLAYER_ACTIVE;
+
+    private Song currentSong;
     private final Context context;
 
-    public final MediaPlayer mediaPlayer;
+    /* local MediaPlayer */
+    private final MediaPlayer mediaPlayer;
     private final MediaPlayer.OnCompletionListener mediaPlayerCompletionListener = new MediaPlayer.OnCompletionListener()
     {
         @Override
@@ -105,40 +112,137 @@ public class PlayerMediaPlayer
     };
     private boolean playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
 
+    /* Spotify media player */
+    private Player spotifyPlayer;
+    private static final int SPOTIFY_ERROR_NONE = 0;
+    private static final int SPOTIFY_ERROR_LOGIN = 1;
+    private static final int SPOTIFY_ERROR_OTHER = 2;
+    private int spotifyPlayerError;
+
     public PlayerMediaPlayer(@NonNull Context context, MediaPlayerListener listener)
     {
         this.context = context;
 
+        /* init local media player */
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setOnCompletionListener(mediaPlayerCompletionListener);
-
         context.registerReceiver(mAudioNoisyReceiver, AUDIO_NOISY_INTENT_FILTER);
-
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        /* init spotify media player */
+        Config playerConfig = new Config(context, UserLibrary.SPOTIFY_USER_TOKEN, UserLibrary.SPOTIFY_CLIENT_ID);
+        Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
+        {
+            @Override
+            public void onInitialized(final SpotifyPlayer spotifyPlayer)
+            {
+                spotifyPlayer.addConnectionStateCallback(new ConnectionStateCallback() {
+                    @Override
+                    public void onLoggedIn()
+                    {
+                        PlayerMediaPlayer.this.spotifyPlayer = spotifyPlayer;
+                    }
+                    @Override
+                    public void onLoggedOut() {}
+                    @Override
+                    public void onLoginFailed(Error error)
+                    {
+                        spotifyPlayerError = SPOTIFY_ERROR_LOGIN;
+                    }
+                    @Override
+                    public void onTemporaryError() {}
+                    @Override
+                    public void onConnectionMessage(String s) {}
+                });
+            }
+
+            @Override
+            public void onError(Throwable throwable)
+            {
+                System.err.println("Spotify player error : " + throwable.getLocalizedMessage());
+                spotifyPlayerError = SPOTIFY_ERROR_OTHER;
+            }
+        });
 
         this.listener = listener;
     }
 
+    /* player operations */
     public void play()
     {
-        if(requestAudioFocus()) mediaPlayer.start();
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
+            if(requestAudioFocus()) mediaPlayer.start();
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
+            spotifyPlayer.resume(null);
+
         currentState = PLAYER_STATE_PLAYING;
         listener.onStateChange();
     }
     public void pause()
     {
-        if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
-        mediaPlayer.pause();
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
+        {
+            if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
+            mediaPlayer.pause();
+        }
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
+            spotifyPlayer.pause(null);
+
         currentState = PLAYER_STATE_PAUSED;
         listener.onStateChange();
     }
+    public void stop()
+    {
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
+        {
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
+            mediaPlayer.stop();
+        }
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
+            spotifyPlayer.destroy();
+
+        currentState = PLAYER_STATE_STOPPED;
+        listener.onStateChange();
+    }
+    public void seekTo(int msec)
+    {
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) mediaPlayer.seekTo(msec);
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) spotifyPlayer.seekToPosition(null, msec);
+    }
+    public int getCurrentPosition()
+    {
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.getCurrentPosition();
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return ((int) spotifyPlayer.getPlaybackState().positionMs);
+
+        return 0;
+    }
+    public boolean isPlaying()
+    {
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.isPlaying();
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return spotifyPlayer.getPlaybackState().isPlaying;
+        return false;
+    }
+    public int getDuration()
+    {
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.getDuration();
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return ((int) currentSong.getDuration());
+        return 0;
+    }
+
 
     public void playSong(final Song song)
     {
-        mediaPlayer.reset();
+        currentSong = song;
 
+        /* stop/reset current playback */
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) mediaPlayer.reset();
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) spotifyPlayer.pause(null);
+
+        /* select appropriate mediaplayer and start playback */
         if(song.getSource() == UserLibrary.SOURCE_LOCAL_LIB)
         {
+            currentActivePlayer = LOCAL_PLAYER_ACTIVE;
+
             Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getId());
 
             try
@@ -151,40 +255,22 @@ public class PlayerMediaPlayer
         }
         else if(song.getSource() == UserLibrary.SOURCE_SPOTIFY)
         {
-            Config playerConfig = new Config(context, UserLibrary.SPOTIFY_USER_TOKEN, UserLibrary.SPOTIFY_CLIENT_ID);
-            Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
+            currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
+            if(spotifyPlayer != null)
             {
-                @Override
-                public void onInitialized(final SpotifyPlayer spotifyPlayer)
-                {
-                    spotifyPlayer.addConnectionStateCallback(new ConnectionStateCallback() {
-                        @Override
-                        public void onLoggedIn()
-                        {
-                            System.out.println("Playing song " + song.getName());
-                            spotifyPlayer.playUri(null, "spotify:track:" + song.getId(), 0, 0);
-                        }
-                        @Override
-                        public void onLoggedOut() {}
-                        @Override
-                        public void onLoginFailed(Error error)
-                        {
-                            System.err.println("Spotify Player : login failed (" + error.name() + ")");
-                        }
-                        @Override
-                        public void onTemporaryError() {}
-                        @Override
-                        public void onConnectionMessage(String s) {}
-                    });
-                }
-
-                @Override
-                public void onError(Throwable throwable)
-                {
-                    System.err.println("Spotify player error : " + throwable.getLocalizedMessage());
-                    Toast.makeText(context, "Spotify Player error : " + throwable.getLocalizedMessage(), Toast.LENGTH_LONG).show();
-                }
-            });
+                spotifyPlayer.playUri(null, "spotify:track:" + song.getId(), 0, 0);
+                currentState = PLAYER_STATE_PLAYING;
+                listener.onStateChange();
+            }
+            else
+            {
+                Toast.makeText(context, "Erreur " +
+                        (spotifyPlayerError == SPOTIFY_ERROR_LOGIN ? " de connection (login/mot de passe erronés, compte non-premium)" : "inconnue")
+                        + " du lecteur Spotify", Toast.LENGTH_SHORT).show();
+                currentActivePlayer = NO_PLAYER_ACTIVE;
+                currentState = PLAYER_STATE_STOPPED;
+                listener.onStateChange();
+            }
         }
     }
 
@@ -235,7 +321,7 @@ public class PlayerMediaPlayer
 
         final PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
         stateBuilder.setActions(actions);
-        stateBuilder.setState(playbackState, mediaPlayer.getCurrentPosition(), 1.0f, SystemClock.elapsedRealtime());
+        stateBuilder.setState(playbackState, getCurrentPosition(), 1.0f, SystemClock.elapsedRealtime());
         return stateBuilder.build();
     }
     public interface MediaPlayerListener
