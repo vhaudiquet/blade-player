@@ -67,6 +67,13 @@ public class PlayerMediaPlayer
         }
     };
 
+    /* Spotify media player */
+    private Player spotifyPlayer;
+    private static final int SPOTIFY_ERROR_NONE = 0;
+    private static final int SPOTIFY_ERROR_LOGIN = 1;
+    private static final int SPOTIFY_ERROR_OTHER = 2;
+    private int spotifyPlayerError;
+
     private static final IntentFilter AUDIO_NOISY_INTENT_FILTER = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
     private final BroadcastReceiver mAudioNoisyReceiver = new BroadcastReceiver()
     {
@@ -111,13 +118,6 @@ public class PlayerMediaPlayer
         }
     };
     private boolean playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
-
-    /* Spotify media player */
-    private Player spotifyPlayer;
-    private static final int SPOTIFY_ERROR_NONE = 0;
-    private static final int SPOTIFY_ERROR_LOGIN = 1;
-    private static final int SPOTIFY_ERROR_OTHER = 2;
-    private int spotifyPlayerError;
 
     public PlayerMediaPlayer(@NonNull Context context, MediaPlayerListener listener)
     {
@@ -170,21 +170,25 @@ public class PlayerMediaPlayer
     /* player operations */
     public void play()
     {
-        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
-            if(requestAudioFocus()) mediaPlayer.start();
-        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
-            spotifyPlayer.resume(null);
+        System.out.println("PLAY()");
+        if(requestAudioFocus())
+        {
+            if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
+                mediaPlayer.start();
+            else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
+                spotifyPlayer.resume(null);
 
-        currentState = PLAYER_STATE_PLAYING;
-        listener.onStateChange();
+            currentState = PLAYER_STATE_PLAYING;
+            listener.onStateChange();
+        }
     }
     public void pause()
     {
+        System.out.println("PAUSE()");
+        if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
+
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
-        {
-            if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
             mediaPlayer.pause();
-        }
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
             spotifyPlayer.pause(null);
 
@@ -193,11 +197,10 @@ public class PlayerMediaPlayer
     }
     public void stop()
     {
+        audioManager.abandonAudioFocus(audioFocusChangeListener);
+
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
-        {
-            audioManager.abandonAudioFocus(audioFocusChangeListener);
             mediaPlayer.stop();
-        }
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
             spotifyPlayer.destroy();
 
@@ -219,7 +222,7 @@ public class PlayerMediaPlayer
     public boolean isPlaying()
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.isPlaying();
-        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return spotifyPlayer.getPlaybackState().isPlaying;
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return currentState == PLAYER_STATE_PLAYING;
         return false;
     }
     public int getDuration()

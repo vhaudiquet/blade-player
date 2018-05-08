@@ -34,6 +34,7 @@ public class Song extends LibraryObject
         this.album = album;
         this.track = albumTrack;
         this.source = SOURCE;
+        this.duration = duration;
     }
 
     public Object getId() {return id;}

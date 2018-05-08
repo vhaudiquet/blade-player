@@ -89,6 +89,14 @@ public class UserLibrary
         songs = new ArrayList<Song>();
         playlists = new ArrayList<Playlist>();
 
+        //setup spotify api
+        if(SPOTIFY_USER_TOKEN == null)
+        {
+            SharedPreferences prefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+            SPOTIFY_USER_TOKEN = prefs.getString("spotify_token", null);
+        }
+        if(SPOTIFY_USER_TOKEN != null) spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+
         //load songs from all sources (async)
         Thread loaderThread = new Thread()
         {
@@ -252,15 +260,8 @@ public class UserLibrary
     }
     public static void registerSpotifySongs(Context appContext)
     {
-        //read spotify info
-        if(SPOTIFY_USER_TOKEN == null)
-        {
-            SharedPreferences prefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-            SPOTIFY_USER_TOKEN = prefs.getString("spotify_token", null);
-        }
         if(SPOTIFY_USER_TOKEN != null)
         {
-            spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
             SpotifyService service = spotifyApi.getService();
             try
             {

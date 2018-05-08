@@ -32,6 +32,7 @@ import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
 import v.blade.library.Song;
+import v.blade.library.UserLibrary;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -75,11 +76,12 @@ public class PlayActivity extends AppCompatActivity
             Song toSwap = playList.get(from);
             playList.remove(from);
             playList.add(to, toSwap);
+            UserLibrary.currentCallback.onLibraryChange();
 
             //reset adapter because notifyDataSetChanged doesnt work
-            LibraryObjectAdapter adapter = new LibraryObjectAdapter(PlayActivity.this, PlayerConnection.musicPlayer.getCurrentPlaylist());
-            adapter.setMoreImage(R.drawable.ic_action_move);
-            playlistView.setAdapter(adapter);
+            //LibraryObjectAdapter adapter = new LibraryObjectAdapter(PlayActivity.this, PlayerConnection.musicPlayer.getCurrentPlaylist());
+            //adapter.setMoreImage(R.drawable.ic_action_move_black);
+            //playlistView.setAdapter(adapter);
 
             int selectedPos = PlayerConnection.musicPlayer.getCurrentPosition();
             if(selectedPos == from)

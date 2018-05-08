@@ -70,6 +70,7 @@ public class SettingsActivity extends AppCompatActivity
                     public void run()
                     {
                         Looper.prepare();
+                        UserLibrary.spotifyApi.setAccessToken(UserLibrary.SPOTIFY_USER_TOKEN);
                         UserLibrary.registerSpotifySongs(SettingsActivity.this.getApplicationContext());
                         UserLibrary.sortLibrary();
                     }
@@ -84,6 +85,12 @@ public class SettingsActivity extends AppCompatActivity
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey)
         {
             addPreferencesFromResource(R.xml.preferences);
+
+            if(UserLibrary.SPOTIFY_USER_TOKEN != null)
+            {
+                Preference sp = getPreferenceScreen().findPreference("spotify_screen");
+                sp.setSummary("Connecté");
+            }
         }
 
         @Override
@@ -99,7 +106,8 @@ public class SettingsActivity extends AppCompatActivity
                 AuthenticationRequest.Builder builder =
                         new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.TOKEN,
                                 UserLibrary.SPOTIFY_REDIRECT_URI);
-                builder.setScopes(new String[]{"user-read-private", "streaming"});
+                builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
+                "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(getActivity(), SPOTIFY_REQUEST_CODE, request);
             }
