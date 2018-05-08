@@ -26,9 +26,10 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
-    //spotify auth
-    compile 'com.spotify.android:auth:1.0.0-alpha'
-    compile 'com.github.kaaes:spotify-web-api-android:0.4.1'
+    //spotify
+    compile 'com.spotify.android:auth:1.0.0-alpha' //auth
+    compile 'com.github.kaaes:spotify-web-api-android:0.4.1' //web api access
+    compile 'com.spotify.sdk:spotify-player-24-noconnect-2.20b@aar' //playback
 
     //compat libs
     compile 'com.android.support:support-compat:27.1.1'

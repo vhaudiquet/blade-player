@@ -232,7 +232,7 @@ public class PlayActivity extends AppCompatActivity
         else albumView.setImageResource(R.drawable.ic_albums);
 
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, PlayerConnection.musicPlayer.getCurrentPlaylist());
-        adapter.setMoreImage(R.drawable.ic_action_move);
+        adapter.setMoreImage(R.drawable.ic_action_move_black);
         playlistView.setAdapter(adapter);
         playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
         playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);

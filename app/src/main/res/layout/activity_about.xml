@@ -50,5 +50,8 @@
               android:layout_height="wrap_content"
               android:textSize="15sp"
               android:text="Spotify Web API for Android, license MIT, Copyright 2014 Kasia Drzyzga, github.com/kaaes/spotify-web-api-android"/>
-
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textSize="15sp"
+              android:text="Spotify Android SDK, license ???, Copyright Spotify AB, github.com/spotify/android-sdk"/>
 </LinearLayout>

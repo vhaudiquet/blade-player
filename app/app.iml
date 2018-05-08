@@ -118,6 +118,7 @@
     <orderEntry type="library" exported="" name="Gradle: auth-1.0.0-alpha" level="project" />
     <orderEntry type="library" exported="" name="Gradle: constraint-layout-1.0.2" level="project" />
     <orderEntry type="library" exported="" name="Gradle: transition-27.1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: spotify-player-24-noconnect-2.20b-" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: hamcrest-core-1.3" level="project" />
     <orderEntry type="library" exported="" name="Gradle: constraint-layout-solver-1.0.2" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: hamcrest-integration-1.3" level="project" />

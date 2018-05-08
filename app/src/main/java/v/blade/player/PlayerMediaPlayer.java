@@ -25,7 +25,12 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.widget.Toast;
+import com.spotify.sdk.android.player.*;
+import com.spotify.sdk.android.player.Error;
+import kaaes.spotify.webapi.android.SpotifyService;
 import v.blade.library.Song;
+import v.blade.library.UserLibrary;
 
 public class PlayerMediaPlayer
 {
@@ -128,18 +133,59 @@ public class PlayerMediaPlayer
         listener.onStateChange();
     }
 
-    public void playSong(Song song)
+    public void playSong(final Song song)
     {
         mediaPlayer.reset();
-        Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getId());
 
-        try
+        if(song.getSource() == UserLibrary.SOURCE_LOCAL_LIB)
         {
-            mediaPlayer.setDataSource(context, songUri);
-            mediaPlayer.prepare();
-            play();
+            Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getId());
+
+            try
+            {
+                mediaPlayer.setDataSource(context, songUri);
+                mediaPlayer.prepare();
+                play();
+            }
+            catch(Exception e) {} //ignored.
         }
-        catch(Exception e) {} //ignored.
+        else if(song.getSource() == UserLibrary.SOURCE_SPOTIFY)
+        {
+            Config playerConfig = new Config(context, UserLibrary.SPOTIFY_USER_TOKEN, UserLibrary.SPOTIFY_CLIENT_ID);
+            Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
+            {
+                @Override
+                public void onInitialized(final SpotifyPlayer spotifyPlayer)
+                {
+                    spotifyPlayer.addConnectionStateCallback(new ConnectionStateCallback() {
+                        @Override
+                        public void onLoggedIn()
+                        {
+                            System.out.println("Playing song " + song.getName());
+                            spotifyPlayer.playUri(null, "spotify:track:" + song.getId(), 0, 0);
+                        }
+                        @Override
+                        public void onLoggedOut() {}
+                        @Override
+                        public void onLoginFailed(Error error)
+                        {
+                            System.err.println("Spotify Player : login failed (" + error.name() + ")");
+                        }
+                        @Override
+                        public void onTemporaryError() {}
+                        @Override
+                        public void onConnectionMessage(String s) {}
+                    });
+                }
+
+                @Override
+                public void onError(Throwable throwable)
+                {
+                    System.err.println("Spotify player error : " + throwable.getLocalizedMessage());
+                    Toast.makeText(context, "Spotify Player error : " + throwable.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
     }
 
     private boolean requestAudioFocus()

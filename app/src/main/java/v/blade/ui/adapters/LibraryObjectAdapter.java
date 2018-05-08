@@ -34,6 +34,7 @@ import java.util.ArrayList;
 
 public class LibraryObjectAdapter extends BaseAdapter
 {
+    private ArrayList<LibraryObject> original;
     private ArrayList<LibraryObject> libraryObjects;
     private Activity context;
     private LayoutInflater inflater;
@@ -51,7 +52,8 @@ public class LibraryObjectAdapter extends BaseAdapter
 
     public LibraryObjectAdapter(final Activity context, ArrayList objects)
     {
-        this.libraryObjects = (ArrayList<LibraryObject>) objects;
+        this.original = objects;
+        this.libraryObjects = (ArrayList<LibraryObject>) objects.clone();
         this.context = context;
         this.inflater = LayoutInflater.from(context);
 
@@ -65,6 +67,7 @@ public class LibraryObjectAdapter extends BaseAdapter
                     @Override
                     public void run()
                     {
+                        libraryObjects = (ArrayList<LibraryObject>) original.clone();
                         LibraryObjectAdapter.this.notifyDataSetChanged();
                     }
                 });
@@ -140,6 +143,10 @@ public class LibraryObjectAdapter extends BaseAdapter
                 mViewHolder.image.setImageBitmap(((Song) obj).getAlbum().getAlbumArt());
             else
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
+
+            if(((Song) obj).getSource() == UserLibrary.SOURCE_SPOTIFY)
+                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSpotify));
+            else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
         }
         else if(obj instanceof Album)
         {

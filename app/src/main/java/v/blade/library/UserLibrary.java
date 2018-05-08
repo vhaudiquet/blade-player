@@ -93,6 +93,8 @@ public class UserLibrary
                 //load local library
                 registerLocalSongs(appContext);
 
+                System.out.println("[BLADE-DEBUG] Local song registered.");
+
                 //read spotify info
                 if(SPOTIFY_USER_TOKEN == null)
                 {
@@ -114,6 +116,14 @@ public class UserLibrary
                             registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
                                     t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
                         }
+                        for(SavedAlbum album : userAlbums.items)
+                        {
+                            kaaes.spotify.webapi.android.models.Album alb = album.album;
+                            Pager<Track> tracks = service.getAlbumTracks(alb.id);
+                            for(Track t : tracks.items)
+                                registerSong(t.id, t.artists.get(0).name, 0, alb.name, 0,
+                                    t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                        }
                     }
                     catch (RetrofitError error)
                     {
@@ -124,6 +134,8 @@ public class UserLibrary
                         System.err.println("SPOTIFY ERROR DETAILS : " + spotifyError.getErrorDetails());
                     }
                 }
+
+                System.out.println("[BLADE-DEBUG] Spotify songs registered.");
 
                 /* sort collection by alphabetical order */
                 Collections.sort(songs, new Comparator<Song>(){
@@ -167,20 +179,28 @@ public class UserLibrary
                                      int albumTrack, long duration, String name, int source)
     {
         Artist songArtist = null;
-        for (Artist artist1 : artists) if (artist1.getName().equals(artist)) songArtist = artist1;
-        if(songArtist == null) {songArtist = new Artist(artist, artistId); artists.add(songArtist);}
+        for (Artist art : artists) if (art.getName().equals(artist)) songArtist = art;
+        if(songArtist == null)
+        {
+            songArtist = new Artist(artist, artistId);
+            artists.add(songArtist);
+        }
 
         Album songAlbum = null;
-        for(int i = 0;i<songArtist.getAlbums().size();i++) if(songArtist.getAlbums().get(i).getName().equals(album)) songAlbum = songArtist.getAlbums().get(i);
+        for(int i = 0;i<songArtist.getAlbums().size();i++)
+            if(songArtist.getAlbums().get(i).getName().equals(album)) songAlbum = songArtist.getAlbums().get(i);
+
         if(songAlbum == null)
         {
             songAlbum = new Album(album, songArtist, albumId);
             albums.add(songAlbum);
+
             if(source == SOURCE_LOCAL_LIB) idsorted_albums.put(albumId, songAlbum);
+
             songArtist.addAlbum(songAlbum);
         }
 
-        Song song = new Song(id, name, songArtist, songAlbum, albumTrack, duration, SOURCE_LOCAL_LIB);
+        Song song = new Song(id, name, songArtist, songAlbum, albumTrack, duration, source);
         songAlbum.addSong(song);
         songs.add(song);
         if(source == SOURCE_LOCAL_LIB) idsorted_songs.put((long) id, song);
