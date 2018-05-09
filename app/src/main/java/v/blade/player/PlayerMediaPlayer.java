@@ -17,6 +17,7 @@
  */
 package v.blade.player;
 
+import android.app.Application;
 import android.content.*;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -26,6 +27,8 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
+import com.deezer.sdk.player.TrackPlayer;
+import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
 import com.spotify.sdk.android.player.*;
 import com.spotify.sdk.android.player.Error;
 import v.blade.library.Song;
@@ -46,9 +49,13 @@ public class PlayerMediaPlayer
     private int currentState = PLAYER_STATE_NONE;
     private final MediaPlayerListener listener;
 
+    private static final int WEBPLAYER_ERROR_NONE = 0;
+    private static final int WEBPLAYER_ERROR_LOGIN = 1;
+    private static final int WEBPLAYER_ERROR_OTHER = 2;
     private static final int NO_PLAYER_ACTIVE = 0;
     private static final int LOCAL_PLAYER_ACTIVE = 1;
     private static final int SPOTIFY_PLAYER_ACTIVE = 2;
+    private static final int DEEZER_PLAYER_ACTIVE = 3;
     private int currentActivePlayer = NO_PLAYER_ACTIVE;
 
     private Song currentSong;
@@ -68,10 +75,11 @@ public class PlayerMediaPlayer
 
     /* Spotify media player */
     private Player spotifyPlayer;
-    private static final int SPOTIFY_ERROR_NONE = 0;
-    private static final int SPOTIFY_ERROR_LOGIN = 1;
-    private static final int SPOTIFY_ERROR_OTHER = 2;
     private int spotifyPlayerError;
+
+    /* Deezer media player */
+    private TrackPlayer deezerPlayer;
+    private int deezerPlayerError;
 
     private static final IntentFilter AUDIO_NOISY_INTENT_FILTER = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
     private final BroadcastReceiver mAudioNoisyReceiver = new BroadcastReceiver()
@@ -146,7 +154,7 @@ public class PlayerMediaPlayer
                     @Override
                     public void onLoginFailed(Error error)
                     {
-                        spotifyPlayerError = SPOTIFY_ERROR_LOGIN;
+                        spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;
                     }
                     @Override
                     public void onTemporaryError() {}
@@ -160,9 +168,25 @@ public class PlayerMediaPlayer
             {
                 System.err.println("Spotify player error : " + throwable.getLocalizedMessage());
                 System.err.println("Caused by : " + throwable.getCause().getLocalizedMessage());
-                spotifyPlayerError = SPOTIFY_ERROR_OTHER;
+                spotifyPlayerError = WEBPLAYER_ERROR_OTHER;
+                spotifyPlayer = null;
             }
         });
+
+        /* init deezer media player */
+        try
+        {
+            deezerPlayer = new TrackPlayer((Application) context.getApplicationContext(), UserLibrary.deezerApi, new WifiAndMobileNetworkStateChecker());
+        }
+        catch(Exception e)
+        {
+            System.err.println("Deezer player error : " + e.getLocalizedMessage());
+            System.err.println("Caused by : " + e.getCause().getLocalizedMessage());
+            e.printStackTrace();
+            deezerPlayerError = WEBPLAYER_ERROR_OTHER;
+            deezerPlayer = null;
+        }
+
 
         this.listener = listener;
     }
@@ -177,6 +201,8 @@ public class PlayerMediaPlayer
                 mediaPlayer.start();
             else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
                 spotifyPlayer.resume(null);
+            else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE)
+                deezerPlayer.play();
 
             currentState = PLAYER_STATE_PLAYING;
             listener.onStateChange();
@@ -191,6 +217,8 @@ public class PlayerMediaPlayer
             mediaPlayer.pause();
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
             spotifyPlayer.pause(null);
+        else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE)
+            deezerPlayer.pause();
 
         currentState = PLAYER_STATE_PAUSED;
         listener.onStateChange();
@@ -203,6 +231,8 @@ public class PlayerMediaPlayer
             mediaPlayer.stop();
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
             spotifyPlayer.destroy();
+        else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE)
+            deezerPlayer.stop();
 
         currentState = PLAYER_STATE_STOPPED;
         listener.onStateChange();
@@ -211,25 +241,24 @@ public class PlayerMediaPlayer
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) mediaPlayer.seekTo(msec);
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) spotifyPlayer.seekToPosition(null, msec);
+        else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE) deezerPlayer.seek(msec);
     }
     public int getCurrentPosition()
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.getCurrentPosition();
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return ((int) spotifyPlayer.getPlaybackState().positionMs);
-
+        else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE) return ((int) deezerPlayer.getPosition());
         return 0;
     }
     public boolean isPlaying()
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.isPlaying();
-        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return currentState == PLAYER_STATE_PLAYING;
-        return false;
+        else return currentState == PLAYER_STATE_PLAYING;
     }
     public int getDuration()
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.getDuration();
-        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return ((int) currentSong.getDuration());
-        return 0;
+        else return ((int) currentSong.getDuration());
     }
 
 
@@ -240,6 +269,7 @@ public class PlayerMediaPlayer
         /* stop/reset current playback */
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) mediaPlayer.reset();
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) spotifyPlayer.pause(null);
+        else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE) deezerPlayer.pause();
 
         /* select appropriate mediaplayer and start playback */
         if(song.getSource() == UserLibrary.SOURCE_LOCAL_LIB)
@@ -261,15 +291,38 @@ public class PlayerMediaPlayer
             currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
             if(spotifyPlayer != null)
             {
-                spotifyPlayer.playUri(null, "spotify:track:" + song.getId(), 0, 0);
-                currentState = PLAYER_STATE_PLAYING;
-                listener.onStateChange();
+                if(requestAudioFocus())
+                {
+                    spotifyPlayer.playUri(null, "spotify:track:" + song.getId(), 0, 0);
+                    currentState = PLAYER_STATE_PLAYING;
+                    listener.onStateChange();
+                }
             }
             else
             {
                 Toast.makeText(context, "Erreur " +
-                        (spotifyPlayerError == SPOTIFY_ERROR_LOGIN ? " de connection (login/mot de passe erronés, compte non-premium)" : "inconnue")
+                        (spotifyPlayerError == WEBPLAYER_ERROR_LOGIN ? " de connection (login/mot de passe erronés, compte non-premium)" : "inconnue")
                         + " du lecteur Spotify", Toast.LENGTH_SHORT).show();
+                currentActivePlayer = NO_PLAYER_ACTIVE;
+                currentState = PLAYER_STATE_STOPPED;
+                listener.onStateChange();
+            }
+        }
+        else if(song.getSource() == UserLibrary.SOURCE_DEEZER)
+        {
+            currentActivePlayer = DEEZER_PLAYER_ACTIVE;
+            if(deezerPlayer != null)
+            {
+                if(requestAudioFocus())
+                {
+                    deezerPlayer.playTrack((long) song.getId());
+                    currentState = PLAYER_STATE_PLAYING;
+                    listener.onStateChange();
+                }
+            }
+            else
+            {
+                Toast.makeText(context, "Erreur inconnue du lecteur Deezer", Toast.LENGTH_SHORT).show();
                 currentActivePlayer = NO_PLAYER_ACTIVE;
                 currentState = PLAYER_STATE_STOPPED;
                 listener.onStateChange();

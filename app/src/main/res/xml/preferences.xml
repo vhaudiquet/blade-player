@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <CheckBoxPreference android:title="Enregistrer les titres des playlists dans la bibliothèque"
+    <CheckBoxPreference android:title="Enregistrer titres playlists"
+                        android:summary="Enregistrer les titres des playlists dans la bibliothèque (classement par Artiste/Albums/Titres)"
                         android:key="save_playlist_to_library"
                         android:defaultValue="false"
                         android:singleLineTitle="false"/>
-    <PreferenceScreen android:title="Spotify" android:key="spotify_screen"/>
+    <PreferenceScreen android:icon="@drawable/ic_spotify" android:title="Spotify" android:key="spotify_screen"/>
+    <PreferenceScreen android:icon="@drawable/ic_deezer" android:title="Deezer" android:key="deezer_screen"/>
     <PreferenceScreen android:title="@string/about" android:key="about_screen"/>
 </PreferenceScreen>

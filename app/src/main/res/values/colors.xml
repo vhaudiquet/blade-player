@@ -3,5 +3,6 @@
     <color name="colorPrimary">#616161</color>
     <color name="colorPrimaryDark">#212121</color>
     <color name="colorAccent">#ffffff</color>
-    <color name="colorSpotify">#88ff88</color>
+    <color name="colorSpotify">#1DB954</color>
+    <color name="colorDeezer">#2962ff</color>
 </resources>

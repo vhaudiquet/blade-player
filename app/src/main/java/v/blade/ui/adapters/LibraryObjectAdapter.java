@@ -144,6 +144,8 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             if(((Song) obj).getSource() == UserLibrary.SOURCE_SPOTIFY)
                 convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSpotify));
+            else if(((Song) obj).getSource() == UserLibrary.SOURCE_DEEZER)
+                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorDeezer));
             else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
         }
         else if(obj instanceof Album)

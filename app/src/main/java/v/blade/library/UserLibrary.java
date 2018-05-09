@@ -27,6 +27,11 @@ import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
+import com.deezer.sdk.network.connect.DeezerConnect;
+import com.deezer.sdk.network.connect.SessionStore;
+import com.deezer.sdk.network.request.DeezerRequest;
+import com.deezer.sdk.network.request.DeezerRequestFactory;
+import com.deezer.sdk.network.request.event.JsonRequestListener;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -38,10 +43,7 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.*;
 
 /*
 * This class parses and contains the current user library
@@ -54,6 +56,7 @@ public class UserLibrary
     /* library */
     public static final int SOURCE_LOCAL_LIB = 1;
     public static final int SOURCE_SPOTIFY = 2;
+    public static final int SOURCE_DEEZER = 3;
 
     private static ArrayList<Artist> artists;
     private static ArrayList<Album> albums;
@@ -68,6 +71,11 @@ public class UserLibrary
     public static String SPOTIFY_USER_TOKEN;
     public static String SPOTIFY_REFRESH_TOKEN;
     public static final SpotifyApi spotifyApi = new SpotifyApi();
+
+    /* deezer specific */
+    public static final String DEEZER_CLIENT_ID = "279742";
+    public static final SessionStore DEEZER_USER_SESSION = new SessionStore();
+    public static DeezerConnect deezerApi;
 
     /* list callbacks */
     public interface UserLibraryCallback{void onLibraryChange();}
@@ -112,6 +120,10 @@ public class UserLibrary
         }
         if(SPOTIFY_USER_TOKEN != null) spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
 
+        //setup deezer api
+        deezerApi = new DeezerConnect(appContext, DEEZER_CLIENT_ID);
+        DEEZER_USER_SESSION.restore(deezerApi, appContext);
+
         //load songs from all sources (async)
         Thread loaderThread = new Thread()
         {
@@ -124,6 +136,20 @@ public class UserLibrary
                 registerLocalSongs(appContext);
                 System.out.println("[BLADE-DEBUG] Local song registered.");
 
+                sortLibrary();
+            }
+        };
+        loaderThread.setName("localLoaderThread");
+        loaderThread.setDaemon(true);
+        loaderThread.start();
+
+        Thread spotifyLoaderThread = new Thread()
+        {
+            @Override
+            public void run()
+            {
+                Looper.prepare();
+
                 //load spotify library
                 registerSpotifySongs();
                 System.out.println("[BLADE-DEBUG] Spotify songs registered.");
@@ -131,9 +157,25 @@ public class UserLibrary
                 sortLibrary();
             }
         };
-        loaderThread.setName("loaderThread");
-        loaderThread.setDaemon(true);
-        loaderThread.start();
+        spotifyLoaderThread.setName("spotifyLoaderThread");
+        spotifyLoaderThread.setDaemon(true);
+        spotifyLoaderThread.start();
+
+        Thread deezerLoaderThread = new Thread()
+        {
+            @Override
+            public void run()
+            {
+                Looper.prepare();
+
+                //load deezer library
+                registerDeezerSongs();
+                System.out.println("[BLADE-DEBUG] Deezer songs registered.");
+            }
+        };
+        deezerLoaderThread.setName("deezerLoaderThread");
+        deezerLoaderThread.setDaemon(true);
+        deezerLoaderThread.start();
     }
 
     /*
@@ -282,47 +324,63 @@ public class UserLibrary
     }
     public static void registerSpotifySongs()
     {
-        if(SPOTIFY_USER_TOKEN != null)
+        if(SPOTIFY_USER_TOKEN == null) return;
+        SpotifyService service = spotifyApi.getService();
+        try
         {
-            SpotifyService service = spotifyApi.getService();
-            try
-            {
-                Pager<SavedTrack> userTracks = service.getMySavedTracks();
-                Pager<SavedAlbum> userAlbums = service.getMySavedAlbums();
-                Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
-                for (SavedTrack track : userTracks.items)
-                {
-                    Track t = track.track;
-                    Song s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
-                            t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
-                    if(!s.getAlbum().hasAlbumArt())
-                    {
-                        Image albumImage = t.album.images.get(0);
-                        loadAlbumArt(s.getAlbum(), albumImage.url, false);
-                    }
-                }
-                for(SavedAlbum album : userAlbums.items)
-                {
-                    Album savedAlbum = null;
-                    kaaes.spotify.webapi.android.models.Album alb = album.album;
-                    Pager<Track> tracks = service.getAlbumTracks(alb.id);
-                    for(Track t : tracks.items)
-                    {
-                        Song s = registerSong(t.id, t.artists.get(0).name, 0, alb.name, 0,
-                                t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
-                        if(savedAlbum == null) savedAlbum = s.getAlbum();
-                    }
+            //requests
+            Pager<SavedTrack> userTracks = service.getMySavedTracks();
+            Pager<SavedAlbum> userAlbums = service.getMySavedAlbums();
+            Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
 
-                    if(!savedAlbum.hasAlbumArt())
-                    {
-                        Image albumImage = alb.images.get(0);
-                        loadAlbumArt(savedAlbum, albumImage.url, false);
-                    }
-                }
-                for(PlaylistSimple playlistBase : userPlaylists.items)
+            //parse user tracks request response
+            for (SavedTrack track : userTracks.items)
+            {
+                Track t = track.track;
+                Song s = registerSong(t.id, t.artists.get(0).name, 0, t.album.name, 0,
+                        t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                if(!s.getAlbum().hasAlbumArt())
                 {
-                    ArrayList<Song> thisList = new ArrayList<>();
-                    Pager<PlaylistTrack> tracks = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id);
+                    Image albumImage = t.album.images.get(0);
+                    loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                }
+            }
+
+            //parse user albums request response
+            for(SavedAlbum album : userAlbums.items)
+            {
+                Album savedAlbum = null;
+                kaaes.spotify.webapi.android.models.Album alb = album.album;
+                Pager<Track> tracks = service.getAlbumTracks(alb.id);
+                for(Track t : tracks.items)
+                {
+                    Song s = registerSong(t.id, t.artists.get(0).name, 0, alb.name, 0,
+                            t.track_number, t.duration_ms, t.name, SOURCE_SPOTIFY);
+                    if(savedAlbum == null) savedAlbum = s.getAlbum();
+                }
+
+                if(!savedAlbum.hasAlbumArt())
+                {
+                    Image albumImage = alb.images.get(0);
+                    loadAlbumArt(savedAlbum, albumImage.url, false);
+                }
+            }
+
+            //parse user playlists request response
+            for(PlaylistSimple playlistBase : userPlaylists.items)
+            {
+                ArrayList<Song> thisList = new ArrayList<>();
+                HashMap<String, Object> map = new HashMap<>();
+                map.put("fields", "total");
+                int trackNbr = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map).total;
+                map.remove("fields");
+
+                int offset = 0;
+                while(trackNbr > 0)
+                {
+                    map.put("offset", offset);
+                    Pager<PlaylistTrack> tracks = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map);
+
                     for(PlaylistTrack pt : tracks.items)
                     {
                         Track t = pt.track;
@@ -344,78 +402,72 @@ public class UserLibrary
                         thisList.add(s);
                     }
 
-                    Playlist list = new Playlist(playlistBase.id, playlistBase.name, thisList, SOURCE_SPOTIFY);
-                    playlists.add(list);
-                    if(currentCallback != null) currentCallback.onLibraryChange();
-                }
-            }
-            catch (RetrofitError error)
-            {
-                if(error.getResponse().getStatus() == 401)
-                {
-                    Log.println(Log.INFO, "[BLADE-SPOTIFY]", "Actualizing token.");
-                    refreshSpotifyToken();
-                    registerSpotifySongs();
-                    return;
+                    offset+=100;
+                    trackNbr-=100;
                 }
 
-                error.printStackTrace();
-                System.err.println("ERROR BODY : " + error.getBody());
-                SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
-                spotifyError.printStackTrace();
-                System.err.println("SPOTIFY ERROR DETAILS : " + spotifyError.getErrorDetails());
+                Playlist list = new Playlist(playlistBase.id, playlistBase.name, thisList, SOURCE_SPOTIFY);
+                playlists.add(list);
+                if(currentCallback != null) currentCallback.onLibraryChange();
             }
         }
+        catch (RetrofitError error)
+        {
+            if(error.getResponse().getStatus() == 401)
+            {
+                Log.println(Log.INFO, "[BLADE-SPOTIFY]", "Actualizing token.");
+                refreshSpotifyToken();
+                registerSpotifySongs();
+                return;
+            }
+
+            error.printStackTrace();
+            System.err.println("ERROR BODY : " + error.getBody());
+            SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
+            spotifyError.printStackTrace();
+            System.err.println("SPOTIFY ERROR DETAILS : " + spotifyError.getErrorDetails());
+        }
     }
-    public static void refreshSpotifyToken()
+    public static void registerDeezerSongs()
     {
+        if(!deezerApi.isSessionValid()) return;
+
+        DeezerRequest requestTracks = DeezerRequestFactory.requestCurrentUserTracks();
+        DeezerRequest requestAlbums = DeezerRequestFactory.requestCurrentUserAlbums();
+        DeezerRequest requestArtists = DeezerRequestFactory.requestCurrentUserArtists();
+        DeezerRequest requestPlaylist = DeezerRequestFactory.requestCurrentUserPlaylists();
+
         try
         {
-            URL apiUrl = new URL("https://accounts.spotify.com/api/token");
-            HttpsURLConnection urlConnection = (HttpsURLConnection) apiUrl.openConnection();
-            urlConnection.setDoInput(true);
-            urlConnection.setDoOutput(true);
-            urlConnection.setRequestMethod("POST");
+           deezerApi.requestAsync(requestTracks, new JsonRequestListener()
+           {
+               @Override
+               public void onResult(Object result, Object requestId)
+               {
+                   List<com.deezer.sdk.model.Track> tracks = (List<com.deezer.sdk.model.Track>) result;
+                   for(com.deezer.sdk.model.Track t : tracks)
+                   {
+                       Song s = registerSong(t.getId(), t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
+                               t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), SOURCE_DEEZER);
+                       if(!s.getAlbum().hasAlbumArt())
+                       {
+                           String imgUrl = t.getAlbum().getImageUrl();
+                           loadAlbumArt(s.getAlbum(), imgUrl, false);
+                       }
+                   }
+               }
 
-            //write POST parameters
-            OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
-            BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
-            writer.write("grant_type=refresh_token&");
-            writer.write("refresh_token=" + SPOTIFY_REFRESH_TOKEN + "&");
-            writer.write("client_id=" + UserLibrary.SPOTIFY_CLIENT_ID + "&");
-            writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
-            writer.flush();
-            writer.close();
-            out.close();
+               @Override
+               public void onUnparsedResult(String s, Object o) {}
 
-            urlConnection.connect();
-
-            System.out.println("[BLADE] [AUTH-REFRESH] Result : " + urlConnection.getResponseCode() + " " + urlConnection.getResponseMessage());
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            String result = reader.readLine();
-            reader.close();
-            result = result.substring(1);
-            result = result.substring(0, result.length()-1);
-            String[] results = result.split(",");
-            for(String param : results)
-            {
-                if(param.startsWith("\"access_token\":\""))
-                {
-                    param = param.replaceFirst("\"access_token\":\"", "");
-                    param = param.replaceFirst("\"", "");
-                    UserLibrary.SPOTIFY_USER_TOKEN = param;
-                    spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
-                    SharedPreferences pref = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = pref.edit();
-                    editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
-                    editor.commit();
-                }
-            }
+               @Override
+               public void onException(Exception e, Object o) {}
+           });
         }
         catch(Exception e)
         {
             e.printStackTrace();
+            System.err.println("DEEZER ERROR MESSAGE : " + e.getLocalizedMessage());
         }
     }
 
@@ -568,5 +620,57 @@ public class UserLibrary
         }
 
         return inSampleSize;
+    }
+
+    private static void refreshSpotifyToken()
+    {
+        try
+        {
+            URL apiUrl = new URL("https://accounts.spotify.com/api/token");
+            HttpsURLConnection urlConnection = (HttpsURLConnection) apiUrl.openConnection();
+            urlConnection.setDoInput(true);
+            urlConnection.setDoOutput(true);
+            urlConnection.setRequestMethod("POST");
+
+            //write POST parameters
+            OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
+            BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
+            writer.write("grant_type=refresh_token&");
+            writer.write("refresh_token=" + SPOTIFY_REFRESH_TOKEN + "&");
+            writer.write("client_id=" + UserLibrary.SPOTIFY_CLIENT_ID + "&");
+            writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
+            writer.flush();
+            writer.close();
+            out.close();
+
+            urlConnection.connect();
+
+            System.out.println("[BLADE] [AUTH-REFRESH] Result : " + urlConnection.getResponseCode() + " " + urlConnection.getResponseMessage());
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+            String result = reader.readLine();
+            reader.close();
+            result = result.substring(1);
+            result = result.substring(0, result.length()-1);
+            String[] results = result.split(",");
+            for(String param : results)
+            {
+                if(param.startsWith("\"access_token\":\""))
+                {
+                    param = param.replaceFirst("\"access_token\":\"", "");
+                    param = param.replaceFirst("\"", "");
+                    UserLibrary.SPOTIFY_USER_TOKEN = param;
+                    spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+                    SharedPreferences pref = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = pref.edit();
+                    editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
+                    editor.commit();
+                }
+            }
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 }

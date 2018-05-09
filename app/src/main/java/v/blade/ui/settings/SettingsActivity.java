@@ -26,6 +26,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.widget.Toolbar;
+import com.deezer.sdk.model.Permissions;
+import com.deezer.sdk.network.connect.event.DialogListener;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -152,6 +154,11 @@ public class SettingsActivity extends AppCompatActivity
                 Preference sp = getPreferenceScreen().findPreference("spotify_screen");
                 sp.setSummary("Connecté");
             }
+            if(UserLibrary.deezerApi.isSessionValid())
+            {
+                Preference dz = getPreferenceScreen().findPreference("deezer_screen");
+                dz.setSummary("Connecté");
+            }
         }
 
         @Override
@@ -164,15 +171,6 @@ public class SettingsActivity extends AppCompatActivity
             }
             else if(preference.getKey().equals("spotify_screen"))
             {
-                /*AuthenticationRequest.Builder builder =
-                        new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.TOKEN,
-                                UserLibrary.SPOTIFY_REDIRECT_URI);
-                builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
-                "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
-                AuthenticationRequest request = builder.build();
-                AuthenticationClient.openLoginActivity(getActivity(), SPOTIFY_REQUEST_CODE, request);
-                */
-
                 AuthenticationRequest.Builder builder =
                         new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
                                 UserLibrary.SPOTIFY_REDIRECT_URI);
@@ -180,6 +178,28 @@ public class SettingsActivity extends AppCompatActivity
                         "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(getActivity(), SPOTIFY_REQUEST_CODE, request);
+            }
+            else if(preference.getKey().equals("deezer_screen"))
+            {
+                String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
+                        Permissions.EMAIL, Permissions.OFFLINE_ACCESS};
+
+                UserLibrary.deezerApi.authorize(getActivity(), permissions, new DialogListener()
+                {
+                    @Override
+                    public void onComplete(Bundle bundle)
+                    {
+                        UserLibrary.DEEZER_USER_SESSION.save(UserLibrary.deezerApi, getContext().getApplicationContext());
+                        Preference dz = getPreferenceScreen().findPreference("deezer_screen");
+                        dz.setSummary("Connecté");
+                    }
+
+                    @Override
+                    public void onCancel() {}
+
+                    @Override
+                    public void onException(Exception e) {}
+                });
             }
 
             return super.onPreferenceTreeClick(preference);
