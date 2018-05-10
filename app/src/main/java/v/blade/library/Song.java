@@ -19,29 +19,23 @@ package v.blade.library;
 
 public class Song extends LibraryObject
 {
-    private Object id;
     private Artist artist;
     private Album album;
     private int track;
     long duration;
-    private int source;
 
-    public Song(Object id, String title, Artist artist, Album album, int albumTrack, long duration, int SOURCE)
+    public Song(String title, Artist artist, Album album, int albumTrack, long duration)
     {
-        this.id = id;
         this.name = title;
         this.artist = artist;
         this.album = album;
         this.track = albumTrack;
-        this.source = SOURCE;
         this.duration = duration;
     }
 
-    public Object getId() {return id;}
     public String getTitle() {return getName();}
     public Artist getArtist() {return artist;}
     public Album getAlbum() {return album;}
     public int getTrackNumber() {return track;}
     public long getDuration() {return duration;}
-    public int getSource() {return source;}
 }

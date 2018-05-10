@@ -28,10 +28,13 @@ import android.support.annotation.NonNull;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
 import com.deezer.sdk.player.TrackPlayer;
+import com.deezer.sdk.player.event.OnPlayerStateChangeListener;
+import com.deezer.sdk.player.event.PlayerState;
 import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
 import com.spotify.sdk.android.player.*;
 import com.spotify.sdk.android.player.Error;
 import v.blade.library.Song;
+import v.blade.library.SongSources;
 import v.blade.library.UserLibrary;
 
 public class PlayerMediaPlayer
@@ -126,7 +129,7 @@ public class PlayerMediaPlayer
     };
     private boolean playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
 
-    public PlayerMediaPlayer(@NonNull Context context, MediaPlayerListener listener)
+    public PlayerMediaPlayer(@NonNull final Context context, final MediaPlayerListener listener)
     {
         this.context = context;
 
@@ -136,6 +139,15 @@ public class PlayerMediaPlayer
         context.registerReceiver(mAudioNoisyReceiver, AUDIO_NOISY_INTENT_FILTER);
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
+        this.listener = listener;
+
+        if(UserLibrary.SPOTIFY_USER_TOKEN != null)
+            initSpotifyMediaPlayer();
+        if(UserLibrary.deezerApi.isSessionValid())
+            initDeezerMediaPlayer();
+    }
+    public void initSpotifyMediaPlayer()
+    {
         /* init spotify media player */
         Config playerConfig = new Config(context, UserLibrary.SPOTIFY_USER_TOKEN, UserLibrary.SPOTIFY_CLIENT_ID);
         Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
@@ -143,11 +155,31 @@ public class PlayerMediaPlayer
             @Override
             public void onInitialized(final SpotifyPlayer spotifyPlayer)
             {
+                PlayerMediaPlayer.this.spotifyPlayer = spotifyPlayer;
                 spotifyPlayer.addConnectionStateCallback(new ConnectionStateCallback() {
                     @Override
                     public void onLoggedIn()
                     {
-                        PlayerMediaPlayer.this.spotifyPlayer = spotifyPlayer;
+                        PlayerMediaPlayer.this.spotifyPlayer.addNotificationCallback(new Player.NotificationCallback() {
+                            @Override
+                            public void onPlaybackEvent(PlayerEvent playerEvent)
+                            {
+                                if(playerEvent.equals(PlayerEvent.kSpPlaybackNotifyAudioDeliveryDone))
+                                {
+                                    currentState = PLAYER_STATE_SONGEND;
+                                    listener.onStateChange();
+                                }
+                            }
+
+                            @Override
+                            public void onPlaybackError(Error error)
+                            {
+                                Toast.makeText(context, "Erreur du lecteur Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
+                                currentActivePlayer = NO_PLAYER_ACTIVE;
+                                currentState = PLAYER_STATE_STOPPED;
+                                listener.onStateChange();
+                            }
+                        });
                     }
                     @Override
                     public void onLoggedOut() {}
@@ -172,23 +204,33 @@ public class PlayerMediaPlayer
                 spotifyPlayer = null;
             }
         });
-
+    }
+    public void initDeezerMediaPlayer()
+    {
         /* init deezer media player */
         try
         {
             deezerPlayer = new TrackPlayer((Application) context.getApplicationContext(), UserLibrary.deezerApi, new WifiAndMobileNetworkStateChecker());
+            deezerPlayer.addOnPlayerStateChangeListener(new OnPlayerStateChangeListener()
+            {
+                @Override
+                public void onPlayerStateChange(PlayerState playerState, long l)
+                {
+                    if(playerState.equals(PlayerState.PLAYBACK_COMPLETED))
+                    {
+                        currentState = PLAYER_STATE_SONGEND;
+                        listener.onStateChange();
+                    }
+                }
+            });
         }
         catch(Exception e)
         {
             System.err.println("Deezer player error : " + e.getLocalizedMessage());
-            System.err.println("Caused by : " + e.getCause().getLocalizedMessage());
             e.printStackTrace();
             deezerPlayerError = WEBPLAYER_ERROR_OTHER;
             deezerPlayer = null;
         }
-
-
-        this.listener = listener;
     }
 
     /* player operations */
@@ -272,11 +314,12 @@ public class PlayerMediaPlayer
         else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE) deezerPlayer.pause();
 
         /* select appropriate mediaplayer and start playback */
-        if(song.getSource() == UserLibrary.SOURCE_LOCAL_LIB)
+        SongSources.SongSource bestSource = song.getSources().getSourceByPriority(0);
+        if(bestSource.getSource() == SongSources.SOURCE_LOCAL_LIB)
         {
             currentActivePlayer = LOCAL_PLAYER_ACTIVE;
 
-            Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getId());
+            Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) bestSource.getId());
 
             try
             {
@@ -286,14 +329,43 @@ public class PlayerMediaPlayer
             }
             catch(Exception e) {} //ignored.
         }
-        else if(song.getSource() == UserLibrary.SOURCE_SPOTIFY)
+        else if(bestSource.getSource() == SongSources.SOURCE_DEEZER)
         {
-            currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
-            if(spotifyPlayer != null)
+            if(deezerPlayer == null) initDeezerMediaPlayer();
+
+            currentActivePlayer = DEEZER_PLAYER_ACTIVE;
+            if(deezerPlayer != null)
             {
                 if(requestAudioFocus())
                 {
-                    spotifyPlayer.playUri(null, "spotify:track:" + song.getId(), 0, 0);
+                    deezerPlayer.playTrack((long) bestSource.getId());
+                    currentState = PLAYER_STATE_PLAYING;
+                    listener.onStateChange();
+                }
+            }
+            else
+            {
+                Toast.makeText(context, "Erreur inconnue du lecteur Deezer", Toast.LENGTH_SHORT).show();
+                currentActivePlayer = NO_PLAYER_ACTIVE;
+                currentState = PLAYER_STATE_STOPPED;
+                listener.onStateChange();
+            }
+        }
+        else if(bestSource.getSource() == SongSources.SOURCE_SPOTIFY)
+        {
+            if(spotifyPlayer == null)
+            {
+                Toast.makeText(context, "Initialisation du lecteur Spotify...", Toast.LENGTH_SHORT).show();
+                initSpotifyMediaPlayer();
+                try {Thread.sleep(500);} catch (InterruptedException e) {}
+            }
+
+            currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
+            if(spotifyPlayerError == WEBPLAYER_ERROR_NONE)
+            {
+                if(requestAudioFocus())
+                {
+                    spotifyPlayer.playUri(null, "spotify:track:" + bestSource.getId(), 0, 0);
                     currentState = PLAYER_STATE_PLAYING;
                     listener.onStateChange();
                 }
@@ -303,26 +375,6 @@ public class PlayerMediaPlayer
                 Toast.makeText(context, "Erreur " +
                         (spotifyPlayerError == WEBPLAYER_ERROR_LOGIN ? " de connection (login/mot de passe erronés, compte non-premium)" : "inconnue")
                         + " du lecteur Spotify", Toast.LENGTH_SHORT).show();
-                currentActivePlayer = NO_PLAYER_ACTIVE;
-                currentState = PLAYER_STATE_STOPPED;
-                listener.onStateChange();
-            }
-        }
-        else if(song.getSource() == UserLibrary.SOURCE_DEEZER)
-        {
-            currentActivePlayer = DEEZER_PLAYER_ACTIVE;
-            if(deezerPlayer != null)
-            {
-                if(requestAudioFocus())
-                {
-                    deezerPlayer.playTrack((long) song.getId());
-                    currentState = PLAYER_STATE_PLAYING;
-                    listener.onStateChange();
-                }
-            }
-            else
-            {
-                Toast.makeText(context, "Erreur inconnue du lecteur Deezer", Toast.LENGTH_SHORT).show();
                 currentActivePlayer = NO_PLAYER_ACTIVE;
                 currentState = PLAYER_STATE_STOPPED;
                 listener.onStateChange();

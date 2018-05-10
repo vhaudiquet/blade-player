@@ -5,6 +5,7 @@
                         android:key="save_playlist_to_library"
                         android:defaultValue="false"
                         android:singleLineTitle="false"/>
+    <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
     <PreferenceScreen android:icon="@drawable/ic_spotify" android:title="Spotify" android:key="spotify_screen"/>
     <PreferenceScreen android:icon="@drawable/ic_deezer" android:title="Deezer" android:key="deezer_screen"/>
     <PreferenceScreen android:title="@string/about" android:key="about_screen"/>

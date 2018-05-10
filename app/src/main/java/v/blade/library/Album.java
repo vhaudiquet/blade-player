@@ -28,22 +28,19 @@ public class Album extends LibraryObject
 
     private ArrayList<Song> songs;
     private Artist artist;
-    private long id;
     private Bitmap miniatureArt;
     private boolean hasArt = false;
     private String albumArtPath;
 
-    public Album(String name, Artist artist, long id)
+    public Album(String name, Artist artist)
     {
         this.artist = artist;
         this.name = name;
-        this.id = id;
         this.songs = new ArrayList<Song>();
     }
 
     public ArrayList<Song> getSongs() {return songs;}
     public Artist getArtist() {return artist;}
-    public long getId() {return id;}
     public Bitmap getAlbumArtMiniature() {return miniatureArt;}
     public Bitmap getAlbumArt() {return BitmapFactory.decodeFile(albumArtPath);}
     public boolean hasAlbumArt() {return hasArt;}

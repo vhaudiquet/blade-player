@@ -21,18 +21,13 @@ import java.util.ArrayList;
 
 public class Playlist extends LibraryObject
 {
-    private Object id;
     private ArrayList<Song> content;
-    private int source;
 
-    public Playlist(Object id, String name, ArrayList<Song> content, int source)
+    public Playlist(String name, ArrayList<Song> content)
     {
-        this.id = id;
         this.name = name;
         this.content = content;
-        this.source = source;
     }
 
     public ArrayList<Song> getContent() {return content;}
-    public int getSource() {return source;}
 }

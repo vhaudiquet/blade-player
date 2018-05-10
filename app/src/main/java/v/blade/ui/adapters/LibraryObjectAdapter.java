@@ -29,11 +29,12 @@ import v.blade.R;
 import v.blade.library.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class LibraryObjectAdapter extends BaseAdapter
 {
-    private ArrayList<LibraryObject> original;
-    private ArrayList<LibraryObject> libraryObjects;
+    private List<LibraryObject> original;
+    private List<LibraryObject> libraryObjects;
     private Activity context;
     private LayoutInflater inflater;
 
@@ -41,17 +42,22 @@ public class LibraryObjectAdapter extends BaseAdapter
     private ImageView.OnTouchListener moreTouchListener;
     private int moreImageRessource = 0;
 
+    private boolean repaintSongBackground = false;
+
     static class ViewHolder
     {
         TextView title;
         TextView subtitle;
         ImageView image;
+        ImageView source0;
+        ImageView source1;
+        ImageView source2;
     }
 
-    public LibraryObjectAdapter(final Activity context, ArrayList objects)
+    public LibraryObjectAdapter(final Activity context, List objects)
     {
         this.original = objects;
-        this.libraryObjects = (ArrayList<LibraryObject>) objects.clone();
+        this.libraryObjects = new ArrayList<>(original);
         this.context = context;
         this.inflater = LayoutInflater.from(context);
 
@@ -65,7 +71,7 @@ public class LibraryObjectAdapter extends BaseAdapter
                     @Override
                     public void run()
                     {
-                        libraryObjects = (ArrayList<LibraryObject>) original.clone();
+                        libraryObjects = new ArrayList<>(original);
                         LibraryObjectAdapter.this.notifyDataSetChanged();
                     }
                 });
@@ -79,6 +85,7 @@ public class LibraryObjectAdapter extends BaseAdapter
     {this.moreTouchListener = touchListener;}
     public void setMoreImage(int ressource)
     {this.moreImageRessource = ressource;}
+    public void repaintSongBackground() {repaintSongBackground = true;}
 
     @Override
     public int getCount() {return libraryObjects.size();}
@@ -94,7 +101,8 @@ public class LibraryObjectAdapter extends BaseAdapter
     }
     @Override public boolean hasStableIds() {return true;}
 
-    public ArrayList<LibraryObject> getObjects() {return libraryObjects;}
+    public List getObjectList() {return libraryObjects;}
+    public List<LibraryObject> getObjects() {return libraryObjects;}
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
@@ -115,6 +123,9 @@ public class LibraryObjectAdapter extends BaseAdapter
             mViewHolder.title = convertView.findViewById(R.id.element_title);
             mViewHolder.subtitle = convertView.findViewById(R.id.element_subtitle);
             mViewHolder.image = convertView.findViewById(R.id.element_image);
+            mViewHolder.source0 = convertView.findViewById(R.id.element_source0);
+            mViewHolder.source1 = convertView.findViewById(R.id.element_source1);
+            mViewHolder.source2 = convertView.findViewById(R.id.element_source2);
 
             //set 'more' action
             ImageView more = convertView.findViewById(R.id.element_more);
@@ -133,20 +144,18 @@ public class LibraryObjectAdapter extends BaseAdapter
 
         if(obj instanceof Song)
         {
+            Song song = (Song) obj;
             //set subtitle : Artist
-            mViewHolder.subtitle.setText(((Song) obj).getArtist().getName());
+            mViewHolder.subtitle.setText(song.getArtist().getName());
 
             //set image to song album art
-            if(((Song) obj).getAlbum().hasAlbumArt())
-                mViewHolder.image.setImageBitmap(((Song) obj).getAlbum().getAlbumArtMiniature());
+            if(song.getAlbum().hasAlbumArt())
+                mViewHolder.image.setImageBitmap(song.getAlbum().getAlbumArtMiniature());
             else
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
 
-            if(((Song) obj).getSource() == UserLibrary.SOURCE_SPOTIFY)
-                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSpotify));
-            else if(((Song) obj).getSource() == UserLibrary.SOURCE_DEEZER)
-                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorDeezer));
-            else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
+            if(repaintSongBackground)
+                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
         }
         else if(obj instanceof Album)
         {
@@ -172,11 +181,19 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             //set image to default playlist image
             mViewHolder.image.setImageResource(R.drawable.ic_playlists);
-
-            if(((Playlist) obj).getSource() == UserLibrary.SOURCE_SPOTIFY)
-                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSpotify));
-            else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
         }
+
+        //set sources images
+        SongSources.SongSource source0 = obj.getSources().getSourceByPriority(0);
+        SongSources.SongSource source1 = obj.getSources().getSourceByPriority(1);
+        SongSources.SongSource source2 = obj.getSources().getSourceByPriority(2);
+
+        if(source0 == null) mViewHolder.source0.setImageResource(0);
+        else mViewHolder.source0.setImageResource(source0.getSource().getIconImage());
+        if(source1 == null) mViewHolder.source1.setImageResource(0);
+        else mViewHolder.source1.setImageResource(source1.getSource().getIconImage());
+        if(source2 == null) mViewHolder.source2.setImageResource(0);
+        else mViewHolder.source2.setImageResource(source2.getSource().getIconImage());
 
         return convertView;
     }

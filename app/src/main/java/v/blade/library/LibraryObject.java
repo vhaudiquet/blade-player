@@ -20,7 +20,11 @@ package v.blade.library;
 public class LibraryObject
 {
     protected String name;
+    protected SongSources sources;
+
+    public LibraryObject() {this.sources = new SongSources();}
 
     public String getName() {return this.name;}
     @Override public String toString() {return this.name;}
+    public SongSources getSources() {return sources;}
 }

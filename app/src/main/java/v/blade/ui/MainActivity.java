@@ -47,6 +47,7 @@ import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener
@@ -128,7 +129,7 @@ public class MainActivity extends AppCompatActivity
             switch(currentContext)
             {
                 case CONTEXT_SONGS:
-                    ArrayList<Song> songs = (ArrayList<Song>) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().clone();
+                    ArrayList<Song> songs = new ArrayList<Song>(((LibraryObjectAdapter)mainListView.getAdapter()).getObjectList());
                     PlayerConnection.musicPlayer.setCurrentPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
@@ -453,7 +454,7 @@ public class MainActivity extends AppCompatActivity
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
-    private void setContentToAlbums(ArrayList<Album> albums, String title)
+    private void setContentToAlbums(List<Album> albums, String title)
     {
         this.setTitle(title);
         currentContext = CONTEXT_ALBUMS;
@@ -461,7 +462,7 @@ public class MainActivity extends AppCompatActivity
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
-    private void setContentToSongs(ArrayList<Song> songs, String title)
+    private void setContentToSongs(List<Song> songs, String title)
     {
         this.setTitle(title);
         currentContext = CONTEXT_SONGS;

@@ -26,5 +26,7 @@ public class AboutActivity extends AppCompatActivity
             version.setText("Version " + packageInfo.versionName);
         }
         catch(Exception e){}
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 }

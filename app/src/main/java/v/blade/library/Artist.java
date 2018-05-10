@@ -22,13 +22,11 @@ import java.util.ArrayList;
 public class Artist extends LibraryObject
 {
     private ArrayList<Album> albums;
-    private long id;
 
-    public Artist(String name, long id)
+    public Artist(String name)
     {
         this.name = name;
-        this.albums = new ArrayList<Album>();
-        this.id = id;
+        this.albums = new ArrayList<>();
     }
 
     public ArrayList<Album> getAlbums() {return albums;}

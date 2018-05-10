@@ -26,6 +26,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.widget.Toolbar;
+import android.widget.Toast;
 import com.deezer.sdk.model.Permissions;
 import com.deezer.sdk.network.connect.event.DialogListener;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
@@ -169,8 +170,19 @@ public class SettingsActivity extends AppCompatActivity
                 Intent intent = new Intent(getActivity(), AboutActivity.class);
                 startActivity(intent);
             }
+            else if(preference.getKey().equals("sources_screen"))
+            {
+                Intent intent = new Intent(getActivity(), SourcesActivity.class);
+                startActivity(intent);
+            }
             else if(preference.getKey().equals("spotify_screen"))
             {
+                if(UserLibrary.SPOTIFY_USER_TOKEN != null)
+                {
+                    Toast.makeText(getActivity(), "Inutile, vous êtes déjà connecté", Toast.LENGTH_SHORT).show();
+                    return super.onPreferenceTreeClick(preference);
+                }
+
                 AuthenticationRequest.Builder builder =
                         new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
                                 UserLibrary.SPOTIFY_REDIRECT_URI);
@@ -181,6 +193,12 @@ public class SettingsActivity extends AppCompatActivity
             }
             else if(preference.getKey().equals("deezer_screen"))
             {
+                if(UserLibrary.deezerApi.isSessionValid())
+                {
+                    Toast.makeText(getActivity(), "Inutile, vous êtes déjà connecté", Toast.LENGTH_SHORT).show();
+                    return super.onPreferenceTreeClick(preference);
+                }
+
                 String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
                         Permissions.EMAIL, Permissions.OFFLINE_ACCESS};
 
@@ -192,6 +210,8 @@ public class SettingsActivity extends AppCompatActivity
                         UserLibrary.DEEZER_USER_SESSION.save(UserLibrary.deezerApi, getContext().getApplicationContext());
                         Preference dz = getPreferenceScreen().findPreference("deezer_screen");
                         dz.setSummary("Connecté");
+                        UserLibrary.registerDeezerSongs();
+                        UserLibrary.sortLibrary();
                     }
 
                     @Override

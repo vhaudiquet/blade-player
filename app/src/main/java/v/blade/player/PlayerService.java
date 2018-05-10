@@ -74,6 +74,9 @@ public class PlayerService extends Service
             currentArt = currentPlaylist.get(currentPosition).getAlbum().getAlbumArt();
             MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
             builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArt);
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentPlaylist.get(currentPosition).getArtist().getName());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentPlaylist.get(currentPosition).getAlbum().getName());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentPlaylist.get(currentPosition).getTitle());
             MediaMetadataCompat metadata = builder.build();
             mSession.setMetadata(metadata);
 
