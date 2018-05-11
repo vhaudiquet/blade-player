@@ -6,7 +6,7 @@
                         android:defaultValue="false"
                         android:singleLineTitle="false"/>
     <CheckBoxPreference android:title="Chercher une meilleure source"
-                        android:summary="Blade tentera pour tous vos sons provenant de service web de les trouver sur le meilleur service web en fonction de sa priorité"
+                        android:summary="Blade tentera pour tous vos sons provenant de services web de les trouver sur le meilleur service web en fonction de sa priorité"
                         android:key="register_better_sources"
                         android:defaultValue="true"
                         android:singleLineTitle="false"/>

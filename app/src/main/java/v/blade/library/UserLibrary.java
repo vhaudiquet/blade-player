@@ -167,6 +167,8 @@ public class UserLibrary
                 System.out.println("[BLADE-DEBUG] Spotify songs registered.");
 
                 sortLibrary();
+
+                registerSongBetterSources();
             }
         };
         webLoaderThread.setName("webLoaderThread");
@@ -552,7 +554,49 @@ public class UserLibrary
      */
     public static void registerSongBetterSources()
     {
-        //TODO
+        if(!REGISTER_SONGS_BETTER_SOURCES) return;
+
+        SongSources.Source bestSource = SongSources.SOURCE_DEEZER.getPriority() > SongSources.SOURCE_SPOTIFY.getPriority() ? SongSources.SOURCE_DEEZER : SongSources.SOURCE_SPOTIFY;
+
+        if(bestSource == SongSources.SOURCE_SPOTIFY)
+        {
+            //search all deezer songs on spotify
+            synchronized (songs)
+            {
+                for(Song s : songs)
+                {
+                    if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_DEEZER)
+                    {
+                        //query spotify for this song
+                        HashMap<String, Object> args = new HashMap<>();
+                        args.put("limit", 1);
+                        List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
+                        if(t != null && t.size() > 0 && t.get(0) != null) s.getSources().addSource(new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY));
+                    }
+                }
+            }
+        }
+        else if(bestSource == SongSources.SOURCE_DEEZER)
+        {
+            //search all spotify songs on deezer
+            synchronized (songs)
+            {
+                for(Song s : songs)
+                {
+                    if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
+                    {
+                        //query deezer for this song
+                        DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
+                        try
+                        {
+                            com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(search))).get(0);
+                            if(t != null) s.getSources().addSource(new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
+                        }
+                        catch(Exception e) {} //ignored
+                    }
+                }
+            }
+        }
     }
 
     public static void sortLibrary()
