@@ -61,6 +61,7 @@
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="v.blade.ui.settings.SettingsActivity"/>
         </activity>
+
         <activity
                 android:name="com.spotify.sdk.android.authentication.LoginActivity"
                 android:theme="@android:style/Theme.Translucent.NoTitleBar"/>

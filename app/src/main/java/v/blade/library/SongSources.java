@@ -9,12 +9,15 @@ public class SongSources
         private final int iconImage;
         private final int logoImage;
         private int priority;
+        private boolean available;
 
         private Source(int iconImage, int logoImage) {this.iconImage = iconImage; this.logoImage = logoImage;}
         public int getIconImage() {return iconImage;}
         public int getLogoImage() {return logoImage;}
         public int getPriority() {return priority;}
         public void setPriority(int priority) {this.priority = priority;}
+        public void setAvailable(boolean available) {this.available = available;}
+        public boolean isAvailable() {return this.available;}
     }
     public static class SongSource
     {

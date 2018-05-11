@@ -5,8 +5,11 @@
                         android:key="save_playlist_to_library"
                         android:defaultValue="false"
                         android:singleLineTitle="false"/>
+    <CheckBoxPreference android:title="Chercher une meilleure source"
+                        android:summary="Blade tentera pour tous vos sons provenant de service web de les trouver sur le meilleur service web en fonction de sa priorité"
+                        android:key="register_better_sources"
+                        android:defaultValue="true"
+                        android:singleLineTitle="false"/>
     <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
-    <PreferenceScreen android:icon="@drawable/ic_spotify" android:title="Spotify" android:key="spotify_screen"/>
-    <PreferenceScreen android:icon="@drawable/ic_deezer" android:title="Deezer" android:key="deezer_screen"/>
     <PreferenceScreen android:title="@string/about" android:key="about_screen"/>
 </PreferenceScreen>

@@ -19,4 +19,8 @@
     <string name="title_activity_play">Playing</string>
     <string name="about">About</string>
     <string name="accounts">Accounts</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="sources">Music sources</string>
+    <string name="already_connected">Useless, you\'re already connected</string>
 </resources>

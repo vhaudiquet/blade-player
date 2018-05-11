@@ -52,6 +52,7 @@ public class UserLibrary
 {
     /* user preferences */
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
+    public static boolean REGISTER_SONGS_BETTER_SOURCES;
 
     /* library */
     private static List<Artist> artists;
@@ -107,9 +108,10 @@ public class UserLibrary
         SharedPreferences generalPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
 
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
+        REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
         SongSources.SOURCE_LOCAL_LIB.setPriority(999);
-        SongSources.SOURCE_DEEZER.setPriority(2);
-        SongSources.SOURCE_SPOTIFY.setPriority(1);
+        SongSources.SOURCE_SPOTIFY.setPriority(accountsPrefs.getInt("spotify_prior", 0));
+        SongSources.SOURCE_DEEZER.setPriority(accountsPrefs.getInt("deezer_prior", 0));
 
         //setup spotify api
         if(SPOTIFY_USER_TOKEN == null)
@@ -118,11 +120,17 @@ public class UserLibrary
             SPOTIFY_REFRESH_TOKEN = accountsPrefs.getString("spotify_refresh_token", null);
         }
         if(SPOTIFY_USER_TOKEN != null)
+        {
             spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+            SongSources.SOURCE_SPOTIFY.setAvailable(true);
+        }
 
         //setup deezer api
         deezerApi = new DeezerConnect(appContext, DEEZER_CLIENT_ID);
-        DEEZER_USER_SESSION.restore(deezerApi, appContext);
+        if(DEEZER_USER_SESSION.restore(deezerApi, appContext))
+        {
+            SongSources.SOURCE_DEEZER.setAvailable(true);
+        }
 
         //load songs from all sources (async)
         Thread loaderThread = new Thread()
@@ -340,8 +348,11 @@ public class UserLibrary
                         t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
                 if(!s.getAlbum().hasAlbumArt())
                 {
-                    Image albumImage = t.album.images.get(0);
-                    loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                    if(t.album.images != null && t.album.images.size() >= 1)
+                    {
+                        Image albumImage = t.album.images.get(0);
+                        loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                    }
                 }
             }
 
@@ -354,14 +365,17 @@ public class UserLibrary
                 for(Track t : tracks.items)
                 {
                     Song s = registerSong(t.artists.get(0).name, 0, alb.name, 0,
-                            t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
-                    if(savedAlbum == null) savedAlbum = s.getAlbum();
+                                t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
+                    if (savedAlbum == null) savedAlbum = s.getAlbum();
                 }
 
                 if(!savedAlbum.hasAlbumArt())
                 {
-                    Image albumImage = alb.images.get(0);
-                    loadAlbumArt(savedAlbum, albumImage.url, false);
+                    if(alb.images != null && alb.images.size() >= 1)
+                    {
+                        Image albumImage = alb.images.get(0);
+                        loadAlbumArt(savedAlbum, albumImage.url, false);
+                    }
                 }
             }
 
@@ -394,8 +408,11 @@ public class UserLibrary
                         //get albumart for this song
                         if(!s.getAlbum().hasAlbumArt())
                         {
-                            Image albumImage = t.album.images.get(0);
-                            loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                            if(t.album.images != null && t.album.images.size() >= 1)
+                            {
+                                Image albumImage = t.album.images.get(0);
+                                loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                            }
                         }
 
                         thisList.add(s);
@@ -447,8 +464,7 @@ public class UserLibrary
                         t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
                 if(!s.getAlbum().hasAlbumArt())
                 {
-                    String imgUrl = t.getAlbum().getImageUrl();
-                    loadAlbumArt(s.getAlbum(), imgUrl, false);
+                    loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
                 }
             }
 
@@ -466,7 +482,7 @@ public class UserLibrary
 
                 if(!alb.hasAlbumArt())
                 {
-                    loadAlbumArt(alb, album.getImageUrl(), false);
+                    loadAlbumArt(alb, album.getBigImageUrl(), false);
                 }
             }
 
@@ -487,7 +503,7 @@ public class UserLibrary
 
                     if(!alb.hasAlbumArt())
                     {
-                        loadAlbumArt(alb, album.getImageUrl(), false);
+                        loadAlbumArt(alb, album.getBigImageUrl(), false);
                     }
                 }
             }
@@ -511,7 +527,7 @@ public class UserLibrary
                     //get albumart for this song
                     if(!s.getAlbum().hasAlbumArt())
                     {
-                        loadAlbumArt(s.getAlbum(), t.getAlbum().getImageUrl(), false);
+                        loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
                     }
 
                     thisList.add(s);
@@ -528,6 +544,15 @@ public class UserLibrary
             e.printStackTrace();
             System.err.println("DEEZER ERROR MESSAGE : " + e.getLocalizedMessage());
         }
+    }
+
+    /*
+    * If the option is enabled, Blade will try to find a better source for all the songs added by WebService
+    * Example : you added a spotify album, but deezer prior > spotify ; Blade will load that album from Deezer
+     */
+    public static void registerSongBetterSources()
+    {
+        //TODO
     }
 
     public static void sortLibrary()

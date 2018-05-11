@@ -143,7 +143,7 @@ public class PlayerMediaPlayer
 
         if(UserLibrary.SPOTIFY_USER_TOKEN != null)
             initSpotifyMediaPlayer();
-        if(UserLibrary.deezerApi.isSessionValid())
+        if(UserLibrary.deezerApi != null && UserLibrary.deezerApi.isSessionValid())
             initDeezerMediaPlayer();
     }
     public void initSpotifyMediaPlayer()
