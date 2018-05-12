@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <CheckBoxPreference android:title="@string/save_playlist_to_library_titl"
+    <CheckBoxPreference android:title="@string/save_playlists_to_library_titl"
                         android:summary="@string/save_playlists_to_library_expl"
                         android:key="save_playlist_to_library"
                         android:defaultValue="false"/>

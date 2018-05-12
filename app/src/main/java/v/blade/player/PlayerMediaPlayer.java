@@ -33,6 +33,7 @@ import com.deezer.sdk.player.event.PlayerState;
 import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
 import com.spotify.sdk.android.player.*;
 import com.spotify.sdk.android.player.Error;
+import v.blade.R;
 import v.blade.library.Song;
 import v.blade.library.SongSources;
 import v.blade.library.UserLibrary;
@@ -236,6 +237,8 @@ public class PlayerMediaPlayer
     /* player operations */
     public void play()
     {
+        if(currentState == PLAYER_STATE_PLAYING) return;
+
         if(requestAudioFocus())
         {
             if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
@@ -251,6 +254,8 @@ public class PlayerMediaPlayer
     }
     public void pause()
     {
+        if(currentState == PLAYER_STATE_PAUSED) return;
+
         if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
 
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
@@ -327,9 +332,19 @@ public class PlayerMediaPlayer
 
             try
             {
+                if(song.getFormat().equals("audio/x-ms-wma"))
+                {
+                    Toast.makeText(context, context.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 mediaPlayer.setDataSource(context, songUri);
-                mediaPlayer.prepare();
-                play();
+                mediaPlayer.prepareAsync();
+                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
+                {
+                    @Override
+                    public void onPrepared(MediaPlayer mp) {play();}
+                });
+                //mediaPlayer.prepare();
             }
             catch(Exception e) {} //ignored.
         }
@@ -349,7 +364,7 @@ public class PlayerMediaPlayer
             }
             else
             {
-                Toast.makeText(context, "Erreur inconnue du lecteur Deezer", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, context.getString(R.string.player_unknown_error) + " Deezer", Toast.LENGTH_SHORT).show();
                 currentActivePlayer = NO_PLAYER_ACTIVE;
                 currentState = PLAYER_STATE_SONGEND;
                 listener.onStateChange();
@@ -359,7 +374,7 @@ public class PlayerMediaPlayer
         {
             if(spotifyPlayer == null)
             {
-                Toast.makeText(context, "Initialisation du lecteur Spotify...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, context.getString(R.string.player_init) + " Spotify...", Toast.LENGTH_SHORT).show();
                 initSpotifyMediaPlayer();
                 try {Thread.sleep(500);} catch (InterruptedException e) {}
             }
@@ -376,9 +391,11 @@ public class PlayerMediaPlayer
             }
             else
             {
-                Toast.makeText(context, "Erreur " +
-                        (spotifyPlayerError == WEBPLAYER_ERROR_LOGIN ? " de connection (login/mot de passe erronés, compte non-premium)" : "inconnue")
-                        + " du lecteur Spotify", Toast.LENGTH_SHORT).show();
+                if(spotifyPlayerError == WEBPLAYER_ERROR_LOGIN)
+                    Toast.makeText(context, context.getString(R.string.player_login_error) + " Spotify", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(context, context.getString(R.string.player_unknown_error) + " Spotify", Toast.LENGTH_SHORT).show();
+
                 currentActivePlayer = NO_PLAYER_ACTIVE;
                 currentState = PLAYER_STATE_SONGEND;
                 listener.onStateChange();

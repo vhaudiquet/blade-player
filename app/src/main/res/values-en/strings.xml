@@ -27,4 +27,8 @@
     <string name="desc">Blade is an Android music player made by Valentin HAUDIQUET (@Valou3433). The goal of the project is to make an app capable to play songs from local library, Spotify, Deezer and SoundCloud.</string>
     <string name="register_better_sources_titl">Look for better sources</string>
     <string name="save_playlists_to_library_titl">Save playlists songs</string>
+    <string name="format_unsupported">Unsupported file format</string>
+    <string name="player_unknown_error">Unknown error of </string>
+    <string name="player_login_error">Login error (bad login/pass, no premium) of</string>
+    <string name="player_init">Initializing</string>
 </resources>

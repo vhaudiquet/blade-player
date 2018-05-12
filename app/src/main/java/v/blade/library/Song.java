@@ -23,6 +23,7 @@ public class Song extends LibraryObject
     private Album album;
     private int track;
     long duration;
+    String format;
 
     public Song(String title, Artist artist, Album album, int albumTrack, long duration)
     {
@@ -33,6 +34,8 @@ public class Song extends LibraryObject
         this.duration = duration;
     }
 
+    public void setFormat(String s) {format = s;}
+    public String getFormat() {return format;}
     public String getTitle() {return getName();}
     public Artist getArtist() {return artist;}
     public Album getAlbum() {return album;}

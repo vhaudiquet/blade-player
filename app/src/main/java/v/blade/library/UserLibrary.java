@@ -252,6 +252,7 @@ public class UserLibrary
             int albumIdColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID);
             int albumTrackColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.TRACK);
             int songDurationColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
+            int formatColumn = musicCursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE);
 
             //add songs to list
             do
@@ -266,6 +267,7 @@ public class UserLibrary
                 long thisDuration = musicCursor.getLong(songDurationColumn);
 
                 Song s = registerSong(thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SongSources.SOURCE_LOCAL_LIB));
+                s.setFormat(musicCursor.getString(formatColumn));
                 idsorted_songs.put(thisId, s);
                 if(idsorted_albums.get(albumId) == null) idsorted_albums.put(albumId, s.getAlbum());
             }
@@ -599,6 +601,7 @@ public class UserLibrary
         if(!REGISTER_SONGS_BETTER_SOURCES) return;
 
         SongSources.Source bestSource = SongSources.SOURCE_DEEZER.getPriority() > SongSources.SOURCE_SPOTIFY.getPriority() ? SongSources.SOURCE_DEEZER : SongSources.SOURCE_SPOTIFY;
+        if(!bestSource.isAvailable()) return;
 
         if(bestSource == SongSources.SOURCE_SPOTIFY)
         {
@@ -718,7 +721,7 @@ public class UserLibrary
             }
         }
 
-        UserLibrary.currentCallback.onLibraryChange();
+        if(UserLibrary.currentCallback != null) UserLibrary.currentCallback.onLibraryChange();
     }
 
     public static void sortLibrary()
