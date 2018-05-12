@@ -603,8 +603,8 @@ public class UserLibrary
         if(bestSource == SongSources.SOURCE_SPOTIFY)
         {
             //search all deezer songs on spotify
-            synchronized (songs)
-            {
+            //synchronized (songs)
+            //{
                 for(Song s : songs)
                 {
                     if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_DEEZER)
@@ -623,16 +623,16 @@ public class UserLibrary
 
                     }
                 }
-            }
+            //}
             //also search for songs in playlist
             if(!SAVE_PLAYLISTS_TO_LIBRARY)
             {
-                synchronized (playlists)
-                {
+                //synchronized (playlists)
+                //{
                     for(Playlist p : playlists)
                     {
-                        synchronized (p.getContent())
-                        {
+                        //synchronized (p.getContent())
+                        //{
                             for(Song s : p.getContent())
                             {
                                 if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
@@ -650,9 +650,9 @@ public class UserLibrary
                                     }
                                 }
                             }
-                        }
+                        //}
                     }
-                }
+                //}
             }
         }
         else if(bestSource == SongSources.SOURCE_DEEZER)

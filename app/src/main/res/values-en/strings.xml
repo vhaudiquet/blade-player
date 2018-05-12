@@ -18,14 +18,13 @@
     <string name="songs">Songs</string>
     <string name="title_activity_play">Playing</string>
     <string name="about">About</string>
-    <string name="accounts">Accounts</string>
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
     <string name="sources">Music sources</string>
     <string name="already_connected">Useless, you\'re already connected</string>
-    <string name="register_better_sources_expl">"Blade will try for your songs that come from web services to find the
-        best web service to play them, depending on priority\n "
-    </string>
-    <string name="save_playlists_to_library_expl">Save playlist\'s songs to the library (Artist/Album/Songs views)
-    </string>
+    <string name="register_better_sources_expl">Blade will try for your songs that come from web services to find the best web service to play them, depending on priority</string>
+    <string name="save_playlists_to_library_expl">Save playlist\'s songs to the library (Artist/Album/Songs views)</string>
+    <string name="desc">Blade is an Android music player made by Valentin HAUDIQUET (@Valou3433). The goal of the project is to make an app capable to play songs from local library, Spotify, Deezer and SoundCloud.</string>
+    <string name="register_better_sources_titl">Look for better sources</string>
+    <string name="save_playlists_to_library_titl">Save playlists songs</string>
 </resources>

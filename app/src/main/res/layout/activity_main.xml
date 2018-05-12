@@ -55,13 +55,14 @@
             />
             <TextView
                     android:id="@+id/element_subtitle"
-                    android:layout_width="fill_parent"
+                    android:layout_width="250dp"
                     android:layout_height="wrap_content"
                     android:textColor="#bdbdbd"
                     android:textSize="12sp"
                     android:layout_below="@+id/element_title"
                     android:layout_toRightOf="@id/element_image"
                     android:layout_marginLeft="10dp"
+                    android:singleLine="true"
                     android:text="Artiste - Album"/>
             <ImageView android:id="@+id/element_action"
                        android:layout_width="wrap_content"

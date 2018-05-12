@@ -106,23 +106,23 @@ public class PlayerMediaPlayer
             switch(focusChange)
             {
                 case AudioManager.AUDIOFOCUS_GAIN:
-                    if(playOnAudioFocus && !mediaPlayer.isPlaying()) play();
-                    else if(mediaPlayer.isPlaying()) mediaPlayer.setVolume(MEDIA_VOLUME_DEFAULT, MEDIA_VOLUME_DEFAULT);
+                    if(playOnAudioFocus && !isPlaying()) play();
+                    else if(isPlaying()) setVolume(MEDIA_VOLUME_DEFAULT, MEDIA_VOLUME_DEFAULT);
                     playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
                     break;
 
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    mediaPlayer.setVolume(MEDIA_VOLUME_DUCK, MEDIA_VOLUME_DUCK);
+                    setVolume(MEDIA_VOLUME_DUCK, MEDIA_VOLUME_DUCK);
                     break;
 
                 /* We only lost audiofocus for a small ammount of time, relaunch player just after */
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                    if(mediaPlayer.isPlaying()) {playOnAudioFocus = true; pause();}
+                    if(isPlaying()) {playOnAudioFocus = true; pause();}
                     break;
 
                 /* We lost audiofocus definetely ; maybe another player was started or ... */
                 case AudioManager.AUDIOFOCUS_LOSS:
-                    if(mediaPlayer.isPlaying()) {pause();}
+                    if(isPlaying()) {pause();}
                     break;
             }
         }
@@ -236,7 +236,6 @@ public class PlayerMediaPlayer
     /* player operations */
     public void play()
     {
-        System.out.println("PLAY()");
         if(requestAudioFocus())
         {
             if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
@@ -252,7 +251,6 @@ public class PlayerMediaPlayer
     }
     public void pause()
     {
-        System.out.println("PAUSE()");
         if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
 
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
@@ -301,6 +299,12 @@ public class PlayerMediaPlayer
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.getDuration();
         else return ((int) currentSong.getDuration());
+    }
+    public void setVolume(float left, float right)
+    {
+        if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) mediaPlayer.setVolume(left, right);
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return;
+        else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE) deezerPlayer.setStereoVolume(left, right);
     }
 
 

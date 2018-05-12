@@ -494,7 +494,8 @@ public class MainActivity extends AppCompatActivity
         if(!currentPlayShown)
         {
             //resize list ; DOESN'T WORK FOR SOME REASON WHEN AUTO-ROTATE (//TODO)
-            //mainListView.getLayoutParams().height = (mainListView.getHeight() - currentPlay.getHeight());
+            mainListView.getLayoutParams().height = 1510;
+            mainListView.requestLayout();
 
             //show
             currentPlay.setVisibility(View.VISIBLE);

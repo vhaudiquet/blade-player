@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <CheckBoxPreference android:title="Enregistrer titres playlists"
+    <CheckBoxPreference android:title="@string/save_playlist_to_library_titl"
                         android:summary="@string/save_playlists_to_library_expl"
                         android:key="save_playlist_to_library"
-                        android:defaultValue="false"
-                        android:singleLineTitle="false"/>
-    <CheckBoxPreference android:title="Chercher une meilleure source"
+                        android:defaultValue="false"/>
+    <CheckBoxPreference android:title="@string/register_better_sources_titl"
                         android:summary="@string/register_better_sources_expl"
                         android:key="register_better_sources"
-                        android:defaultValue="true"
-                        android:singleLineTitle="false"/>
+                        android:defaultValue="true"/>
     <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
     <PreferenceScreen android:title="@string/about" android:key="about_screen"/>
 </PreferenceScreen>
