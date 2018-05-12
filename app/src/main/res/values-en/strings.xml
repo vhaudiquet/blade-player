@@ -23,4 +23,9 @@
     <string name="disconnected">Disconnected</string>
     <string name="sources">Music sources</string>
     <string name="already_connected">Useless, you\'re already connected</string>
+    <string name="register_better_sources_expl">"Blade will try for your songs that come from web services to find the
+        best web service to play them, depending on priority\n "
+    </string>
+    <string name="save_playlists_to_library_expl">Save playlist\'s songs to the library (Artist/Album/Songs views)
+    </string>
 </resources>

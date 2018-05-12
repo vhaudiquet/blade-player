@@ -55,10 +55,10 @@ public class UserLibrary
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
 
     /* library */
-    private static List<Artist> artists;
-    private static List<Album> albums;
-    private static List<Song> songs;
-    private static List<Playlist> playlists;
+    private static List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
+    private static List<Album> albums = Collections.synchronizedList(new ArrayList<Album>());
+    private static List<Song> songs = Collections.synchronizedList(new ArrayList<Song>());
+    private static List<Playlist> playlists = Collections.synchronizedList(new ArrayList<Playlist>());
 
     private static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
@@ -92,12 +92,7 @@ public class UserLibrary
     public static void configureLibrary(final Context appContext)
     {
         /* init the lists (to make sure they are empty) */
-        if(songs != null) return;
-
-        artists = Collections.synchronizedList(new ArrayList<Artist>());
-        albums = Collections.synchronizedList(new ArrayList<Album>());
-        songs = Collections.synchronizedList(new ArrayList<Song>());
-        playlists = Collections.synchronizedList(new ArrayList<Playlist>());
+        if(songs.size() > 0) return;
 
         //init cache dir
         UserLibrary.appContext = appContext;
@@ -190,6 +185,7 @@ public class UserLibrary
             {
                 if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
                 {
+                    System.out.println("Found song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName());
                     s.getSources().addSource(source);
                     return s;
                 }
@@ -232,6 +228,7 @@ public class UserLibrary
         if(snames != null) snames.add(song);
         else {ArrayList<Song> sn = new ArrayList<>(); sn.add(song); songsByName.put(name.toLowerCase(), sn);}
 
+        //System.out.println("Registered : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName());
         return song;
     }
 
@@ -338,96 +335,141 @@ public class UserLibrary
         try
         {
             //requests
-            Pager<SavedTrack> userTracks = service.getMySavedTracks();
-            Pager<SavedAlbum> userAlbums = service.getMySavedAlbums();
-            Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
+            HashMap<String, Object> params = new HashMap<>();
+            params.put("limit", 50);
+            Pager<SavedTrack> userTracks = service.getMySavedTracks(params);
 
             //parse user tracks request response
-            for (SavedTrack track : userTracks.items)
+            int count = userTracks.total;
+            int offset = 0;
+            while(true)
             {
-                Track t = track.track;
-                Song s = registerSong(t.artists.get(0).name, 0, t.album.name, 0,
-                        t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
-                if(!s.getAlbum().hasAlbumArt())
+                for (SavedTrack track : userTracks.items)
                 {
-                    if(t.album.images != null && t.album.images.size() >= 1)
+                    Track t = track.track;
+                    Song s = registerSong(t.artists.get(0).name, 0, t.album.name, 0,
+                            t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
+                    if(!s.getAlbum().hasAlbumArt())
                     {
-                        Image albumImage = t.album.images.get(0);
-                        loadAlbumArt(s.getAlbum(), albumImage.url, false);
-                    }
-                }
-            }
-
-            //parse user albums request response
-            for(SavedAlbum album : userAlbums.items)
-            {
-                Album savedAlbum = null;
-                kaaes.spotify.webapi.android.models.Album alb = album.album;
-                Pager<Track> tracks = service.getAlbumTracks(alb.id);
-                for(Track t : tracks.items)
-                {
-                    Song s = registerSong(t.artists.get(0).name, 0, alb.name, 0,
-                                t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
-                    if (savedAlbum == null) savedAlbum = s.getAlbum();
-                }
-
-                if(!savedAlbum.hasAlbumArt())
-                {
-                    if(alb.images != null && alb.images.size() >= 1)
-                    {
-                        Image albumImage = alb.images.get(0);
-                        loadAlbumArt(savedAlbum, albumImage.url, false);
-                    }
-                }
-            }
-
-            //parse user playlists request response
-            for(PlaylistSimple playlistBase : userPlaylists.items)
-            {
-                ArrayList<Song> thisList = new ArrayList<>();
-                HashMap<String, Object> map = new HashMap<>();
-                map.put("fields", "total");
-                int trackNbr = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map).total;
-                map.remove("fields");
-
-                int offset = 0;
-                while(trackNbr > 0)
-                {
-                    map.put("offset", offset);
-                    Pager<PlaylistTrack> tracks = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map);
-
-                    for(PlaylistTrack pt : tracks.items)
-                    {
-                        Track t = pt.track;
-                        Song s;
-                        if(SAVE_PLAYLISTS_TO_LIBRARY)
-                            s = registerSong(t.artists.get(0).name, 0, t.album.name, 0,
-                                    t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
-                        else
-                            s = getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY),
-                                    t.track_number);
-
-                        //get albumart for this song
-                        if(!s.getAlbum().hasAlbumArt())
+                        if(t.album.images != null && t.album.images.size() >= 1)
                         {
-                            if(t.album.images != null && t.album.images.size() >= 1)
+                            Image albumImage = t.album.images.get(0);
+                            loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                        }
+                    }
+                }
+                count -= 50;
+                if(count < 0) break;
+                else
+                {
+                    offset += 50;
+                    params.put("offset", offset);
+                    userTracks = service.getMySavedTracks(params);
+                }
+            }
+
+            params.put("limit", 50);
+            params.put("offset", 0);
+            Pager<SavedAlbum> userAlbums = service.getMySavedAlbums(params);
+            offset = 0;
+            count = userAlbums.total;
+            while(true)
+            {
+                //parse user albums request response
+                for(SavedAlbum album : userAlbums.items)
+                {
+                    Album savedAlbum = null;
+                    kaaes.spotify.webapi.android.models.Album alb = album.album;
+                    Pager<Track> tracks = service.getAlbumTracks(alb.id);
+                    for(Track t : tracks.items)
+                    {
+                        Song s = registerSong(t.artists.get(0).name, 0, alb.name, 0,
+                                t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
+                        if (savedAlbum == null) savedAlbum = s.getAlbum();
+                    }
+
+                    if(!savedAlbum.hasAlbumArt())
+                    {
+                        if(alb.images != null && alb.images.size() >= 1)
+                        {
+                            Image albumImage = alb.images.get(0);
+                            loadAlbumArt(savedAlbum, albumImage.url, false);
+                        }
+                    }
+                }
+                count-=50;
+                if(count < 0) break;
+                else
+                {
+                    offset += 50;
+                    params.put("offset", offset);
+                    userAlbums = service.getMySavedAlbums(params);
+                }
+            }
+
+            params.put("limit", 50);
+            params.put("offset", 0);
+            Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
+            offset = 0;
+            count = userPlaylists.total;
+            while(true)
+            {
+                //parse user playlists request response
+                for(PlaylistSimple playlistBase : userPlaylists.items)
+                {
+                    ArrayList<Song> thisList = new ArrayList<>();
+                    HashMap<String, Object> map = new HashMap<>();
+                    map.put("fields", "total");
+                    int trackNbr = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map).total;
+                    map.remove("fields");
+
+                    int poffset = 0;
+                    while(trackNbr > 0)
+                    {
+                        map.put("offset", poffset);
+                        Pager<PlaylistTrack> tracks = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map);
+
+                        for(PlaylistTrack pt : tracks.items)
+                        {
+                            Track t = pt.track;
+                            Song s;
+                            if(SAVE_PLAYLISTS_TO_LIBRARY)
+                                s = registerSong(t.artists.get(0).name, 0, t.album.name, 0,
+                                        t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
+                            else
+                                s = getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY),
+                                        t.track_number);
+
+                            //get albumart for this song
+                            if(!s.getAlbum().hasAlbumArt())
                             {
-                                Image albumImage = t.album.images.get(0);
-                                loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                                if(t.album.images != null && t.album.images.size() >= 1)
+                                {
+                                    Image albumImage = t.album.images.get(0);
+                                    loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                                }
                             }
+
+                            thisList.add(s);
                         }
 
-                        thisList.add(s);
+                        poffset+=100;
+                        trackNbr-=100;
                     }
 
-                    offset+=100;
-                    trackNbr-=100;
+                    Playlist list = new Playlist(playlistBase.name, thisList);
+                    list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SongSources.SOURCE_SPOTIFY));
+                    playlists.add(list);
+                    if(currentCallback != null) currentCallback.onLibraryChange();
                 }
-
-                Playlist list = new Playlist(playlistBase.name, thisList);
-                list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SongSources.SOURCE_SPOTIFY));
-                playlists.add(list);
-                if(currentCallback != null) currentCallback.onLibraryChange();
+                count -= 50;
+                if(count < 0) break;
+                else
+                {
+                    offset += 50;
+                    params.put("offset", offset);
+                    userPlaylists = service.getMyPlaylists(params);
+                }
             }
         }
         catch (RetrofitError error)
@@ -571,7 +613,44 @@ public class UserLibrary
                         HashMap<String, Object> args = new HashMap<>();
                         args.put("limit", 1);
                         List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
-                        if(t != null && t.size() > 0 && t.get(0) != null) s.getSources().addSource(new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY));
+                        if(t != null && t.size() > 0 && t.get(0) != null)
+                        {
+                            SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY);
+                            s.getSources().addSource(source);
+                            s.getArtist().getSources().addSource(source);
+                            s.getAlbum().getSources().addSource(source);
+                        }
+
+                    }
+                }
+            }
+            //also search for songs in playlist
+            if(!SAVE_PLAYLISTS_TO_LIBRARY)
+            {
+                synchronized (playlists)
+                {
+                    for(Playlist p : playlists)
+                    {
+                        synchronized (p.getContent())
+                        {
+                            for(Song s : p.getContent())
+                            {
+                                if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
+                                {
+                                    //query spotify for this song
+                                    HashMap<String, Object> args = new HashMap<>();
+                                    args.put("limit", 1);
+                                    List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
+                                    if(t != null && t.size() > 0 && t.get(0) != null)
+                                    {
+                                        SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY);
+                                        s.getSources().addSource(source);
+                                        s.getArtist().getSources().addSource(source);
+                                        s.getAlbum().getSources().addSource(source);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -581,22 +660,65 @@ public class UserLibrary
             //search all spotify songs on deezer
             synchronized (songs)
             {
-                for(Song s : songs)
+                for (Song s : songs)
                 {
-                    if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
+                    if (s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
                     {
                         //query deezer for this song
                         DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
                         try
                         {
                             com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(search))).get(0);
-                            if(t != null) s.getSources().addSource(new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
+                            if (t != null)
+                            {
+                                //System.out.println("Found better source for : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName());
+                                SongSources.SongSource source = new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER);
+                                s.getSources().addSource(source);
+                                s.getAlbum().getSources().addSource(source);
+                                s.getArtist().getSources().addSource(source);
+                            }
                         }
-                        catch(Exception e) {} //ignored
+                        catch (Exception e) {} //ignored
+                    }
+                }
+            }
+            //also search for songs in playlist
+            if(!SAVE_PLAYLISTS_TO_LIBRARY)
+            {
+                synchronized (playlists)
+                {
+                    for(Playlist p : playlists)
+                    {
+                        synchronized (p.getContent())
+                        {
+                            for(Song s : p.getContent())
+                            {
+                                if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
+                                {
+                                    //query deezer for this song
+                                    DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
+                                    try
+                                    {
+                                        com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(search))).get(0);
+                                        if (t != null)
+                                        {
+                                            //System.out.println("Found better source for : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName());
+                                            SongSources.SongSource source = new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER);
+                                            s.getSources().addSource(source);
+                                            s.getAlbum().getSources().addSource(source);
+                                            s.getArtist().getSources().addSource(source);
+                                        }
+                                    }
+                                    catch(Exception e) {} //ignored
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+
+        UserLibrary.currentCallback.onLibraryChange();
     }
 
     public static void sortLibrary()
@@ -682,7 +804,7 @@ public class UserLibrary
         Artist songArtist = null;
         synchronized (artists)
         {for(Artist art : artists) if(art.getName().equalsIgnoreCase(artist)) songArtist = art;}
-        if(songArtist == null) songArtist = new Artist(name);
+        if(songArtist == null) songArtist = new Artist(artist);
         songArtist.getSources().addSource(source);
 
         Album songAlbum = null;
@@ -693,6 +815,7 @@ public class UserLibrary
 
         Song s = new Song(name, songArtist, songAlbum, track, duration);
         s.getSources().addSource(source);
+        //System.out.println("Handled : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName());
         return s;
     }
 

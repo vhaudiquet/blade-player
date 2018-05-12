@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <CheckBoxPreference android:title="Enregistrer titres playlists"
-                        android:summary="Enregistrer les titres des playlists dans la bibliothèque (classement par Artiste/Albums/Titres)"
+                        android:summary="@string/save_playlists_to_library_expl"
                         android:key="save_playlist_to_library"
                         android:defaultValue="false"
                         android:singleLineTitle="false"/>
     <CheckBoxPreference android:title="Chercher une meilleure source"
-                        android:summary="Blade tentera pour tous vos sons provenant de services web de les trouver sur le meilleur service web en fonction de sa priorité"
+                        android:summary="@string/register_better_sources_expl"
                         android:key="register_better_sources"
                         android:defaultValue="true"
                         android:singleLineTitle="false"/>

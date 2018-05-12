@@ -10,14 +10,17 @@ public class SongSources
         private final int logoImage;
         private int priority;
         private boolean available;
+        private String name;
 
-        private Source(int iconImage, int logoImage) {this.iconImage = iconImage; this.logoImage = logoImage;}
+        private Source(int iconImage, int logoImage, String name) {this.iconImage = iconImage; this.logoImage = logoImage; this.name = name;}
         public int getIconImage() {return iconImage;}
         public int getLogoImage() {return logoImage;}
         public int getPriority() {return priority;}
         public void setPriority(int priority) {this.priority = priority;}
         public void setAvailable(boolean available) {this.available = available;}
         public boolean isAvailable() {return this.available;}
+        @Override
+        public String toString() {return name;}
     }
     public static class SongSource
     {
@@ -35,9 +38,9 @@ public class SongSources
     }
 
     public static final int SOURCE_COUNT = 3;
-    public static final Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0);
-    public static final Source SOURCE_SPOTIFY = new Source(R.drawable.ic_spotify, R.drawable.ic_spotify_logo);
-    public static final Source SOURCE_DEEZER = new Source(R.drawable.ic_deezer, R.drawable.ic_deezer);
+    public static final Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL");
+    public static final Source SOURCE_SPOTIFY = new Source(R.drawable.ic_spotify, R.drawable.ic_spotify_logo, "SPOTIFY");
+    public static final Source SOURCE_DEEZER = new Source(R.drawable.ic_deezer, R.drawable.ic_deezer, "DEEZER");
 
     public SongSource sources[] = new SongSource[SOURCE_COUNT];
 

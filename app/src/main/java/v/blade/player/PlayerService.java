@@ -196,6 +196,15 @@ public class PlayerService extends Service
         mPlayer = new PlayerMediaPlayer(this, mPlayerListener);
     }
 
+    @Override
+    public void onDestroy()
+    {
+        super.onDestroy();
+
+        stopForeground(true);
+        stopSelf();
+    }
+
     /* service binding */
     public class PlayerBinder extends Binder
     {

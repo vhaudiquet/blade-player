@@ -30,4 +30,7 @@
     <string name="connected">Connecté</string>
     <string name="disconnected">Déconnecté</string>
     <string name="already_connected">Inutile, vous êtes déjà connecté</string>
+
+    <string name="register_better_sources_expl">Blade tentera pour tous vos sons provenant de services web de les trouver sur le meilleur service web en fonction de sa priorité</string>
+    <string name="save_playlists_to_library_expl">Enregistrer les titres des playlists dans la bibliothèque (classement par Artiste/Albums/Titres)</string>
 </resources>

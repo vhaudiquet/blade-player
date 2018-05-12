@@ -331,7 +331,7 @@ public class PlayerMediaPlayer
         }
         else if(bestSource.getSource() == SongSources.SOURCE_DEEZER)
         {
-            if(deezerPlayer == null) initDeezerMediaPlayer();
+            if(deezerPlayer == null || deezerPlayer.getPlayerState().equals(PlayerState.RELEASED)) initDeezerMediaPlayer();
 
             currentActivePlayer = DEEZER_PLAYER_ACTIVE;
             if(deezerPlayer != null)
@@ -347,7 +347,7 @@ public class PlayerMediaPlayer
             {
                 Toast.makeText(context, "Erreur inconnue du lecteur Deezer", Toast.LENGTH_SHORT).show();
                 currentActivePlayer = NO_PLAYER_ACTIVE;
-                currentState = PLAYER_STATE_STOPPED;
+                currentState = PLAYER_STATE_SONGEND;
                 listener.onStateChange();
             }
         }
@@ -376,7 +376,7 @@ public class PlayerMediaPlayer
                         (spotifyPlayerError == WEBPLAYER_ERROR_LOGIN ? " de connection (login/mot de passe erronés, compte non-premium)" : "inconnue")
                         + " du lecteur Spotify", Toast.LENGTH_SHORT).show();
                 currentActivePlayer = NO_PLAYER_ACTIVE;
-                currentState = PLAYER_STATE_STOPPED;
+                currentState = PLAYER_STATE_SONGEND;
                 listener.onStateChange();
             }
         }
