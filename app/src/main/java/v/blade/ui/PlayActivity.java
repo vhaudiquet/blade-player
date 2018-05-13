@@ -78,11 +78,6 @@ public class PlayActivity extends AppCompatActivity
             playList.remove(from);
             playList.add(to, toSwap);
 
-            //reset adapter because notifyDataSetChanged doesnt work
-            //LibraryObjectAdapter adapter = new LibraryObjectAdapter(PlayActivity.this, PlayerConnection.musicPlayer.getCurrentPlaylist());
-            //adapter.setMoreImage(R.drawable.ic_action_move_black);
-            //playlistView.setAdapter(adapter);
-
             int selectedPos = PlayerConnection.musicPlayer.getCurrentPosition();
             if(selectedPos == from)
             {
@@ -242,7 +237,7 @@ public class PlayActivity extends AppCompatActivity
         playlistAdapter.repaintSongBackground();
         playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
         playlistView.setAdapter(playlistAdapter);
-        playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
+        //playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
         playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);
 
         //set song info
@@ -322,6 +317,7 @@ public class PlayActivity extends AppCompatActivity
         else
         {
             albumView.setVisibility(View.GONE);
+            playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
             playlistView.setVisibility(View.VISIBLE);
         }
     }
