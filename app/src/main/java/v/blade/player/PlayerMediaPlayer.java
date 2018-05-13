@@ -51,7 +51,7 @@ public class PlayerMediaPlayer
     public static final int PLAYER_STATE_DO_NOTHING = 4;
     public static final int PLAYER_STATE_STOPPED = 5;
     private int currentState = PLAYER_STATE_NONE;
-    private final MediaPlayerListener listener;
+    public final MediaPlayerListener listener;
 
     private static final int WEBPLAYER_ERROR_NONE = 0;
     private static final int WEBPLAYER_ERROR_LOGIN = 1;
@@ -237,8 +237,6 @@ public class PlayerMediaPlayer
     /* player operations */
     public void play()
     {
-        if(currentState == PLAYER_STATE_PLAYING) return;
-
         if(requestAudioFocus())
         {
             if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
@@ -334,6 +332,7 @@ public class PlayerMediaPlayer
             {
                 if(song.getFormat().equals("audio/x-ms-wma"))
                 {
+                    System.out.println("FORMAT");
                     Toast.makeText(context, context.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -345,6 +344,7 @@ public class PlayerMediaPlayer
                     public void onPrepared(MediaPlayer mp) {play();}
                 });
                 //mediaPlayer.prepare();
+                //play();
             }
             catch(Exception e) {} //ignored.
         }

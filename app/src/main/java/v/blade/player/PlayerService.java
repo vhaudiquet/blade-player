@@ -31,7 +31,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import v.blade.library.Song;
 
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.Collections;
 
 public class PlayerService extends Service
 {
@@ -44,6 +44,7 @@ public class PlayerService extends Service
     private Bitmap currentArt;
     private int repeatMode = PlaybackStateCompat.REPEAT_MODE_NONE;
     private boolean shuffleMode = false;
+    private ArrayList<Song> shufflePlaylist;
 
     private PlayerNotification mNotificationManager;
     private Notification mNotification;
@@ -71,7 +72,7 @@ public class PlayerService extends Service
             /* send current playbackstate to mediasession */
             mSession.setPlaybackState(mPlayer.getPlaybackState());
 
-            currentArt = currentPlaylist.get(currentPosition).getAlbum().getAlbumArt();
+            currentArt = getCurrentPlaylist().get(currentPosition).getAlbum().getAlbumArt();
             MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
             builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArt);
             builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentPlaylist.get(currentPosition).getArtist().getName());
@@ -132,9 +133,9 @@ public class PlayerService extends Service
         @Override
         public void onSkipToNext()
         {
-            if(shuffleMode) currentPosition = new Random().nextInt(currentPlaylist.size()-1);
-            else currentPosition = (++currentPosition % currentPlaylist.size());
-            mPlayer.playSong(currentPlaylist.get(currentPosition));
+            //if(shuffleMode) currentPosition = new Random().nextInt(currentPlaylist.size()-1);
+            currentPosition = (++currentPosition % currentPlaylist.size());
+            mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
         }
 
         @Override
@@ -144,7 +145,7 @@ public class PlayerService extends Service
             if(mPlayer.getCurrentPosition() < 5000)
             {
                 currentPosition = currentPosition > 0 ? currentPosition-1 : currentPlaylist.size()-1;
-                mPlayer.playSong(currentPlaylist.get(currentPosition));
+                mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
             }
             //else we seek to the song begin
             else mPlayer.seekTo(0);
@@ -175,7 +176,25 @@ public class PlayerService extends Service
         @Override
         public void onSetShuffleMode(int shuffleMode)
         {
+            if(!PlayerService.this.shuffleMode) // shuffle mode enabling, construct shuffle playlist
+            {
+                shufflePlaylist = (ArrayList<Song>) currentPlaylist.clone();
+                Collections.shuffle(shufflePlaylist);
+                shufflePlaylist.remove(currentPlaylist.get(currentPosition));
+                shufflePlaylist.add(0, currentPlaylist.get(currentPosition));
+                currentPosition = 0;
+            }
+            else // shuffle mode disable, retreive current position
+            {
+                int i;
+                for(i = 0; i < currentPlaylist.size(); i++)
+                {
+                    if(currentPlaylist.get(i) == shufflePlaylist.get(currentPosition)) break;
+                }
+                currentPosition = i;
+            }
             PlayerService.this.shuffleMode = !PlayerService.this.shuffleMode;
+            mPlayer.listener.onStateChange();
         }
     };
 
@@ -218,14 +237,34 @@ public class PlayerService extends Service
 
     /* interactions with activities */
     public void setCurrentPlaylist(ArrayList<Song> playlist, int position)
-    {currentPlaylist = playlist; currentPosition = position;mPlayer.playSong(currentPlaylist.get(currentPosition));}
-    public void addToPlaylist(ArrayList<Song> toAdd) {currentPlaylist.addAll(toAdd);}
-    public void addNextToPlaylist(ArrayList<Song> toAdd) {currentPlaylist.addAll(currentPosition+1, toAdd);}
+    {currentPlaylist = playlist; currentPosition = position;mPlayer.playSong(currentPlaylist.get(currentPosition)); if(shuffleMode) shuffleMode = false;}
+    public void addToPlaylist(ArrayList<Song> toAdd)
+    {
+        if(currentPlaylist == null)
+        {
+            currentPlaylist = new ArrayList<>();
+            currentPlaylist.addAll(toAdd);
+            mPlayer.playSong(getCurrentSong());
+        }
+        else currentPlaylist.addAll(toAdd);
+        if(shuffleMode) shufflePlaylist.addAll(toAdd);
+    }
+    public void addNextToPlaylist(ArrayList<Song> toAdd)
+    {
+        if(currentPlaylist == null)
+        {
+            currentPlaylist = new ArrayList<>();
+            currentPlaylist.addAll(0, toAdd);
+            mPlayer.playSong(currentPlaylist.get(currentPosition));
+        }
+        else currentPlaylist.addAll(currentPosition+1, toAdd);
+        if(shuffleMode) shufflePlaylist.addAll(toAdd);
+    }
     public void setCurrentPosition(int position)
-    {currentPosition = position; mPlayer.playSong(currentPlaylist.get(currentPosition));}
-    public ArrayList<Song> getCurrentPlaylist() {return currentPlaylist;}
+    {currentPosition = position; mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));}
+    public ArrayList<Song> getCurrentPlaylist() {return shuffleMode ? shufflePlaylist : currentPlaylist;}
     public int getCurrentPosition() {return currentPosition;}
-    public Song getCurrentSong() {return currentPlaylist.get(currentPosition);}
+    public Song getCurrentSong() {return shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition);}
     public boolean isPlaying() {return mPlayer.isPlaying();}
     public boolean isShuffleEnabled() {return shuffleMode;}
     public int getRepeatMode() {return repeatMode;}

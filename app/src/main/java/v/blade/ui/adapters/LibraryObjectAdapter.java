@@ -43,6 +43,7 @@ public class LibraryObjectAdapter extends BaseAdapter
     private int moreImageRessource = 0;
 
     private boolean repaintSongBackground = false;
+    private int selectedPosition;
 
     static class ViewHolder
     {
@@ -86,6 +87,7 @@ public class LibraryObjectAdapter extends BaseAdapter
     public void setMoreImage(int ressource)
     {this.moreImageRessource = ressource;}
     public void repaintSongBackground() {repaintSongBackground = true;}
+    public void setSelectedPosition(int selectedPosition) {this.selectedPosition  = selectedPosition;}
 
     @Override
     public int getCount() {return libraryObjects.size();}
@@ -155,7 +157,9 @@ public class LibraryObjectAdapter extends BaseAdapter
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
 
             if(repaintSongBackground)
-                convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
+                if(position != selectedPosition)
+                    convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
+                else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSelected));
         }
         else if(obj instanceof Album)
         {

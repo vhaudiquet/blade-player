@@ -57,6 +57,7 @@ public class PlayActivity extends AppCompatActivity
     private ImageView repeatAction;
     private SeekBar seekBar;
     private DragSortListView playlistView;
+    private LibraryObjectAdapter playlistAdapter;
     private ListView.OnItemClickListener playlistViewListener = new ListView.OnItemClickListener()
     {
         @Override
@@ -76,7 +77,6 @@ public class PlayActivity extends AppCompatActivity
             Song toSwap = playList.get(from);
             playList.remove(from);
             playList.add(to, toSwap);
-            UserLibrary.currentCallback.onLibraryChange();
 
             //reset adapter because notifyDataSetChanged doesnt work
             //LibraryObjectAdapter adapter = new LibraryObjectAdapter(PlayActivity.this, PlayerConnection.musicPlayer.getCurrentPlaylist());
@@ -88,6 +88,7 @@ public class PlayActivity extends AppCompatActivity
             {
                 PlayerConnection.musicPlayer.updatePosition(to);
                 playlistView.setItemChecked(to, true);
+                playlistAdapter.setSelectedPosition(to);
             }
             else
             {
@@ -97,7 +98,10 @@ public class PlayActivity extends AppCompatActivity
 
                 PlayerConnection.musicPlayer.updatePosition(PlayerConnection.musicPlayer.getCurrentPosition()+modifier);
                 playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);
+                playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
             }
+
+            UserLibrary.currentCallback.onLibraryChange();
         }
     };
 
@@ -233,10 +237,11 @@ public class PlayActivity extends AppCompatActivity
         if(currentSong.getAlbum().hasAlbumArt()) albumView.setImageBitmap(PlayerConnection.musicPlayer.getCurrentArt());
         else albumView.setImageResource(R.drawable.ic_albums);
 
-        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, PlayerConnection.musicPlayer.getCurrentPlaylist());
-        adapter.setMoreImage(R.drawable.ic_action_move_black);
-        adapter.repaintSongBackground();
-        playlistView.setAdapter(adapter);
+        playlistAdapter = new LibraryObjectAdapter(this, PlayerConnection.musicPlayer.getCurrentPlaylist());
+        playlistAdapter.setMoreImage(R.drawable.ic_action_move_black);
+        playlistAdapter.repaintSongBackground();
+        playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
+        playlistView.setAdapter(playlistAdapter);
         playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
         playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);
 
