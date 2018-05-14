@@ -258,7 +258,7 @@ public class PlayerService extends Service
             mPlayer.playSong(currentPlaylist.get(currentPosition));
         }
         else currentPlaylist.addAll(currentPosition+1, toAdd);
-        if(shuffleMode) shufflePlaylist.addAll(toAdd);
+        if(shuffleMode) shufflePlaylist.addAll(currentPosition+1, toAdd);
     }
     public void setCurrentPosition(int position)
     {currentPosition = position; mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));}

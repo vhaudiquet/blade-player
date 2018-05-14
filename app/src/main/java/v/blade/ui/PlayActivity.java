@@ -232,11 +232,19 @@ public class PlayActivity extends AppCompatActivity
         if(currentSong.getAlbum().hasAlbumArt()) albumView.setImageBitmap(PlayerConnection.musicPlayer.getCurrentArt());
         else albumView.setImageResource(R.drawable.ic_albums);
 
-        playlistAdapter = new LibraryObjectAdapter(this, PlayerConnection.musicPlayer.getCurrentPlaylist());
-        playlistAdapter.setMoreImage(R.drawable.ic_action_move_black);
-        playlistAdapter.repaintSongBackground();
-        playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
-        playlistView.setAdapter(playlistAdapter);
+        if(playlistAdapter == null)
+        {
+            playlistAdapter = new LibraryObjectAdapter(this, PlayerConnection.musicPlayer.getCurrentPlaylist());
+            playlistAdapter.setMoreImage(R.drawable.ic_action_move_black);
+            playlistAdapter.repaintSongBackground();
+            playlistView.setAdapter(playlistAdapter);
+            playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
+        }
+        else
+        {
+            playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
+            playlistAdapter.notifyDataSetChanged();
+        }
         //playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
         playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);
 
