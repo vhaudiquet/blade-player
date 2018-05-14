@@ -273,6 +273,6 @@ public class PlayerService extends Service
     public int onStartCommand(Intent intent, int flags, int startId)
     {
         MediaButtonReceiver.handleIntent(mSession, intent);
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 }
