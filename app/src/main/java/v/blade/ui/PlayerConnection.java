@@ -21,8 +21,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaControllerCompat;
+import v.blade.library.Song;
 import v.blade.player.PlayerService;
 
 import java.util.ArrayList;
@@ -34,7 +36,8 @@ public class PlayerConnection
     private static Context applicationContext;
 
     /* connection to player and callbacks */
-    public static PlayerService musicPlayer;
+    private static ArrayList<Song> playOnConnect; private static int positionOnConnect;
+    private static volatile PlayerService musicPlayer = null;
     public static MediaControllerCompat musicController;
     private static ServiceConnection musicConnection = new ServiceConnection()
     {
@@ -46,31 +49,48 @@ public class PlayerConnection
             try{musicController = new MediaControllerCompat(applicationContext, musicPlayer.getSessionToken());}
             catch(Exception e) { exit(1); }
 
-            for(Callback c : callbacks) c.onConnected();
+            if(playOnConnect != null) {musicPlayer.setCurrentPlaylist(playOnConnect, positionOnConnect); playOnConnect = null;}
+
+            if(connectionCallback != null) connectionCallback.onConnected();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name)
         {
             musicPlayer = null;
-            for(Callback c : callbacks) c.onDisconnected();
+            if(connectionCallback != null) connectionCallback.onDisconnected();
         }
     };
 
-    public static void initConnection(Context context)
+    /* connection callbacks */
+    public interface Callback {void onConnected(); void onDisconnected();}
+    private static Callback connectionCallback;
+
+    public static boolean init(Callback connectionCallback, Context applicationContext)
     {
-        if(musicPlayer == null)
-        {
-            applicationContext = context.getApplicationContext();
-            Intent intent = new Intent(applicationContext, PlayerService.class);
-            applicationContext.bindService(intent, musicConnection, Context.BIND_AUTO_CREATE);
-            applicationContext.startService(intent);
-        }
+        if(musicPlayer != null) {if(connectionCallback != null) connectionCallback.onConnected(); return true;}
+
+        PlayerConnection.applicationContext = applicationContext;
+        Intent serv = new Intent(applicationContext, PlayerService.class);
+        PlayerConnection.connectionCallback = connectionCallback;
+        return applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
     }
 
-    /* connection callbacks */
-    private static ArrayList<Callback> callbacks = new ArrayList<Callback>();
-    public interface Callback {public void onConnected(); public void onDisconnected();}
-    public static void registerCallback(Callback callback) {callbacks.add(callback);}
-    public static void unregisterCallback(Callback callback) {callbacks.remove(callback);}
+    public static void start(ArrayList<Song> songs, int currentPos)
+    {
+        playOnConnect = songs;
+        positionOnConnect = currentPos;
+
+        Intent serv = new Intent(applicationContext, PlayerService.class);
+
+        if(Build.VERSION.SDK_INT >= 26) applicationContext.startForegroundService(serv);
+        else applicationContext.startService(serv);
+
+        applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
+    }
+
+    public static PlayerService getService()
+    {
+        return musicPlayer;
+    }
 }

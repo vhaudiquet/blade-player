@@ -43,6 +43,7 @@ import android.view.View;
 import android.widget.*;
 import v.blade.R;
 import v.blade.library.*;
+import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -55,19 +56,20 @@ public class MainActivity extends AppCompatActivity
     private static final int EXT_PERM_REQUEST_CODE = 0x42;
 
     /* music controller and callbacks */
+    private PlayerService musicPlayer;
     private boolean musicCallbacksRegistered = false;
     private MediaControllerCompat.Callback musicCallbacks = new MediaControllerCompat.Callback()
     {
         @Override
         public void onPlaybackStateChanged(PlaybackStateCompat state)
         {
-            showCurrentPlay(PlayerConnection.musicPlayer.getCurrentSong(), PlayerConnection.musicPlayer.isPlaying());
+            showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
         }
 
         @Override
         public void onMetadataChanged(MediaMetadataCompat metadata)
         {
-            showCurrentPlay(PlayerConnection.musicPlayer.getCurrentSong(), PlayerConnection.musicPlayer.isPlaying());
+            showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
         }
     };
     private PlayerConnection.Callback connectionCallbacks = new PlayerConnection.Callback()
@@ -75,21 +77,20 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onConnected()
         {
+            musicPlayer = PlayerConnection.getService();
+
             if(!musicCallbacksRegistered)
             {
                 PlayerConnection.musicController.registerCallback(musicCallbacks);
                 musicCallbacksRegistered = true;
             }
 
-            if(PlayerConnection.musicPlayer.isPlaying())
-                showCurrentPlay(PlayerConnection.musicPlayer.getCurrentSong(), PlayerConnection.musicPlayer.isPlaying());
+            if(musicPlayer.isPlaying())
+                showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
 
         @Override
-        public void onDisconnected()
-        {
-
-        }
+        public void onDisconnected() {}
     };
 
     /* current activity context */
@@ -130,7 +131,7 @@ public class MainActivity extends AppCompatActivity
             {
                 case CONTEXT_SONGS:
                     ArrayList<Song> songs = new ArrayList<Song>(((LibraryObjectAdapter)mainListView.getAdapter()).getObjectList());
-                    PlayerConnection.musicPlayer.setCurrentPlaylist(songs, position);
+                    setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
                     Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
@@ -163,7 +164,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         ArrayList<Song> playlist = new ArrayList<Song>();
                         playlist.add((Song) selected);
-                        PlayerConnection.musicPlayer.setCurrentPlaylist(playlist, 0);
+                        setPlaylist(playlist, 0);
                     }
                     break;
             }
@@ -190,7 +191,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist.addAll(((Playlist) object).getContent());
-                            PlayerConnection.musicPlayer.setCurrentPlaylist(playlist, 0);
+                            setPlaylist(playlist, 0);
                             break;
 
                         case R.id.action_play_next:
@@ -199,7 +200,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist1.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist1.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist1.addAll(((Playlist) object).getContent());
-                            PlayerConnection.musicPlayer.addNextToPlaylist(playlist1);
+                            playNext(playlist1);
                             break;
 
                         case R.id.action_add_to_playlist:
@@ -208,7 +209,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist2.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist2.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist2.addAll(((Playlist) object).getContent());
-                            PlayerConnection.musicPlayer.addToPlaylist(playlist2);
+                            addToPlaylist(playlist2);
                             break;
                     }
                     return false;
@@ -258,7 +259,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View v)
             {
-                if(PlayerConnection.musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
+                if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
                 else PlayerConnection.musicController.getTransportControls().play();
             }
         });
@@ -270,17 +271,13 @@ public class MainActivity extends AppCompatActivity
     protected void onStart()
     {
         super.onStart();
-        PlayerConnection.registerCallback(connectionCallbacks);
-
-        if(PlayerConnection.musicPlayer == null) PlayerConnection.initConnection(this);
-        else connectionCallbacks.onConnected();
+        PlayerConnection.init(connectionCallbacks, getApplicationContext());
     }
 
     @Override
     protected void onDestroy()
     {
         super.onDestroy();
-        PlayerConnection.unregisterCallback(connectionCallbacks);
         musicCallbacksRegistered = false;
     }
 
@@ -510,5 +507,22 @@ public class MainActivity extends AppCompatActivity
 
         if(play) currentPlayAction.setImageResource(R.drawable.ic_action_pause);
         else currentPlayAction.setImageResource(R.drawable.ic_play_action);
+    }
+
+    /* actions */
+    private void setPlaylist(ArrayList<Song> songs, int currentPos)
+    {
+        if(musicPlayer == null) PlayerConnection.start(songs, currentPos);
+        else musicPlayer.setCurrentPlaylist(songs, currentPos);
+    }
+    private void playNext(ArrayList<Song> songs)
+    {
+        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+        else musicPlayer.addNextToPlaylist(songs);
+    }
+    private void addToPlaylist(ArrayList<Song> songs)
+    {
+        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+        else musicPlayer.addToPlaylist(songs);
     }
 }

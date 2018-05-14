@@ -88,6 +88,12 @@ public class LibraryObjectAdapter extends BaseAdapter
     {this.moreImageRessource = ressource;}
     public void repaintSongBackground() {repaintSongBackground = true;}
     public void setSelectedPosition(int selectedPosition) {this.selectedPosition  = selectedPosition;}
+    public void resetList(List objects)
+    {
+        this.original = objects;
+        this.libraryObjects = new ArrayList<>(original);
+        this.notifyDataSetChanged();
+    }
 
     @Override
     public int getCount() {return libraryObjects.size();}

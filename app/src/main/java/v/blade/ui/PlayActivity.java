@@ -33,6 +33,7 @@ import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
 import v.blade.library.Song;
 import v.blade.library.UserLibrary;
+import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 
 public class PlayActivity extends AppCompatActivity
 {
+    private PlayerService musicPlayer;
     boolean isDisplayingAlbumArt = true;
     /* activity components */
     private ImageView albumView;
@@ -63,7 +65,7 @@ public class PlayActivity extends AppCompatActivity
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id)
         {
-            PlayerConnection.musicPlayer.setCurrentPosition(position);
+            musicPlayer.setCurrentPosition(position);
         }
     };
     private DragSortController playlistDragController;
@@ -72,16 +74,16 @@ public class PlayActivity extends AppCompatActivity
         @Override
         public void drop(int from, int to)
         {
-            ArrayList<Song> playList = PlayerConnection.musicPlayer.getCurrentPlaylist();
+            ArrayList<Song> playList = musicPlayer.getCurrentPlaylist();
 
             Song toSwap = playList.get(from);
             playList.remove(from);
             playList.add(to, toSwap);
 
-            int selectedPos = PlayerConnection.musicPlayer.getCurrentPosition();
+            int selectedPos = musicPlayer.getCurrentPosition();
             if(selectedPos == from)
             {
-                PlayerConnection.musicPlayer.updatePosition(to);
+                musicPlayer.updatePosition(to);
                 playlistView.setItemChecked(to, true);
                 playlistAdapter.setSelectedPosition(to);
             }
@@ -91,9 +93,9 @@ public class PlayActivity extends AppCompatActivity
                 if(to >= selectedPos && from < selectedPos) modifier = -1;
                 else if(to <= selectedPos && from > selectedPos) modifier = +1;
 
-                PlayerConnection.musicPlayer.updatePosition(PlayerConnection.musicPlayer.getCurrentPosition()+modifier);
-                playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);
-                playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
+                musicPlayer.updatePosition(musicPlayer.getCurrentPosition()+modifier);
+                playlistView.setItemChecked(musicPlayer.getCurrentPosition(), true);
+                playlistAdapter.setSelectedPosition(musicPlayer.getCurrentPosition());
             }
 
             UserLibrary.currentCallback.onLibraryChange();
@@ -161,12 +163,19 @@ public class PlayActivity extends AppCompatActivity
         playlistDragController.setDragHandleId(R.id.element_more);
         playlistView.setDropListener(playlistDropListener);
 
-        /*
-        * We do not call PlayerConnection.init because we assume connection was already established
-        * (as we are already playing)
-        */
+        if(!PlayerConnection.init(new PlayerConnection.Callback()
+        {
+            @Override
+            public void onConnected()
+            {
+                musicPlayer = PlayerConnection.getService();
+                refreshState(musicPlayer.getPlayerState());
+            }
+
+            @Override
+            public void onDisconnected() {finish();}
+        }, getApplicationContext())) finish();
         PlayerConnection.musicController.registerCallback(musicCallbacks);
-        refreshState(PlayerConnection.musicPlayer.getPlayerState());
 
         //setup handler that will keep seekBar and playTime in sync
         final Handler handler = new Handler();
@@ -175,7 +184,7 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void run()
             {
-                int pos = PlayerConnection.musicPlayer.resolveCurrentSongPosition();
+                int pos = musicPlayer.resolveCurrentSongPosition();
                 int posMns = (pos / 60000) % 60000;
                 int posScs = pos % 60000 / 1000;
                 String songPos = String.format("%02d:%02d",  posMns, posScs);
@@ -192,7 +201,7 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
             {
-                if(fromUser) PlayerConnection.musicPlayer.seekTo(progress);
+                if(fromUser) musicPlayer.seekTo(progress);
             }
 
             @Override
@@ -226,34 +235,35 @@ public class PlayActivity extends AppCompatActivity
 
     private void refreshState(PlaybackStateCompat state)
     {
-        Song currentSong = PlayerConnection.musicPlayer.getCurrentSong();
+        Song currentSong = musicPlayer.getCurrentSong();
 
         //set album view / playlistView
-        if(currentSong.getAlbum().hasAlbumArt()) albumView.setImageBitmap(PlayerConnection.musicPlayer.getCurrentArt());
+        if(currentSong.getAlbum().hasAlbumArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
         else albumView.setImageResource(R.drawable.ic_albums);
 
         if(playlistAdapter == null)
         {
-            playlistAdapter = new LibraryObjectAdapter(this, PlayerConnection.musicPlayer.getCurrentPlaylist());
+            playlistAdapter = new LibraryObjectAdapter(this, musicPlayer.getCurrentPlaylist());
             playlistAdapter.setMoreImage(R.drawable.ic_action_move_black);
             playlistAdapter.repaintSongBackground();
             playlistView.setAdapter(playlistAdapter);
-            playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
+            playlistAdapter.setSelectedPosition(musicPlayer.getCurrentPosition());
         }
         else
         {
-            playlistAdapter.setSelectedPosition(PlayerConnection.musicPlayer.getCurrentPosition());
+            playlistAdapter.resetList(musicPlayer.getCurrentPlaylist());
+            playlistAdapter.setSelectedPosition(musicPlayer.getCurrentPosition());
             playlistAdapter.notifyDataSetChanged();
         }
         //playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
-        playlistView.setItemChecked(PlayerConnection.musicPlayer.getCurrentPosition(), true);
+        playlistView.setItemChecked(musicPlayer.getCurrentPosition(), true);
 
         //set song info
         songTitle.setText(currentSong.getTitle());
         songArtistAlbum.setText(currentSong.getArtist().getName() + " - " + currentSong.getAlbum().getName());
-        playlistPosition.setText((PlayerConnection.musicPlayer.getCurrentPosition()+1) + "/" + PlayerConnection.musicPlayer.getCurrentPlaylist().size());
+        playlistPosition.setText((musicPlayer.getCurrentPosition()+1) + "/" + musicPlayer.getCurrentPlaylist().size());
 
-        int dur = PlayerConnection.musicPlayer.resolveCurrentSongDuration();
+        int dur = musicPlayer.resolveCurrentSongDuration();
         int durMns = (dur / 60000) % 60000;
         int durScs = dur % 60000 / 1000;
         String songDur = String.format("%02d:%02d",  durMns, durScs);
@@ -261,15 +271,15 @@ public class PlayActivity extends AppCompatActivity
         seekBar.setMax(dur);
 
         //set play button icon
-        if(PlayerConnection.musicPlayer.isPlaying()) playAction.setImageResource(R.drawable.ic_action_pause);
+        if(musicPlayer.isPlaying()) playAction.setImageResource(R.drawable.ic_action_pause);
         else playAction.setImageResource(R.drawable.ic_play_action);
 
         //set shuffle button icon
-        if(PlayerConnection.musicPlayer.isShuffleEnabled()) shuffleAction.setImageResource(R.drawable.ic_action_shuffle_enabled);
+        if(musicPlayer.isShuffleEnabled()) shuffleAction.setImageResource(R.drawable.ic_action_shuffle_enabled);
         else shuffleAction.setImageResource(R.drawable.ic_action_shuffle_white);
 
         //set repeat button icon
-        int repeatMode = PlayerConnection.musicPlayer.getRepeatMode();
+        int repeatMode = musicPlayer.getRepeatMode();
         if(repeatMode == PlaybackStateCompat.REPEAT_MODE_NONE) repeatAction.setImageResource(R.drawable.ic_action_repeat_white);
         else if(repeatMode == PlaybackStateCompat.REPEAT_MODE_ONE) repeatAction.setImageResource(R.drawable.ic_action_repeat_one);
         else repeatAction.setImageResource(R.drawable.ic_action_repeat_enabled);
@@ -278,7 +288,7 @@ public class PlayActivity extends AppCompatActivity
     /* button actions */
     public void onPlayClicked(View v)
     {
-        if(PlayerConnection.musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
+        if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
         else PlayerConnection.musicController.getTransportControls().play();
     }
     public void onPrevClicked(View v)
@@ -291,7 +301,7 @@ public class PlayActivity extends AppCompatActivity
     }
     public void onRepeatClicked(View v)
     {
-        int currentRepeatMode = PlayerConnection.musicPlayer.getRepeatMode();
+        int currentRepeatMode = musicPlayer.getRepeatMode();
 
         if(currentRepeatMode == PlaybackStateCompat.REPEAT_MODE_NONE) currentRepeatMode = PlaybackStateCompat.REPEAT_MODE_ONE;
         else if(currentRepeatMode == PlaybackStateCompat.REPEAT_MODE_ONE) currentRepeatMode = PlaybackStateCompat.REPEAT_MODE_ALL;
@@ -306,7 +316,7 @@ public class PlayActivity extends AppCompatActivity
     }
     public void onShuffleClicked(View v)
     {
-        boolean shuffle = !PlayerConnection.musicPlayer.isShuffleEnabled();
+        boolean shuffle = !musicPlayer.isShuffleEnabled();
         PlayerConnection.musicController.getTransportControls().setShuffleMode(0);
 
         /* manually refresh UI */
@@ -325,7 +335,7 @@ public class PlayActivity extends AppCompatActivity
         else
         {
             albumView.setVisibility(View.GONE);
-            playlistView.setSelection(PlayerConnection.musicPlayer.getCurrentPosition());
+            playlistView.setSelection(musicPlayer.getCurrentPosition());
             playlistView.setVisibility(View.VISIBLE);
         }
     }
