@@ -147,6 +147,10 @@ public class PlayerMediaPlayer
         if(UserLibrary.deezerApi != null && UserLibrary.deezerApi.isSessionValid())
             initDeezerMediaPlayer();
     }
+    public void destroy()
+    {
+        context.unregisterReceiver(mAudioNoisyReceiver);
+    }
     public void initSpotifyMediaPlayer()
     {
         /* init spotify media player */
@@ -332,7 +336,6 @@ public class PlayerMediaPlayer
             {
                 if(song.getFormat().equals("audio/x-ms-wma"))
                 {
-                    System.out.println("FORMAT");
                     Toast.makeText(context, context.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
                     return;
                 }

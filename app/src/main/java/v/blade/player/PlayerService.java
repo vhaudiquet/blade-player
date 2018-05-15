@@ -101,11 +101,16 @@ public class PlayerService extends Service
         @Override
         public void onPlay()
         {
-            if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_DO_NOTHING
-                    || mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_STOPPED)
+            if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_DO_NOTHING)
+            {
+                if(currentPosition >= currentPlaylist.size()) currentPosition = 0;
+                else currentPosition++;
+                mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
+            }
+            else if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_STOPPED)
             {
                 currentPosition = 0;
-                mPlayer.playSong(currentPlaylist.get(currentPosition));
+                mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
             }
             else mPlayer.play();
         }
@@ -210,7 +215,7 @@ public class PlayerService extends Service
     @Override
     public void onDestroy()
     {
-        super.onDestroy();
+        mPlayer.destroy();
 
         stopForeground(true);
         stopSelf();
