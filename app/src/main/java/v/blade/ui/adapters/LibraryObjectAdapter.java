@@ -62,7 +62,7 @@ public class LibraryObjectAdapter extends BaseAdapter
         this.context = context;
         this.inflater = LayoutInflater.from(context);
 
-        UserLibrary.currentCallback = new UserLibrary.UserLibraryCallback()
+        LibraryService.currentCallback = new LibraryService.UserLibraryCallback()
         {
             @Override
             public void onLibraryChange()

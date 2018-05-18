@@ -25,6 +25,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -293,7 +294,7 @@ public class MainActivity extends AppCompatActivity
         else if(fromAlbum)
         {
             if(fromArtists) setContentToAlbums(artistFrom.getAlbums(), artistFrom.getName());
-            else setContentToAlbums(UserLibrary.getAlbums(), getResources().getString(R.string.albums));
+            else setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
             fromAlbum = false;
         }
         else if(fromArtists)
@@ -332,7 +333,7 @@ public class MainActivity extends AppCompatActivity
         if(Intent.ACTION_SEARCH.equals(intent.getAction()))
         {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            setContentToSearch(UserLibrary.query(query));
+            setContentToSearch(LibraryService.query(query));
         }
     }
 
@@ -350,6 +351,23 @@ public class MainActivity extends AppCompatActivity
         {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
+            return true;
+        }
+        else if(id == R.id.action_sync)
+        {
+            new Thread()
+            {
+                @Override
+                public void run()
+                {
+                    Looper.prepare();
+                    LibraryService.registerLocalSongs();
+                    LibraryService.registerSpotifySongs();
+                    LibraryService.registerDeezerSongs();
+                    LibraryService.registerSongBetterSources();
+                    LibraryService.sortLibrary();
+                }
+            }.start();
             return true;
         }
 
@@ -377,13 +395,13 @@ public class MainActivity extends AppCompatActivity
             case R.id.nav_albums:
                 fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with album view
-                setContentToAlbums(UserLibrary.getAlbums(), getResources().getString(R.string.albums));
+                setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
                 fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with song list
-                setContentToSongs(UserLibrary.getSongs(), getResources().getString(R.string.songs));
+                setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
@@ -429,16 +447,21 @@ public class MainActivity extends AppCompatActivity
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                 }
             }
-            else {UserLibrary.configureLibrary(this.getApplicationContext()); setContentToArtists();}
+            else startLibService();
         }
-        else {UserLibrary.configureLibrary(this.getApplicationContext()); setContentToArtists();}
+        else startLibService();
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
     {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == EXT_PERM_REQUEST_CODE)
-        {UserLibrary.configureLibrary(this.getApplicationContext()); setContentToArtists();}
+        if(requestCode == EXT_PERM_REQUEST_CODE) startLibService();
+    }
+    public void startLibService()
+    {
+        Intent srv = new Intent(this, LibraryService.class);
+        startService(srv);
+        setContentToArtists();
     }
 
     /* UI Change methods (Artists/Albums/Songs/Playlists...) */
@@ -447,7 +470,7 @@ public class MainActivity extends AppCompatActivity
         this.setTitle(getResources().getString(R.string.artists));
         currentContext = CONTEXT_ARTISTS;
 
-        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, UserLibrary.getArtists());
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, LibraryService.getArtists());
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
@@ -471,7 +494,7 @@ public class MainActivity extends AppCompatActivity
     {
         this.setTitle(getResources().getString(R.string.playlists));
         currentContext = CONTEXT_PLAYLISTS;
-        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, UserLibrary.getPlaylists());
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, LibraryService.getPlaylists());
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }

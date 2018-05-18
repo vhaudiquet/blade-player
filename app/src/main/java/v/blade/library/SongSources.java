@@ -71,4 +71,16 @@ public class SongSources
     {
         return sources[priority];
     }
+    public SongSource getSpotify()
+    {
+        for(SongSource s : sources)
+            if(s != null && s.getSource() == SOURCE_SPOTIFY) return s;
+        return null;
+    }
+    public SongSource getDeezer()
+    {
+        for(SongSource s : sources)
+            if(s != null && s.getSource() == SOURCE_DEEZER) return s;
+        return null;
+    }
 }

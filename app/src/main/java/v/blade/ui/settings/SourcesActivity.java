@@ -19,8 +19,8 @@ import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import v.blade.R;
+import v.blade.library.LibraryService;
 import v.blade.library.SongSources;
-import v.blade.library.UserLibrary;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
@@ -86,7 +86,7 @@ public class SourcesActivity extends AppCompatActivity
                 public void run()
                 {
                     Looper.prepare();
-                    UserLibrary.registerSongBetterSources();
+                    LibraryService.registerSongBetterSources();
                 }
             }.start();
         }
@@ -107,8 +107,8 @@ public class SourcesActivity extends AppCompatActivity
             if(source == SongSources.SOURCE_SPOTIFY)
             {
                 AuthenticationRequest.Builder builder =
-                        new AuthenticationRequest.Builder(UserLibrary.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
-                                UserLibrary.SPOTIFY_REDIRECT_URI).setShowDialog(true);
+                        new AuthenticationRequest.Builder(LibraryService.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
+                                LibraryService.SPOTIFY_REDIRECT_URI).setShowDialog(true);
                 builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
                         "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
                 AuthenticationRequest request = builder.build();
@@ -119,12 +119,12 @@ public class SourcesActivity extends AppCompatActivity
                 String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
                         Permissions.EMAIL, Permissions.OFFLINE_ACCESS};
 
-                UserLibrary.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener()
+                LibraryService.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener()
                 {
                     @Override
                     public void onComplete(Bundle bundle)
                     {
-                        UserLibrary.DEEZER_USER_SESSION.save(UserLibrary.deezerApi, SourcesActivity.this.getApplicationContext());
+                        LibraryService.DEEZER_USER_SESSION.save(LibraryService.deezerApi, SourcesActivity.this.getApplicationContext());
                         SongSources.SOURCE_DEEZER.setAvailable(true);
                         SongSources.SOURCE_DEEZER.setPriority(adapter.sources.get(0).getPriority()+1);
                         SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
@@ -139,9 +139,9 @@ public class SourcesActivity extends AppCompatActivity
                             public void run()
                             {
                                 Looper.prepare();
-                                UserLibrary.registerDeezerSongs();
-                                UserLibrary.registerSongBetterSources();
-                                UserLibrary.sortLibrary();
+                                LibraryService.registerDeezerSongs();
+                                LibraryService.registerSongBetterSources();
+                                LibraryService.sortLibrary();
                             }
                         }.start();
                     }
@@ -206,8 +206,8 @@ public class SourcesActivity extends AppCompatActivity
                             BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
                             writer.write("grant_type=authorization_code&");
                             writer.write("code=" + code + "&");
-                            writer.write("redirect_uri=" + UserLibrary.SPOTIFY_REDIRECT_URI + "&");
-                            writer.write("client_id=" + UserLibrary.SPOTIFY_CLIENT_ID + "&");
+                            writer.write("redirect_uri=" + LibraryService.SPOTIFY_REDIRECT_URI + "&");
+                            writer.write("client_id=" + LibraryService.SPOTIFY_CLIENT_ID + "&");
                             writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
                             writer.flush();
                             writer.close();
@@ -229,20 +229,20 @@ public class SourcesActivity extends AppCompatActivity
                                 {
                                     param = param.replaceFirst("\"access_token\":\"", "");
                                     param = param.replaceFirst("\"", "");
-                                    UserLibrary.SPOTIFY_USER_TOKEN = param;
+                                    LibraryService.SPOTIFY_USER_TOKEN = param;
                                     SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                                     SharedPreferences.Editor editor = pref.edit();
-                                    editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
+                                    editor.putString("spotify_token", LibraryService.SPOTIFY_USER_TOKEN);
                                     editor.commit();
                                 }
                                 else if(param.startsWith("\"refresh_token\":\""))
                                 {
                                     param = param.replaceFirst("\"refresh_token\":\"", "");
                                     param = param.replaceFirst("\"", "");
-                                    UserLibrary.SPOTIFY_REFRESH_TOKEN = param;
+                                    LibraryService.SPOTIFY_REFRESH_TOKEN = param;
                                     SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                                     SharedPreferences.Editor editor = pref.edit();
-                                    editor.putString("spotify_refresh_token", UserLibrary.SPOTIFY_REFRESH_TOKEN);
+                                    editor.putString("spotify_refresh_token", LibraryService.SPOTIFY_REFRESH_TOKEN);
                                     editor.commit();
                                 }
                             }
@@ -254,10 +254,10 @@ public class SourcesActivity extends AppCompatActivity
                             editor.putInt("spotify_prior", SongSources.SOURCE_SPOTIFY.getPriority());
                             editor.apply();
                             adapter.notifyDataSetChanged();
-                            UserLibrary.spotifyApi.setAccessToken(UserLibrary.SPOTIFY_USER_TOKEN);
-                            UserLibrary.registerSpotifySongs();
-                            UserLibrary.registerSongBetterSources();
-                            UserLibrary.sortLibrary();
+                            LibraryService.spotifyApi.setAccessToken(LibraryService.SPOTIFY_USER_TOKEN);
+                            LibraryService.registerSpotifySongs();
+                            LibraryService.registerSongBetterSources();
+                            LibraryService.sortLibrary();
                         }
                         catch(Exception e)
                         {

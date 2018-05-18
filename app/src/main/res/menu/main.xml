@@ -8,6 +8,11 @@
             app:showAsAction="ifRoom"
             android:title="@string/action_search"
             app:actionViewClass="android.widget.SearchView"/>
+    <item android:id="@+id/action_sync"
+          android:menuCategory="secondary"
+          app:showAsAction="ifRoom"
+          android:icon="@drawable/ic_sync"
+          android:title="Synchronisation"/>
     <item android:id="@+id/action_settings"
           android:title="@string/action_settings"
           android:orderInCategory="100"

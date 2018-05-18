@@ -31,8 +31,8 @@ import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
+import v.blade.library.LibraryService;
 import v.blade.library.Song;
-import v.blade.library.UserLibrary;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
@@ -98,7 +98,7 @@ public class PlayActivity extends AppCompatActivity
                 playlistAdapter.setSelectedPosition(musicPlayer.getCurrentPosition());
             }
 
-            UserLibrary.currentCallback.onLibraryChange();
+            LibraryService.currentCallback.onLibraryChange();
         }
     };
 

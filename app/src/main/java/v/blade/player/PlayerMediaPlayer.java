@@ -34,9 +34,9 @@ import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
 import com.spotify.sdk.android.player.*;
 import com.spotify.sdk.android.player.Error;
 import v.blade.R;
+import v.blade.library.LibraryService;
 import v.blade.library.Song;
 import v.blade.library.SongSources;
-import v.blade.library.UserLibrary;
 
 public class PlayerMediaPlayer
 {
@@ -142,9 +142,9 @@ public class PlayerMediaPlayer
 
         this.listener = listener;
 
-        if(UserLibrary.SPOTIFY_USER_TOKEN != null)
+        if(LibraryService.SPOTIFY_USER_TOKEN != null)
             initSpotifyMediaPlayer();
-        if(UserLibrary.deezerApi != null && UserLibrary.deezerApi.isSessionValid())
+        if(LibraryService.deezerApi != null && LibraryService.deezerApi.isSessionValid())
             initDeezerMediaPlayer();
     }
     public void destroy()
@@ -154,7 +154,7 @@ public class PlayerMediaPlayer
     public void initSpotifyMediaPlayer()
     {
         /* init spotify media player */
-        Config playerConfig = new Config(context, UserLibrary.SPOTIFY_USER_TOKEN, UserLibrary.SPOTIFY_CLIENT_ID);
+        Config playerConfig = new Config(context, LibraryService.SPOTIFY_USER_TOKEN, LibraryService.SPOTIFY_CLIENT_ID);
         Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
         {
             @Override
@@ -215,7 +215,7 @@ public class PlayerMediaPlayer
         /* init deezer media player */
         try
         {
-            deezerPlayer = new TrackPlayer((Application) context.getApplicationContext(), UserLibrary.deezerApi, new WifiAndMobileNetworkStateChecker());
+            deezerPlayer = new TrackPlayer((Application) context.getApplicationContext(), LibraryService.deezerApi, new WifiAndMobileNetworkStateChecker());
             deezerPlayer.addOnPlayerStateChangeListener(new OnPlayerStateChangeListener()
             {
                 @Override

@@ -21,10 +21,13 @@ public class LibraryObject
 {
     protected String name;
     protected SongSources sources;
+    protected boolean handled;
 
     public LibraryObject() {this.sources = new SongSources();}
 
     public String getName() {return this.name;}
     @Override public String toString() {return this.name;}
     public SongSources getSources() {return sources;}
+    public boolean isHandled() {return handled;}
+    public void setHandled(boolean handled) {this.handled = handled;}
 }

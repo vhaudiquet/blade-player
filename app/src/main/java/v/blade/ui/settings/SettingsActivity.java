@@ -26,7 +26,7 @@ import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.widget.Toolbar;
 import v.blade.R;
-import v.blade.library.UserLibrary;
+import v.blade.library.LibraryService;
 
 public class SettingsActivity extends AppCompatActivity
 {
@@ -70,12 +70,12 @@ public class SettingsActivity extends AppCompatActivity
             else if(preference.getKey().equals("save_playlists_to_library"))
             {
                 SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-                UserLibrary.SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
+                LibraryService.SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
             }
             else if(preference.getKey().equals("register_better_sources"))
             {
                 SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-                UserLibrary.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
+                LibraryService.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
             }
 
             return super.onPreferenceTreeClick(preference);

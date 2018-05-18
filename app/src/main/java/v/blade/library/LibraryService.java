@@ -1,29 +1,14 @@
-/*
- *    Blade - Android music player
- *    Copyright (C) 2018 Valentin HAUDIQUET
- *
- *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
- *
- *    This program is distributed in the hope that it will be useful,
- *    but WITHOUT ANY WARRANTY; without even the implied warranty of
- *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
- *
- *    You should have received a copy of the GNU General Public License
- *    along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 package v.blade.library;
 
+import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Looper;
+import android.os.IBinder;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
@@ -46,10 +31,13 @@ import java.net.URLConnection;
 import java.util.*;
 
 /*
-* This class parses and contains the current user library
-*/
-public class UserLibrary
+* LibraryService is the service that handles library caching/restore and synchronyzation
+* It is a background service, but during operations such as restoring/synchronization it appears as a foreground service
+ */
+public class LibraryService extends Service
 {
+    private static final String CACHE_SEPARATOR = "##";
+
     /* user preferences */
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
@@ -60,8 +48,10 @@ public class UserLibrary
     private static List<Song> songs = Collections.synchronizedList(new ArrayList<Song>());
     private static List<Playlist> playlists = Collections.synchronizedList(new ArrayList<Playlist>());
 
-    private static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
+    //song handles, that are not part of library but playable (from web sources)
+    private static List<Song> handles = Collections.synchronizedList(new ArrayList<Song>());
 
+    private static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
     /* spotify specific */
     public static final String SPOTIFY_CLIENT_ID = "2f95bc7168584e7aa67697418a684bae";
     public static final String SPOTIFY_REDIRECT_URI = "http://valou3433.fr/";
@@ -78,164 +68,65 @@ public class UserLibrary
     public interface UserLibraryCallback{void onLibraryChange();}
     public static UserLibraryCallback currentCallback;
 
-    private static Context appContext;
     private static File artCacheDir;
+    private static File spotifyCacheFile;
+    private static File spotifyPlaylistsCache;
+    private static File deezerCacheFile;
+    private static File deezerPlaylistsCache;
 
     public static List<Artist> getArtists() {return artists;}
     public static List<Album> getAlbums() {return albums;}
     public static List<Song> getSongs() {return songs;}
     public static List<Playlist> getPlaylists() {return playlists;}
 
+    //TEMP
+    private static Context serviceContext;
+
+    @Override
+    public void onCreate()
+    {
+        System.out.println("[BLADE] LibraryService onCreate");
+        super.onCreate();
+
+        serviceContext = this;
+        configureLibrary();
+
+        Thread loader = new Thread()
+        {
+            @Override
+            public void run()
+            {
+                // get local library from ContentProvider
+                registerLocalSongs();
+                System.out.println("[BLADE-DEBUG] Local songs registered.");
+
+                // get library from disk (if cached)
+                registerCachedSongs();
+                System.out.println("[BLADE-DEBUG] Cached songs registered.");
+
+                sortLibrary();
+            }
+        };
+        loader.setName("LIBRARY_LOADER");
+        loader.start();
+    }
+    @Override
+    public IBinder onBind(Intent intent)
+    {
+        return null;
+    }
+
     /*
-    * Start the library config
+    * Register local library with android ContentProvider
+    * Called at every service start
      */
-    public static void configureLibrary(final Context appContext)
+    public static void registerLocalSongs()
     {
-        /* init the lists (to make sure they are empty) */
-        if(songs.size() > 0) return;
+        //empty lists
+        artists.clear(); albums.clear(); songs.clear(); playlists.clear(); songsByName.clear();
 
-        //init cache dir
-        UserLibrary.appContext = appContext;
-        artCacheDir = appContext.getCacheDir();
-
-        //get preferences
-        SharedPreferences accountsPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-        SharedPreferences generalPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-
-        SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
-        REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
-        SongSources.SOURCE_LOCAL_LIB.setPriority(999);
-        SongSources.SOURCE_SPOTIFY.setPriority(accountsPrefs.getInt("spotify_prior", 0));
-        SongSources.SOURCE_DEEZER.setPriority(accountsPrefs.getInt("deezer_prior", 0));
-
-        //setup spotify api
-        if(SPOTIFY_USER_TOKEN == null)
-        {
-            SPOTIFY_USER_TOKEN = accountsPrefs.getString("spotify_token", null);
-            SPOTIFY_REFRESH_TOKEN = accountsPrefs.getString("spotify_refresh_token", null);
-        }
-        if(SPOTIFY_USER_TOKEN != null)
-        {
-            spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
-            SongSources.SOURCE_SPOTIFY.setAvailable(true);
-        }
-
-        //setup deezer api
-        deezerApi = new DeezerConnect(appContext, DEEZER_CLIENT_ID);
-        if(DEEZER_USER_SESSION.restore(deezerApi, appContext))
-        {
-            SongSources.SOURCE_DEEZER.setAvailable(true);
-        }
-
-        //load songs from all sources (async)
-        Thread loaderThread = new Thread()
-        {
-            @Override
-            public void run()
-            {
-                Looper.prepare();
-
-                //load local library
-                registerLocalSongs(appContext);
-                System.out.println("[BLADE-DEBUG] Local song registered.");
-
-                sortLibrary();
-            }
-        };
-        loaderThread.setName("localLoaderThread");
-        loaderThread.setDaemon(true);
-        loaderThread.start();
-
-        Thread webLoaderThread = new Thread()
-        {
-            @Override
-            public void run()
-            {
-                Looper.prepare();
-
-                //load source priority 1 library
-                registerDeezerSongs();
-                System.out.println("[BLADE-DEBUG] Deezer songs registered.");
-
-                //load source priority 2 library
-                registerSpotifySongs();
-                System.out.println("[BLADE-DEBUG] Spotify songs registered.");
-
-                sortLibrary();
-
-                registerSongBetterSources();
-            }
-        };
-        webLoaderThread.setName("webLoaderThread");
-        webLoaderThread.setDaemon(true);
-        webLoaderThread.start();
-    }
-
-    /*
-    * Registers a song in user library
-    */
-    private static Song registerSong(String artist, long artistId, String album, long albumId,
-                                     int albumTrack, long duration, String name, SongSources.SongSource source)
-    {
-        ArrayList<Song> snames = songsByName.get(name.toLowerCase());
-        if(snames != null)
-        {
-            //check if the song is already registered
-            for(Song s : snames)
-            {
-                if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
-                {
-                    System.out.println("Found song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName());
-                    s.getSources().addSource(source);
-                    return s;
-                }
-            }
-        }
-
-        Artist songArtist = null;
-        synchronized (artists)
-        {for (Artist art : artists) if (art.getName().equalsIgnoreCase(artist)) songArtist = art;}
-        if(songArtist == null)
-        {
-            songArtist = new Artist(artist);
-            artists.add(songArtist);
-        }
-        songArtist.getSources().addSource(source);
-
-        Album songAlbum = null;
-        synchronized (songArtist.getAlbums())
-        {
-            for(int i = 0;i<songArtist.getAlbums().size();i++)
-                if(songArtist.getAlbums().get(i).getName().equalsIgnoreCase(album)) songAlbum = songArtist.getAlbums().get(i);
-        }
-
-        if(songAlbum == null)
-        {
-            songAlbum = new Album(album, songArtist);
-            albums.add(songAlbum);
-            songArtist.addAlbum(songAlbum);
-        }
-        songAlbum.getSources().addSource(source);
-
-        Song song = new Song(name, songArtist, songAlbum, albumTrack, duration);
-        song.getSources().addSource(source);
-        songAlbum.addSong(song);
-        songs.add(song);
-
-        if(currentCallback != null) currentCallback.onLibraryChange();
-
-        //register song by name
-        if(snames != null) snames.add(song);
-        else {ArrayList<Song> sn = new ArrayList<>(); sn.add(song); songsByName.put(name.toLowerCase(), sn);}
-
-        //System.out.println("Registered : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName());
-        return song;
-    }
-
-    private static void registerLocalSongs(Context appContext)
-    {
         /* get content resolver and init temp sorted arrays */
-        final ContentResolver musicResolver = appContext.getContentResolver();
+        final ContentResolver musicResolver = serviceContext.getContentResolver();
         LongSparseArray<Album> idsorted_albums = new LongSparseArray<>();
         LongSparseArray<Song> idsorted_songs = new LongSparseArray<>();
 
@@ -330,9 +221,281 @@ public class UserLibrary
             albumCursor.close();
         }
     }
+
+    /*
+    * Register web libraries that were previously cached
+    * Called at every service start
+     */
+    public void registerCachedSongs()
+    {
+        try
+        {
+            if(spotifyCacheFile.exists())
+            {
+                //spotify library
+                BufferedReader spr = new BufferedReader(new FileReader(spotifyCacheFile));
+                while(spr.ready())
+                {
+                    String[] tp = spr.readLine().split(CACHE_SEPARATOR);
+                    Song song = registerSong(tp[2], 0, tp[1], 0,
+                    Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SongSources.SOURCE_SPOTIFY));
+                    song.setFormat(tp[3]);
+
+                    if(!song.getAlbum().hasAlbumArt())
+                    {
+                        //the image is supposed to be cached locally, so no need to provide URL
+                        loadAlbumArt(song.getAlbum(), "", false);
+                    }
+                }
+                spr.close();
+
+                //spotify playlists
+                for(File f : spotifyPlaylistsCache.listFiles())
+                {
+                    ArrayList<Song> thisList = new ArrayList<>();
+                    BufferedReader sppr = new BufferedReader(new FileReader(f));
+                    while(sppr.ready())
+                    {
+                        String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
+                        Song song = SAVE_PLAYLISTS_TO_LIBRARY ?
+                                registerSong(tp[2], 0, tp[1], 0, Integer.parseInt(tp[4]),
+                                        Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SongSources.SOURCE_SPOTIFY))
+                                : getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
+                                new SongSources.SongSource(tp[6], SongSources.SOURCE_SPOTIFY), Integer.parseInt(tp[4]));
+                        song.setFormat(tp[3]);
+
+                        thisList.add(song);
+                        if(!song.getAlbum().hasAlbumArt())
+                        {
+                            //the image is supposed to be cached locally, so no need to provide URL
+                            loadAlbumArt(song.getAlbum(), "", false);
+                        }
+                    }
+                    sppr.close();
+
+                    Playlist p = new Playlist(f.getName(), thisList);
+                    p.getSources().addSource(new SongSources.SongSource(0, SongSources.SOURCE_SPOTIFY));
+                    playlists.add(p);
+                }
+            }
+
+            if(deezerCacheFile.exists())
+            {
+                //deezer library
+                BufferedReader spr = new BufferedReader(new FileReader(deezerCacheFile));
+                while(spr.ready())
+                {
+                    String[] tp = spr.readLine().split(CACHE_SEPARATOR);
+                    Song song = registerSong(tp[2], 0, tp[1], 0,
+                            Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SongSources.SOURCE_DEEZER));
+                    song.setFormat(tp[3]);
+
+                    if(!song.getAlbum().hasAlbumArt())
+                    {
+                        //the image is supposed to be cached locally, so no need to provide URL
+                        loadAlbumArt(song.getAlbum(), "", false);
+                    }
+                }
+                spr.close();
+
+                //deezer playlists
+                for(File f : deezerPlaylistsCache.listFiles())
+                {
+                    ArrayList<Song> thisList = new ArrayList<>();
+                    BufferedReader sppr = new BufferedReader(new FileReader(f));
+                    while(sppr.ready())
+                    {
+                        String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
+
+                        Song song = SAVE_PLAYLISTS_TO_LIBRARY ?
+                                registerSong(tp[2], 0, tp[1], 0, Integer.parseInt(tp[4]),
+                                        Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SongSources.SOURCE_DEEZER))
+                                : getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
+                                new SongSources.SongSource(Long.parseLong(tp[6]), SongSources.SOURCE_DEEZER), Integer.parseInt(tp[4]));
+                        song.setFormat(tp[3]);
+                        thisList.add(song);
+
+                        if(!song.getAlbum().hasAlbumArt())
+                        {
+                            //the image is supposed to be cached locally, so no need to provide URL
+                            loadAlbumArt(song.getAlbum(), "", false);
+                        }
+                    }
+                    sppr.close();
+
+                    Playlist p = new Playlist(f.getName(), thisList);
+                    p.getSources().addSource(new SongSources.SongSource(0, SongSources.SOURCE_DEEZER));
+                    playlists.add(p);
+                }
+            }
+        }
+        catch(IOException e)
+        {
+            Log.println(Log.ERROR, "[BLADE-CACHE]", "Cache restore : IOException");
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * Configure the APIs, the preferences, ...
+     */
+    private void configureLibrary()
+    {
+        /* init the lists (to make sure they are empty) */
+        if(songs.size() > 0) return;
+
+        //init cache dirs
+        artCacheDir = new File(getCacheDir().getAbsolutePath() + "/albumArts");
+        if(!artCacheDir.exists()) artCacheDir.mkdir();
+        spotifyCacheFile = new File(getCacheDir().getAbsolutePath() + "/spotify.cached");
+        spotifyPlaylistsCache = new File(getCacheDir().getAbsolutePath() + "/spotifyPlaylists/");
+        if(!spotifyPlaylistsCache.exists()) spotifyPlaylistsCache.mkdir();
+        deezerCacheFile = new File(getCacheDir().getAbsolutePath() + "/deezer.cached");
+        deezerPlaylistsCache = new File(getCacheDir().getAbsolutePath() + "/deezerPlaylists/");
+        if(!deezerPlaylistsCache.exists()) deezerPlaylistsCache.mkdir();
+
+        //get preferences
+        SharedPreferences accountsPrefs = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+        SharedPreferences generalPrefs = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+
+        SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
+        REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
+        SongSources.SOURCE_LOCAL_LIB.setPriority(999);
+        SongSources.SOURCE_SPOTIFY.setPriority(accountsPrefs.getInt("spotify_prior", 0));
+        SongSources.SOURCE_DEEZER.setPriority(accountsPrefs.getInt("deezer_prior", 0));
+
+        //setup spotify api
+        if(SPOTIFY_USER_TOKEN == null)
+        {
+            SPOTIFY_USER_TOKEN = accountsPrefs.getString("spotify_token", null);
+            SPOTIFY_REFRESH_TOKEN = accountsPrefs.getString("spotify_refresh_token", null);
+        }
+        if(SPOTIFY_USER_TOKEN != null)
+        {
+            spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+            SongSources.SOURCE_SPOTIFY.setAvailable(true);
+        }
+
+        //setup deezer api
+        deezerApi = new DeezerConnect(this.getApplicationContext(), DEEZER_CLIENT_ID);
+        if(DEEZER_USER_SESSION.restore(deezerApi, this.getApplicationContext()))
+        {
+            SongSources.SOURCE_DEEZER.setAvailable(true);
+        }
+
+        /*
+        Thread webLoaderThread = new Thread()
+        {
+            @Override
+            public void run()
+            {
+                Looper.prepare();
+
+                //load source priority 1 library
+                registerDeezerSongs();
+                System.out.println("[BLADE-DEBUG] Deezer songs registered.");
+
+                //load source priority 2 library
+                registerSpotifySongs();
+                System.out.println("[BLADE-DEBUG] Spotify songs registered.");
+
+                sortLibrary();
+
+                registerSongBetterSources();
+            }
+        };
+        webLoaderThread.setName("webLoaderThread");
+        webLoaderThread.setDaemon(true);
+        webLoaderThread.start();
+        */
+    }
+
+    /*
+     * Registers a song in user library
+     */
+    private static Song registerSong(String artist, long artistId, String album, long albumId,
+                                     int albumTrack, long duration, String name, SongSources.SongSource source)
+    {
+        //check if the song is already registered
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase());
+        if(snames != null)
+        {
+            for(Song s : snames)
+            {
+                if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+                {
+                    System.out.println("[REGISTER] Found song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
+                    s.getSources().addSource(source);
+                    s.getAlbum().getSources().addSource(source);
+                    s.getArtist().getSources().addSource(source);
+                    return s;
+                }
+            }
+        }
+
+        //check if the song is already handled
+        for(Song s : handles)
+        {
+            if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+            {
+                s.getSources().addSource(source);
+                if(s.getAlbum().isHandled()) {albums.add(s.getAlbum()); s.getAlbum().setHandled(false);}
+                if(s.getArtist().isHandled()) {artists.add(s.getArtist()); s.getArtist().setHandled(false);}
+                s.setHandled(false);
+                handles.remove(s);
+                System.out.println("[REGISTER] Found handled song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
+                return s;
+            }
+        }
+
+        Artist songArtist = null;
+        synchronized (artists)
+        {for (Artist art : artists) if (art.getName().equalsIgnoreCase(artist)) songArtist = art;}
+        if(songArtist == null)
+        {
+            songArtist = new Artist(artist);
+            artists.add(songArtist);
+        }
+        songArtist.getSources().addSource(source);
+
+        Album songAlbum = null;
+        synchronized (songArtist.getAlbums())
+        {
+            for(int i = 0;i<songArtist.getAlbums().size();i++)
+                if(songArtist.getAlbums().get(i).getName().equalsIgnoreCase(album)) songAlbum = songArtist.getAlbums().get(i);
+        }
+
+        if(songAlbum == null)
+        {
+            songAlbum = new Album(album, songArtist);
+            albums.add(songAlbum);
+            songArtist.addAlbum(songAlbum);
+        }
+        songAlbum.getSources().addSource(source);
+
+        Song song = new Song(name, songArtist, songAlbum, albumTrack, duration);
+        song.getSources().addSource(source);
+        songAlbum.addSong(song);
+        songs.add(song);
+
+        if(currentCallback != null) currentCallback.onLibraryChange();
+
+        //register song by name
+        if(snames != null) snames.add(song);
+        else {ArrayList<Song> sn = new ArrayList<>(); sn.add(song); songsByName.put(name.toLowerCase(), sn);}
+
+        System.out.println("[REGISTER] Registered : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName() + " - SOURCE " + source.getSource());
+        return song;
+    }
+
     public static void registerSpotifySongs()
     {
         if(SPOTIFY_USER_TOKEN == null) return;
+
+        // list used for spotify cache
+        ArrayList<Song> spotifySongs = new ArrayList<>();
+        ArrayList<Playlist> spotifyPlaylists = new ArrayList<>();
+
         SpotifyService service = spotifyApi.getService();
         try
         {
@@ -351,6 +514,7 @@ public class UserLibrary
                     Track t = track.track;
                     Song s = registerSong(t.artists.get(0).name, 0, t.album.name, 0,
                             t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
+                    spotifySongs.add(s);
                     if(!s.getAlbum().hasAlbumArt())
                     {
                         if(t.album.images != null && t.album.images.size() >= 1)
@@ -361,7 +525,7 @@ public class UserLibrary
                     }
                 }
                 count -= 50;
-                if(count < 0) break;
+                if(count <= 0) break;
                 else
                 {
                     offset += 50;
@@ -387,6 +551,7 @@ public class UserLibrary
                     {
                         Song s = registerSong(t.artists.get(0).name, 0, alb.name, 0,
                                 t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY));
+                        spotifySongs.add(s);
                         if (savedAlbum == null) savedAlbum = s.getAlbum();
                     }
 
@@ -400,7 +565,7 @@ public class UserLibrary
                     }
                 }
                 count-=50;
-                if(count < 0) break;
+                if(count <= 0) break;
                 else
                 {
                     offset += 50;
@@ -409,7 +574,7 @@ public class UserLibrary
                 }
             }
 
-            params.put("limit", 50);
+            params.put("limit", 20);
             params.put("offset", 0);
             Pager<PlaylistSimple> userPlaylists = service.getMyPlaylists();
             offset = 0;
@@ -461,17 +626,54 @@ public class UserLibrary
 
                     Playlist list = new Playlist(playlistBase.name, thisList);
                     list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SongSources.SOURCE_SPOTIFY));
+                    spotifyPlaylists.add(list);
                     playlists.add(list);
                     if(currentCallback != null) currentCallback.onLibraryChange();
                 }
-                count -= 50;
-                if(count < 0) break;
+                count -= 20;
+                if(count <= 0) break;
                 else
                 {
-                    offset += 50;
+                    offset += 20;
                     params.put("offset", offset);
                     userPlaylists = service.getMyPlaylists(params);
                 }
+            }
+
+            // cache all spotifySongs and spotifyPlaylists
+            try
+            {
+                //library songs
+                BufferedWriter bw = new BufferedWriter(new FileWriter((spotifyCacheFile)));
+                for(Song song : spotifySongs)
+                {
+                    bw.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
+                            + CACHE_SEPARATOR);
+                    bw.newLine();
+                }
+                bw.close();
+
+                //playlists
+                for(File f : spotifyPlaylistsCache.listFiles()) f.delete();
+                for(Playlist p : spotifyPlaylists)
+                {
+                    File thisPlaylist = new File(spotifyPlaylistsCache.getAbsolutePath() + "/" + p.getName());
+                    thisPlaylist.createNewFile();
+                    BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
+                    for(Song song : p.getContent())
+                    {
+                        pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                                + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
+                                + CACHE_SEPARATOR);
+                        pwriter.newLine();
+                    }
+                    pwriter.close();
+                }
+            }
+            catch(IOException e)
+            {
+                Log.println(Log.ERROR, "[BLADE-SPOTIFY]", "Error while writing cache !");
             }
         }
         catch (RetrofitError error)
@@ -496,6 +698,9 @@ public class UserLibrary
     {
         if(!deezerApi.isSessionValid()) return;
 
+        ArrayList<Song> deezerSongs = new ArrayList<>();
+        ArrayList<Playlist> deezerPlaylists = new ArrayList<>();
+
         DeezerRequest requestTracks = DeezerRequestFactory.requestCurrentUserTracks();
         DeezerRequest requestAlbums = DeezerRequestFactory.requestCurrentUserAlbums();
         DeezerRequest requestArtists = DeezerRequestFactory.requestCurrentUserArtists();
@@ -508,6 +713,7 @@ public class UserLibrary
             {
                 Song s = registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
                         t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
+                deezerSongs.add(s);
                 if(!s.getAlbum().hasAlbumArt())
                 {
                     loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
@@ -523,6 +729,7 @@ public class UserLibrary
                 {
                     Song s = registerSong(t.getArtist().getName(), 0, album.getTitle(), 0,
                             t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
+                    deezerSongs.add(s);
                     if(alb == null) alb = s.getAlbum();
                 }
 
@@ -544,6 +751,7 @@ public class UserLibrary
                     {
                         Song s = registerSong(t.getArtist().getName(), 0, album.getTitle(), 0,
                                 t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
+                        deezerSongs.add(s);
                         if(alb == null) alb = s.getAlbum();
                     }
 
@@ -554,35 +762,93 @@ public class UserLibrary
                 }
             }
 
-            List<com.deezer.sdk.model.Playlist> playlists = (List<com.deezer.sdk.model.Playlist>) JsonUtils.deserializeJson(deezerApi.requestSync(requestPlaylist));
-            for(com.deezer.sdk.model.Playlist playlist : playlists)
+            String outJSON = deezerApi.requestSync(requestPlaylist);
+            List<com.deezer.sdk.model.Playlist> playlists = (List<com.deezer.sdk.model.Playlist>) JsonUtils.deserializeJson(outJSON);
+
+            //Parse playlists track numbers manually
+            String[] outArr = outJSON.split("\"nb_tracks\":");
+            ArrayList<Integer> trackNumbers = new ArrayList<>();
+            for(int i = 1; i<outArr.length ; i++)
             {
-                List<com.deezer.sdk.model.Track> playlistTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestPlaylistTracks(playlist.getId())));
+                int off = 1;
+                while(outArr[i].charAt(off) != ',') off++;
+                trackNumbers.add(Integer.parseInt(outArr[i].substring(0, off)));
+            }
+
+            for(int i = 0; i<playlists.size(); i++)
+            {
+                com.deezer.sdk.model.Playlist playlist = playlists.get(i);
                 ArrayList<Song> thisList = new ArrayList<>();
 
-                for(com.deezer.sdk.model.Track t : playlistTracks)
+                for(int off = 0; off <= trackNumbers.get(i); off+=25)
                 {
-                    Song s;
-                    if(SAVE_PLAYLISTS_TO_LIBRARY)
-                        s = registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
-                                t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
-                    else
-                        s = getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(),
-                                t.getDuration()*1000, new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER), t.getTrackPosition());
+                    DeezerRequest thispRequest = DeezerRequestFactory.requestPlaylistTracks(playlist.getId());
+                    thispRequest.addParam("limit", "25");
+                    thispRequest.addParam("index", String.valueOf(off));
+                    List<com.deezer.sdk.model.Track> playlistTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(thispRequest));
 
-                    //get albumart for this song
-                    if(!s.getAlbum().hasAlbumArt())
+                    for(com.deezer.sdk.model.Track t : playlistTracks)
                     {
-                        loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
-                    }
+                        Song s;
+                        if(SAVE_PLAYLISTS_TO_LIBRARY)
+                            s = registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
+                                    t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER));
+                        else
+                            s = getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(),
+                                    t.getDuration()*1000, new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER), t.getTrackPosition());
 
-                    thisList.add(s);
+                        //get albumart for this song
+                        if(!s.getAlbum().hasAlbumArt())
+                        {
+                            loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
+                        }
+
+                        thisList.add(s);
+                    }
                 }
 
                 Playlist list = new Playlist(playlist.getTitle(), thisList);
                 list.getSources().addSource(new SongSources.SongSource(playlist.getId(), SongSources.SOURCE_DEEZER));
-                UserLibrary.playlists.add(list);
+                LibraryService.playlists.add(list);
+                deezerPlaylists.add(list);
                 if(currentCallback != null) currentCallback.onLibraryChange();
+            }
+
+            //Cache deezer songs and playlists
+            try
+            {
+                //library songs
+                BufferedWriter bw = new BufferedWriter(new FileWriter((deezerCacheFile)));
+                for(Song song : deezerSongs)
+                {
+                    bw.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
+                            + CACHE_SEPARATOR);
+                    bw.newLine();
+                }
+                bw.close();
+
+                //playlists
+                for(File f : deezerPlaylistsCache.listFiles()) f.delete();
+                for(Playlist p : deezerPlaylists)
+                {
+                    File thisPlaylist = new File(deezerPlaylistsCache.getAbsolutePath() + "/" + p.getName());
+                    System.out.println("Caching in " + thisPlaylist.getAbsolutePath());
+                    thisPlaylist.createNewFile();
+                    BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
+                    for(Song song : p.getContent())
+                    {
+                        pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                                + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
+                                + CACHE_SEPARATOR);
+                        pwriter.newLine();
+                    }
+                    pwriter.close();
+                }
+            }
+            catch(IOException e)
+            {
+                Log.println(Log.ERROR, "[BLADE-DEEZER]", "Error while writing cache !");
             }
         }
         catch(Exception e)
@@ -593,8 +859,8 @@ public class UserLibrary
     }
 
     /*
-    * If the option is enabled, Blade will try to find a better source for all the songs added by WebService
-    * Example : you added a spotify album, but deezer prior > spotify ; Blade will load that album from Deezer
+     * If the option is enabled, Blade will try to find a better source for all the songs added by WebService
+     * Example : you added a spotify album, but deezer prior > spotify ; Blade will load that album from Deezer
      */
     public static void registerSongBetterSources()
     {
@@ -606,60 +872,70 @@ public class UserLibrary
         if(bestSource == SongSources.SOURCE_SPOTIFY)
         {
             //search all deezer songs on spotify
-            //synchronized (songs)
-            //{
-                for(Song s : songs)
+            ArrayList<Song> spotifySongs = new ArrayList<>();
+            for(Song s : songs)
+            {
+                if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_DEEZER)
                 {
-                    if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_DEEZER)
+                    //query spotify for this song
+                    HashMap<String, Object> args = new HashMap<>();
+                    args.put("limit", 1);
+                    List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
+                    if(t != null && t.size() > 0 && t.get(0) != null)
                     {
-                        //query spotify for this song
-                        HashMap<String, Object> args = new HashMap<>();
-                        args.put("limit", 1);
-                        List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
-                        if(t != null && t.size() > 0 && t.get(0) != null)
-                        {
-                            SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY);
-                            s.getSources().addSource(source);
-                            s.getArtist().getSources().addSource(source);
-                            s.getAlbum().getSources().addSource(source);
-                        }
-
+                        SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY);
+                        s.getSources().addSource(source);
+                        s.getArtist().getSources().addSource(source);
+                        s.getAlbum().getSources().addSource(source);
+                        spotifySongs.add(s);
                     }
                 }
-            //}
+            }
             //also search for songs in playlist
             if(!SAVE_PLAYLISTS_TO_LIBRARY)
             {
-                //synchronized (playlists)
-                //{
-                    for(Playlist p : playlists)
+                for(Playlist p : playlists)
+                {
+                    for(Song s : p.getContent())
                     {
-                        //synchronized (p.getContent())
-                        //{
-                            for(Song s : p.getContent())
+                        if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
+                        {
+                            //query spotify for this song
+                            HashMap<String, Object> args = new HashMap<>();
+                            args.put("limit", 1);
+                            List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
+                            if(t != null && t.size() > 0 && t.get(0) != null)
                             {
-                                if(s.getSources().getSourceByPriority(0).getSource() == SongSources.SOURCE_SPOTIFY)
-                                {
-                                    //query spotify for this song
-                                    HashMap<String, Object> args = new HashMap<>();
-                                    args.put("limit", 1);
-                                    List<Track> t = spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
-                                    if(t != null && t.size() > 0 && t.get(0) != null)
-                                    {
-                                        SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY);
-                                        s.getSources().addSource(source);
-                                        s.getArtist().getSources().addSource(source);
-                                        s.getAlbum().getSources().addSource(source);
-                                    }
-                                }
+                                SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, SongSources.SOURCE_SPOTIFY);
+                                s.getSources().addSource(source);
+                                s.getArtist().getSources().addSource(source);
+                                s.getAlbum().getSources().addSource(source);
+                                spotifySongs.add(s);
                             }
-                        //}
+                        }
                     }
-                //}
+                }
             }
+
+            //cache theses
+            try
+            {
+                BufferedWriter spw = new BufferedWriter(new FileWriter(spotifyCacheFile));
+                for(Song song : spotifySongs)
+                {
+                    spw.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
+                            + CACHE_SEPARATOR + "\n");
+                }
+                spw.close();
+            }
+            catch(IOException e) {e.printStackTrace();}
+
         }
         else if(bestSource == SongSources.SOURCE_DEEZER)
         {
+            ArrayList<Song> deezerSongs = new ArrayList<>();
+
             //search all spotify songs on deezer
             synchronized (songs)
             {
@@ -669,6 +945,7 @@ public class UserLibrary
                     {
                         //query deezer for this song
                         DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
+                        search.addParam("limit", "1");
                         try
                         {
                             com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(search))).get(0);
@@ -679,6 +956,7 @@ public class UserLibrary
                                 s.getSources().addSource(source);
                                 s.getAlbum().getSources().addSource(source);
                                 s.getArtist().getSources().addSource(source);
+                                deezerSongs.add(s);
                             }
                         }
                         catch (Exception e) {} //ignored
@@ -710,6 +988,7 @@ public class UserLibrary
                                             s.getSources().addSource(source);
                                             s.getAlbum().getSources().addSource(source);
                                             s.getArtist().getSources().addSource(source);
+                                            deezerSongs.add(s);
                                         }
                                     }
                                     catch(Exception e) {} //ignored
@@ -719,9 +998,23 @@ public class UserLibrary
                     }
                 }
             }
+
+            //cache theses
+            try
+            {
+                BufferedWriter spw = new BufferedWriter(new FileWriter(deezerCacheFile));
+                for(Song song : deezerSongs)
+                {
+                    spw.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
+                            + CACHE_SEPARATOR + "\n");
+                }
+                spw.close();
+            }
+            catch(IOException e) {e.printStackTrace();}
         }
 
-        if(UserLibrary.currentCallback != null) UserLibrary.currentCallback.onLibraryChange();
+        if(currentCallback != null) currentCallback.onLibraryChange();
     }
 
     public static void sortLibrary()
@@ -766,8 +1059,8 @@ public class UserLibrary
     }
 
     /*
-    * Query the library for objects
-    */
+     * Query the library for objects
+     */
     public static ArrayList<LibraryObject> query(String s)
     {
         ArrayList<LibraryObject> tr = new ArrayList<>();
@@ -799,26 +1092,41 @@ public class UserLibrary
             for(Song s : snames)
             {
                 if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
-                {s.getSources().addSource(source); return s;}
+                {
+                    s.getSources().addSource(source);
+                    s.getAlbum().getSources().addSource(source);
+                    s.getArtist().getSources().addSource(source);
+                    System.out.println("[HANDLE] Found registered song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
+                    return s;
+                }
             }
         }
+        for(Song s : handles)
+            if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+            {
+                s.getSources().addSource(source);
+                System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE" + source.getSource());
+                return s;
+            }
 
         //else create song object
         Artist songArtist = null;
         synchronized (artists)
         {for(Artist art : artists) if(art.getName().equalsIgnoreCase(artist)) songArtist = art;}
-        if(songArtist == null) songArtist = new Artist(artist);
+        if(songArtist == null) {songArtist = new Artist(artist); songArtist.setHandled(true);}
         songArtist.getSources().addSource(source);
 
         Album songAlbum = null;
         synchronized (albums)
         {for(Album alb : albums) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;}
-        if(songAlbum == null) songAlbum = new Album(album, songArtist);
+        if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true);}
         songAlbum.getSources().addSource(source);
 
         Song s = new Song(name, songArtist, songAlbum, track, duration);
         s.getSources().addSource(source);
-        //System.out.println("Handled : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName());
+        s.setHandled(true);
+        handles.add(s);
+        System.out.println("[HANDLE] Handled : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName() + " SOURCE " + source.getSource());
         return s;
     }
 
@@ -907,7 +1215,7 @@ public class UserLibrary
             BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
             writer.write("grant_type=refresh_token&");
             writer.write("refresh_token=" + SPOTIFY_REFRESH_TOKEN + "&");
-            writer.write("client_id=" + UserLibrary.SPOTIFY_CLIENT_ID + "&");
+            writer.write("client_id=" + SPOTIFY_CLIENT_ID + "&");
             writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
             writer.flush();
             writer.close();
@@ -929,11 +1237,11 @@ public class UserLibrary
                 {
                     param = param.replaceFirst("\"access_token\":\"", "");
                     param = param.replaceFirst("\"", "");
-                    UserLibrary.SPOTIFY_USER_TOKEN = param;
+                    SPOTIFY_USER_TOKEN = param;
                     spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
-                    SharedPreferences pref = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+                    SharedPreferences pref = serviceContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = pref.edit();
-                    editor.putString("spotify_token", UserLibrary.SPOTIFY_USER_TOKEN);
+                    editor.putString("spotify_token", SPOTIFY_USER_TOKEN);
                     editor.commit();
                 }
             }
