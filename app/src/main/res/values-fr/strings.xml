@@ -31,4 +31,5 @@
     <string name="player_unknown_error">Erreur inconnue du lecteur</string>
     <string name="player_login_error">Erreur de connection (login/mot de passe erronnés, compte non premium) du lecteur</string>
     <string name="player_init">Initialisation du lecteur</string>
+    <string name="pls_resync">Vous devez re-synchronyser la bibliothèque pour appliquer cette option</string>
 </resources>

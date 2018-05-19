@@ -79,16 +79,7 @@ public class SourcesActivity extends AppCompatActivity
             editor.putInt("deezer_prior", SongSources.SOURCE_DEEZER.getPriority());
             editor.apply();
 
-            //register better source
-            new Thread()
-            {
-                @Override
-                public void run()
-                {
-                    Looper.prepare();
-                    LibraryService.registerSongBetterSources();
-                }
-            }.start();
+            Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -133,17 +124,7 @@ public class SourcesActivity extends AppCompatActivity
                         editor.apply();
                         adapter.notifyDataSetChanged();
 
-                        new Thread()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                Looper.prepare();
-                                LibraryService.registerDeezerSongs();
-                                LibraryService.registerSongBetterSources();
-                                LibraryService.sortLibrary();
-                            }
-                        }.start();
+                        Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
@@ -255,9 +236,8 @@ public class SourcesActivity extends AppCompatActivity
                             editor.apply();
                             adapter.notifyDataSetChanged();
                             LibraryService.spotifyApi.setAccessToken(LibraryService.SPOTIFY_USER_TOKEN);
-                            LibraryService.registerSpotifySongs();
-                            LibraryService.registerSongBetterSources();
-                            LibraryService.sortLibrary();
+
+                            Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                         }
                         catch(Exception e)
                         {

@@ -25,7 +25,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -355,19 +354,7 @@ public class MainActivity extends AppCompatActivity
         }
         else if(id == R.id.action_sync)
         {
-            new Thread()
-            {
-                @Override
-                public void run()
-                {
-                    Looper.prepare();
-                    LibraryService.registerLocalSongs();
-                    LibraryService.registerSpotifySongs();
-                    LibraryService.registerDeezerSongs();
-                    LibraryService.registerSongBetterSources();
-                    LibraryService.sortLibrary();
-                }
-            }.start();
+            LibraryService.synchronizeLibrary();
             return true;
         }
 

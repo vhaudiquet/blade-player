@@ -25,6 +25,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.widget.Toolbar;
+import android.widget.Toast;
 import v.blade.R;
 import v.blade.library.LibraryService;
 
@@ -71,11 +72,13 @@ public class SettingsActivity extends AppCompatActivity
             {
                 SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
                 LibraryService.SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
+                Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
             }
             else if(preference.getKey().equals("register_better_sources"))
             {
                 SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
                 LibraryService.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
+                Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
             }
 
             return super.onPreferenceTreeClick(preference);

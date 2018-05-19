@@ -231,6 +231,8 @@ public class PlayerService extends Service
     {
         return binder;
     }
+    @Override
+    public boolean onUnbind(Intent intent) {return true;}
 
     /* interactions with activities */
     public void setCurrentPlaylist(ArrayList<Song> playlist, int position)
