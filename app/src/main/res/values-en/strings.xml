@@ -34,4 +34,5 @@
     <string name="player_login_error">Login error (bad login/pass, no premium) of</string>
     <string name="player_init">Initializing</string>
     <string name="pls_resync">You will need to re-synchronize library to apply setting</string>
+    <string name="already_syncing">Already syncing...</string>
 </resources>

@@ -1,6 +1,8 @@
 package v.blade.library;
 
-import android.app.Service;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,12 +10,15 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.IBinder;
-import android.os.Looper;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.JobIntentService;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.LongSparseArray;
-import android.widget.Toast;
 import com.deezer.sdk.network.connect.DeezerConnect;
 import com.deezer.sdk.network.connect.SessionStore;
 import com.deezer.sdk.network.request.DeezerRequest;
@@ -24,6 +29,7 @@ import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
+import v.blade.R;
 import v.blade.ui.settings.SettingsActivity;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -36,7 +42,7 @@ import java.util.*;
 * LibraryService is the service that handles library caching/restore and synchronyzation
 * It is a background service, but during operations such as restoring/synchronization it appears as a foreground service
  */
-public class LibraryService extends Service
+public class LibraryService extends JobIntentService
 {
     private static final String CACHE_SEPARATOR = "##";
 
@@ -84,57 +90,54 @@ public class LibraryService extends Service
     public static List<Song> getSongs() {return songs;}
     public static List<Playlist> getPlaylists() {return playlists;}
 
-    //TEMP
     private static Context serviceContext;
 
     /* synchronization notification management */
-    private static volatile boolean synchronization;
+    public static volatile boolean synchronization;
 
     @Override
     public void onCreate()
     {
         System.out.println("[BLADE] LibraryService onCreate");
         super.onCreate();
-
-        serviceContext = this;
-        configureLibrary();
-
-        Thread loader = new Thread()
-        {
-            @Override
-            public void run()
-            {
-                // get local library from ContentProvider
-                registerLocalSongs();
-                System.out.println("[BLADE-DEBUG] Local songs registered.");
-
-                // get library from disk (if cached)
-                registerCachedSongs();
-                System.out.println("[BLADE-DEBUG] Cached songs registered.");
-
-                sortLibrary();
-            }
-        };
-        loader.setName("LIBRARY_LOADER");
-        loader.start();
     }
     @Override
-    public IBinder onBind(Intent intent)
+    public IBinder onBind(Intent intent) {return null;}
+    @Override
+    protected void onHandleWork(@NonNull Intent intent)
     {
-        return null;
+        String job = intent.getStringExtra("JOB");
+        if(job == null) return;
+
+        if(job.equalsIgnoreCase("SYNCHRONIZATION"))
+        {
+            synchronizeLibrary();
+        }
+        else if(job.equalsIgnoreCase("LOAD"))
+        {
+            // get local library from ContentProvider
+            registerLocalSongs();
+            System.out.println("[BLADE-DEBUG] Local songs registered.");
+
+            // get library from disk (if cached)
+            registerCachedSongs();
+            System.out.println("[BLADE-DEBUG] Cached songs registered.");
+
+            sortLibrary();
+        }
     }
 
     /*
     * Register local library with android ContentProvider
     * Called at every service start
      */
-    private static void registerLocalSongs()
+    private void registerLocalSongs()
     {
         //empty lists
         artists.clear(); albums.clear(); songs.clear(); playlists.clear(); songsByName.clear();
 
         /* get content resolver and init temp sorted arrays */
-        final ContentResolver musicResolver = serviceContext.getContentResolver();
+        final ContentResolver musicResolver = getContentResolver();
         LongSparseArray<Album> idsorted_albums = new LongSparseArray<>();
         LongSparseArray<Song> idsorted_songs = new LongSparseArray<>();
 
@@ -365,25 +368,27 @@ public class LibraryService extends Service
     /*
      * Configure the APIs, the preferences, ...
      */
-    private void configureLibrary()
+    public static void configureLibrary(Context appContext)
     {
         /* init the lists (to make sure they are empty) */
         if(songs.size() > 0) return;
 
+        serviceContext = appContext;
+
         //init cache dirs
-        artCacheDir = new File(getCacheDir().getAbsolutePath() + "/albumArts");
+        artCacheDir = new File(appContext.getCacheDir().getAbsolutePath() + "/albumArts");
         if(!artCacheDir.exists()) artCacheDir.mkdir();
-        spotifyCacheFile = new File(getCacheDir().getAbsolutePath() + "/spotify.cached");
-        spotifyPlaylistsCache = new File(getCacheDir().getAbsolutePath() + "/spotifyPlaylists/");
+        spotifyCacheFile = new File(appContext.getCacheDir().getAbsolutePath() + "/spotify.cached");
+        spotifyPlaylistsCache = new File(appContext.getCacheDir().getAbsolutePath() + "/spotifyPlaylists/");
         if(!spotifyPlaylistsCache.exists()) spotifyPlaylistsCache.mkdir();
-        deezerCacheFile = new File(getCacheDir().getAbsolutePath() + "/deezer.cached");
-        deezerPlaylistsCache = new File(getCacheDir().getAbsolutePath() + "/deezerPlaylists/");
+        deezerCacheFile = new File(appContext.getCacheDir().getAbsolutePath() + "/deezer.cached");
+        deezerPlaylistsCache = new File(appContext.getCacheDir().getAbsolutePath() + "/deezerPlaylists/");
         if(!deezerPlaylistsCache.exists()) deezerPlaylistsCache.mkdir();
-        betterSourceFile = new File(getCacheDir().getAbsolutePath() + "/betterSources.cached");
+        betterSourceFile = new File(appContext.getCacheDir().getAbsolutePath() + "/betterSources.cached");
 
         //get preferences
-        SharedPreferences accountsPrefs = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-        SharedPreferences generalPrefs = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+        SharedPreferences accountsPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+        SharedPreferences generalPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
 
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
         REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
@@ -404,8 +409,8 @@ public class LibraryService extends Service
         }
 
         //setup deezer api
-        deezerApi = new DeezerConnect(this.getApplicationContext(), DEEZER_CLIENT_ID);
-        if(DEEZER_USER_SESSION.restore(deezerApi, this.getApplicationContext()))
+        deezerApi = new DeezerConnect(appContext, DEEZER_CLIENT_ID);
+        if(DEEZER_USER_SESSION.restore(deezerApi, appContext))
         {
             SongSources.SOURCE_DEEZER.setAvailable(true);
         }
@@ -524,27 +529,52 @@ public class LibraryService extends Service
     * Synchronize local/cached library with local/web library
     * This method is asynchronous
      */
-    public static void synchronizeLibrary()
+    public void synchronizeLibrary()
     {
-        if(!synchronization) synchronization = true;
-        else Toast.makeText(serviceContext, "Synchronysation déjà en cours !", Toast.LENGTH_SHORT).show();
+        synchronization = true;
 
-        Thread syncThread = new Thread()
+        /* build notification */
+        if(Build.VERSION.SDK_INT >= 26)
         {
-            @Override
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            // The id of the channel.
+            String id = "v.blade.librarychannel";
+            // The user-visible name of the channel.
+            CharSequence name = "Library sync";
+            // The user-visible description of the channel.
+            String description = "Library synchronization";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel mChannel = new NotificationChannel(id, name, importance);
+            // Configure the notification channel.
+            mChannel.setDescription(description);
+            mChannel.setShowBadge(false);
+            mChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            mNotificationManager.createNotificationChannel(mChannel);
+        }
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "v.blade.librarychannel");
+        notificationBuilder.setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                .setSmallIcon(R.drawable.app_icon_notif) //icon that will be displayed in status bar
+                .setContentTitle("Synchronization...")
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setOngoing(true); //disable swipe delete
+        Notification currentNotification = notificationBuilder.build();
+        startForeground(0x43, currentNotification);
+
+        /*new Thread()
+        {
             public void run()
             {
                 Looper.prepare();
-                registerLocalSongs();
-                registerSpotifySongs();
-                registerDeezerSongs();
-                registerSongBetterSources();
-                sortLibrary();
-                synchronization = false;
             }
-        };
-        syncThread.setName("LIBRARY_SYNC");
-        syncThread.start();
+        }.start();*/
+        registerLocalSongs();
+        registerSpotifySongs();
+        registerDeezerSongs();
+        registerSongBetterSources();
+        sortLibrary();
+        synchronization = false;
+
+        stopForeground(true);
     }
 
     /*

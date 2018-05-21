@@ -266,6 +266,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        LibraryService.configureLibrary(getApplicationContext());
         checkPermission();
     }
 
@@ -356,7 +357,15 @@ public class MainActivity extends AppCompatActivity
         }
         else if(id == R.id.action_sync)
         {
-            LibraryService.synchronizeLibrary();
+            if(LibraryService.synchronization)
+            {
+                Toast.makeText(this, getString(R.string.already_syncing), Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+            Intent syncIntent = new Intent();
+            syncIntent.putExtra("JOB", "SYNCHRONIZATION");
+            LibraryService.enqueueWork(getApplicationContext(), LibraryService.class, 1, syncIntent);
             return true;
         }
 
@@ -448,8 +457,12 @@ public class MainActivity extends AppCompatActivity
     }
     public void startLibService()
     {
-        Intent srv = new Intent(this, LibraryService.class);
-        startService(srv);
+        if(LibraryService.getArtists().size() == 0)
+        {
+            Intent syncIntent = new Intent();
+            syncIntent.putExtra("JOB", "LOAD");
+            LibraryService.enqueueWork(getApplicationContext(), LibraryService.class, 1, syncIntent);
+        }
         setContentToArtists();
     }
 
