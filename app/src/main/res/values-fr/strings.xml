@@ -3,7 +3,7 @@
     <string name="app_name">Blade</string>
     <string name="action_search">Recherche</string>
     <string name="action_settings">Paramètres</string>
-    <string name="add_to_playlist">Ajouter à la liste</string>
+    <string name="add_to_current_playlist">Ajouter à la liste en cours de lecture</string>
     <string name="albums">Albums</string>
     <string name="artists">Artistes</string>
     <string name="library">Bibliothèque</string>
@@ -12,7 +12,9 @@
     <string name="next">Suivant</string>
     <string name="pause">Pause</string>
     <string name="play">Lire</string>
-    <string name="play_next">Play next</string>
+    <string name="play_next">Lire juste après</string>
+    <string name="added_ok"> chansons ont été ajoutées à la playlist</string>
+    <string name="added_next_ok"> chansons ont été insérées à la position courante</string>
     <string name="playlists">Playlists</string>
     <string name="prev">Précédent</string>
     <string name="songs">Titres</string>

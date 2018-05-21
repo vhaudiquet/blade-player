@@ -201,6 +201,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist1.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist1.addAll(((Playlist) object).getContent());
                             playNext(playlist1);
+                            Toast.makeText(MainActivity.this, playlist1.size() + " " + getString(R.string.added_next_ok), Toast.LENGTH_SHORT).show();
                             break;
 
                         case R.id.action_add_to_playlist:
@@ -210,6 +211,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist2.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist2.addAll(((Playlist) object).getContent());
                             addToPlaylist(playlist2);
+                            Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
                             break;
                     }
                     return false;

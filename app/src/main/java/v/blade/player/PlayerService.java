@@ -103,8 +103,7 @@ public class PlayerService extends Service
         {
             if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_DO_NOTHING)
             {
-                if(currentPosition >= currentPlaylist.size()) currentPosition = 0;
-                else currentPosition++;
+                currentPosition = (++currentPosition % currentPlaylist.size());
                 mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
             }
             else if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_STOPPED)

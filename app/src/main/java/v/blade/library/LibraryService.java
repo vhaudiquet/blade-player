@@ -86,6 +86,8 @@ public class LibraryService extends Service
 
     //TEMP
     private static Context serviceContext;
+
+    /* synchronization notification management */
     private static volatile boolean synchronization;
 
     @Override
@@ -343,8 +345,11 @@ public class LibraryService extends Service
                 while(spr.ready())
                 {
                     String[] tp = spr.readLine().split(CACHE_SEPARATOR);
-                    Song song = getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                            new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]));
+                    Song song = bestSource == SongSources.SOURCE_DEEZER ?
+                            getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
+                            new SongSources.SongSource(Long.parseLong(tp[6]), bestSource), Integer.parseInt(tp[4])) :
+                            getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
+                                    new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]));
                     song.setFormat(tp[3]);
                 }
                 spr.close();
@@ -456,18 +461,21 @@ public class LibraryService extends Service
         }
 
         //check if the song is already handled
-        for(Song s : handles)
+        synchronized(handles)
         {
-            if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+            for(Song s : handles)
             {
-                s.getSources().addSource(source);
-                if(s.getAlbum().isHandled()) {albums.add(s.getAlbum()); s.getAlbum().setHandled(false); s.getArtist().addAlbum(s.getAlbum()); albumHandles.remove(s.getAlbum());}
-                if(s.getArtist().isHandled()) {artists.add(s.getArtist());s.getArtist().setHandled(false);artistHandles.remove(s.getArtist());}
-                s.getAlbum().addSong(s);
-                s.setHandled(false);
-                handles.remove(s);
-                System.out.println("[REGISTER] Found handled song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
-                return s;
+                if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
+                {
+                    s.getSources().addSource(source);
+                    if(s.getAlbum().isHandled()) {albums.add(s.getAlbum()); s.getAlbum().setHandled(false); s.getArtist().addAlbum(s.getAlbum()); albumHandles.remove(s.getAlbum());}
+                    if(s.getArtist().isHandled()) {artists.add(s.getArtist());s.getArtist().setHandled(false);artistHandles.remove(s.getArtist());}
+                    s.getAlbum().addSong(s);
+                    s.setHandled(false);
+                    handles.remove(s);
+                    System.out.println("[REGISTER] Found handled song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
+                    return s;
+                }
             }
         }
 
