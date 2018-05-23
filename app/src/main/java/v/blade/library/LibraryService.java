@@ -12,7 +12,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.Looper;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.JobIntentService;
@@ -561,11 +560,11 @@ public class LibraryService extends JobIntentService
         Notification currentNotification = notificationBuilder.build();
         startForeground(0x43, currentNotification);
 
-        new Thread()
-        {
-            public void run()
-            {
-                Looper.prepare();
+        //new Thread()
+        //{
+        //    public void run()
+        //    {
+        //        Looper.prepare();
                 registerLocalSongs();
                 registerSpotifySongs();
                 registerDeezerSongs();
@@ -574,8 +573,8 @@ public class LibraryService extends JobIntentService
                 synchronization = false;
 
                 stopForeground(true);
-            }
-        }.start();
+        //    }
+        //}.start();
     }
 
     /*
@@ -1196,7 +1195,7 @@ public class LibraryService extends JobIntentService
                 //request from spotify
                 TracksPager tracks = spotifyApi.getService().searchTracks(q);
                 AlbumsPager albums = spotifyApi.getService().searchAlbums(q);
-                ArtistsPager artists = spotifyApi.getService().searchArtists(q);
+                //ArtistsPager artists = spotifyApi.getService().searchArtists(q);
 
                 //handle returned data
                 for(Track t : tracks.tracks.items)
@@ -1250,7 +1249,7 @@ public class LibraryService extends JobIntentService
                 //request from deezer
                 List<com.deezer.sdk.model.Track> tracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchTracks(q)));
                 List<com.deezer.sdk.model.Album> albums = (List<com.deezer.sdk.model.Album>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchAlbums(q)));
-                List<com.deezer.sdk.model.Artist> artists = (List<com.deezer.sdk.model.Artist>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchArtists(q)));
+                //List<com.deezer.sdk.model.Artist> artists = (List<com.deezer.sdk.model.Artist>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchArtists(q)));
 
                 //handle returned data
                 for(com.deezer.sdk.model.Track t : tracks)
@@ -1299,21 +1298,13 @@ public class LibraryService extends JobIntentService
             public int compare(LibraryObject o1, LibraryObject o2)
             {
                 if(o1 instanceof Song && o2 instanceof Song)
-                {
                     return o2.getSources().getSourceByPriority(0).getSource().getPriority() - o1.getSources().getSourceByPriority(0).getSource().getPriority();
-                }
-                else if(o1 instanceof Song && o2 instanceof Album)
-                {
-                    return -2;
-                }
-                else if(o1 instanceof Song && o2 instanceof Artist)
-                {
-                    return -3;
-                }
-                else if(o1 instanceof Album && o2 instanceof Song)
-                {
-                    return 2;
-                }
+                else if(o1 instanceof Song && o2 instanceof Album) return -2;
+                else if(o1 instanceof Song && o2 instanceof Artist) return -3;
+                else if(o1 instanceof Album && o2 instanceof Song) return 2;
+                else if(o1 instanceof Artist && o2 instanceof Song) return 3;
+                else if(o1 instanceof Album && o2 instanceof Artist) return -2;
+                else if(o1 instanceof Artist && o2 instanceof Album) return 2;
                 return 0;
             }
         });
