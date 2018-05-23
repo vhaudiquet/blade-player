@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity
     private Artist artistFrom;
     private boolean fromAlbum = false; // we came to this context from an album view
     private boolean fromPlaylists = false; // we came to this context from playlist view
+    private boolean globalSearch = false;
 
     /* currently playing display */
     private RelativeLayout currentPlay;
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity
     private ImageView currentPlayImage;
     private ImageView currentPlayAction;
     private boolean currentPlayShown = false;
+    private SearchView searchView;
 
     /* main list view */
     private ListView mainListView;
@@ -266,7 +268,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        LibraryService.configureLibrary(getApplicationContext());
         checkPermission();
     }
 
@@ -323,7 +324,7 @@ public class MainActivity extends AppCompatActivity
         getMenuInflater().inflate(R.menu.main, menu);
 
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+        searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
         return true;
@@ -334,8 +335,26 @@ public class MainActivity extends AppCompatActivity
     {
         if(Intent.ACTION_SEARCH.equals(intent.getAction()))
         {
-            String query = intent.getStringExtra(SearchManager.QUERY);
-            setContentToSearch(LibraryService.query(query));
+            final String query = intent.getStringExtra(SearchManager.QUERY);
+            if(globalSearch)
+            {
+                new Thread()
+                {
+                    public void run()
+                    {
+                        final ArrayList<LibraryObject> objects = LibraryService.queryWeb(query);
+                        runOnUiThread(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                setContentToSearch(objects);
+                            }
+                        });
+                    }
+                }.start();
+            }
+            else setContentToSearch(LibraryService.query(query));
         }
     }
 
@@ -381,28 +400,39 @@ public class MainActivity extends AppCompatActivity
         switch(id)
         {
             case R.id.nav_search:
-                // Go to search activity
+                // Enable web search
+                globalSearch = true;
+                // Request SearchView focus
+                searchView.setIconified(false);
+                searchView.setQueryHint(getString(R.string.search_web));
+                // Set to empty activity
+                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
+                setContentToSearch(new ArrayList<LibraryObject>());
                 break;
 
             case R.id.nav_artists:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
                 fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
                 fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with album view
                 setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
                 fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with song list
                 setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
                 fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
@@ -459,6 +489,11 @@ public class MainActivity extends AppCompatActivity
     {
         if(LibraryService.getArtists().size() == 0)
         {
+            Intent service = new Intent(this, LibraryService.class);
+            startService(service);
+
+            LibraryService.configureLibrary(getApplicationContext());
+
             Intent syncIntent = new Intent();
             syncIntent.putExtra("JOB", "LOAD");
             LibraryService.enqueueWork(getApplicationContext(), LibraryService.class, 1, syncIntent);

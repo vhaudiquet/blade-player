@@ -35,4 +35,7 @@
     <string name="player_init">Initializing</string>
     <string name="pls_resync">You will need to re-synchronize library to apply setting</string>
     <string name="already_syncing">Already syncing...</string>
+    <string name="search_lib">Search local library</string>
+    <string name="search_web">Web search</string>
+    <string name="oncrash">Sorry, Blade just crashed. A report was sent to the developer. We hope next update will fix this bug ! :)</string>
 </resources>

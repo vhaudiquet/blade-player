@@ -79,6 +79,13 @@ public class PlayerService extends Service
             MediaMetadataCompat metadata = builder.build();
             mSession.setMetadata(metadata);
 
+            //kill notification on MediaPlayer STOP
+            if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_STOPPED)
+            {
+                stopForeground(true);
+                return;
+            }
+
             /* update notification */
             if(mNotification == null)
             {

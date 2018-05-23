@@ -189,10 +189,7 @@ public class PlayerMediaPlayer
                     @Override
                     public void onLoggedOut() {}
                     @Override
-                    public void onLoginFailed(Error error)
-                    {
-                        spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;
-                    }
+                    public void onLoginFailed(Error error) {spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;}
                     @Override
                     public void onTemporaryError() {}
                     @Override

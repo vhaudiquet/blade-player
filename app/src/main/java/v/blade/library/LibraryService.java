@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.JobIntentService;
@@ -560,21 +561,21 @@ public class LibraryService extends JobIntentService
         Notification currentNotification = notificationBuilder.build();
         startForeground(0x43, currentNotification);
 
-        /*new Thread()
+        new Thread()
         {
             public void run()
             {
                 Looper.prepare();
-            }
-        }.start();*/
-        registerLocalSongs();
-        registerSpotifySongs();
-        registerDeezerSongs();
-        registerSongBetterSources();
-        sortLibrary();
-        synchronization = false;
+                registerLocalSongs();
+                registerSpotifySongs();
+                registerDeezerSongs();
+                registerSongBetterSources();
+                sortLibrary();
+                synchronization = false;
 
-        stopForeground(true);
+                stopForeground(true);
+            }
+        }.start();
     }
 
     /*
@@ -1177,6 +1178,147 @@ public class LibraryService extends JobIntentService
                 tr.add(playlist);
 
         return tr;
+    }
+
+    /*
+    * Query all web sources + local library for objects
+     */
+    public static ArrayList<LibraryObject> queryWeb(String s)
+    {
+        ArrayList<LibraryObject> tr = new ArrayList<>();
+        String q = s.toLowerCase();
+
+        // add results from spotify query
+        try
+        {
+            if(SongSources.SOURCE_SPOTIFY.isAvailable())
+            {
+                //request from spotify
+                TracksPager tracks = spotifyApi.getService().searchTracks(q);
+                AlbumsPager albums = spotifyApi.getService().searchAlbums(q);
+                ArtistsPager artists = spotifyApi.getService().searchArtists(q);
+
+                //handle returned data
+                for(Track t : tracks.tracks.items)
+                {
+                    Song song = getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY), t.track_number);
+                    tr.add(song);
+
+                    if(!song.getAlbum().hasAlbumArt())
+                    {
+                        if(t.album.images.get(0) != null)
+                            loadAlbumArt(song.getAlbum(), t.album.images.get(0).url, false);
+                    }
+                }
+                for(kaaes.spotify.webapi.android.models.AlbumSimple a : albums.albums.items)
+                {
+                    Album album = null;
+                    Pager<Track> albumTracks = spotifyApi.getService().getAlbumTracks(a.id);
+                    for(Track t : tracks.tracks.items)
+                    {
+                        Song currentSong = getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SongSources.SOURCE_SPOTIFY), t.track_number);
+                        if(album == null) album = currentSong.getAlbum();
+                    }
+
+                    if(!album.hasAlbumArt())
+                    {
+                        if(a.images != null && a.images.size() >= 1)
+                        {
+                            Image albumImage = a.images.get(0);
+                            if(albumImage != null)
+                                loadAlbumArt(album, albumImage.url, false);
+                        }
+                    }
+                }
+            }
+        }
+        catch(RetrofitError e)
+        {
+            if(e.getResponse().getStatus() == 401)
+            {
+                refreshSpotifyToken();
+                return queryWeb(s);
+            }
+            e.printStackTrace();
+        }
+
+        // add results from deezer query
+        if(SongSources.SOURCE_DEEZER.isAvailable())
+        {
+            try
+            {
+                //request from deezer
+                List<com.deezer.sdk.model.Track> tracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchTracks(q)));
+                List<com.deezer.sdk.model.Album> albums = (List<com.deezer.sdk.model.Album>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchAlbums(q)));
+                List<com.deezer.sdk.model.Artist> artists = (List<com.deezer.sdk.model.Artist>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestSearchArtists(q)));
+
+                //handle returned data
+                for(com.deezer.sdk.model.Track t : tracks)
+                {
+                    Song currentSong = getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER), t.getTrackPosition());
+                    tr.add(currentSong);
+
+                    if(!currentSong.getAlbum().hasAlbumArt())
+                    {
+                        loadAlbumArt(currentSong.getAlbum(), t.getAlbum().getBigImageUrl(), false);
+                    }
+                }
+                for(com.deezer.sdk.model.Album alb : albums)
+                {
+                    Album album = null;
+                    List<com.deezer.sdk.model.Track> albTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestAlbumTracks(alb.getId())));
+                    for(com.deezer.sdk.model.Track t : albTracks)
+                    {
+                        Song currentSong = getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SongSources.SOURCE_DEEZER), t.getTrackPosition());
+                        if(album == null) album = currentSong.getAlbum();
+                    }
+
+                    if(!album.hasAlbumArt())
+                    {
+                        loadAlbumArt(album, alb.getBigImageUrl(), false);
+                    }
+                }
+            }
+            catch(Exception e) {}
+        }
+
+        // add results from local query
+        tr.addAll(query(s));
+
+        //remove doublons (oh my god n*m)
+        ArrayList<LibraryObject> trfinal = new ArrayList<>();
+        for(LibraryObject libraryObject : tr)
+        {
+            if(!trfinal.contains(libraryObject)) trfinal.add(libraryObject);
+        }
+
+        //sort (songs first, then albums, then artists)
+        Collections.sort(trfinal, new Comparator<LibraryObject>()
+        {
+            @Override
+            public int compare(LibraryObject o1, LibraryObject o2)
+            {
+                if(o1 instanceof Song && o2 instanceof Song)
+                {
+                    return o2.getSources().getSourceByPriority(0).getSource().getPriority() - o1.getSources().getSourceByPriority(0).getSource().getPriority();
+                }
+                else if(o1 instanceof Song && o2 instanceof Album)
+                {
+                    return -2;
+                }
+                else if(o1 instanceof Song && o2 instanceof Artist)
+                {
+                    return -3;
+                }
+                else if(o1 instanceof Album && o2 instanceof Song)
+                {
+                    return 2;
+                }
+                return 0;
+            }
+        });
+
+        return trfinal;
     }
 
     private static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track)
