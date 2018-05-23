@@ -209,6 +209,8 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+
+        LibraryService.configureLibrary(getApplicationContext());
     }
 
     @Override

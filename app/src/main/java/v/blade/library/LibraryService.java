@@ -30,6 +30,7 @@ import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
 import v.blade.R;
+import v.blade.ui.PlayerConnection;
 import v.blade.ui.settings.SettingsActivity;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -47,6 +48,7 @@ public class LibraryService extends JobIntentService
     private static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
+    private static boolean configured = false;
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
 
@@ -100,6 +102,7 @@ public class LibraryService extends JobIntentService
     {
         System.out.println("[BLADE] LibraryService onCreate");
         super.onCreate();
+        configureLibrary(this.getApplicationContext());
     }
     @Override
     public IBinder onBind(Intent intent) {return null;}
@@ -133,6 +136,8 @@ public class LibraryService extends JobIntentService
      */
     private void registerLocalSongs()
     {
+        if(!configured) return;
+
         //empty lists
         artists.clear(); albums.clear(); songs.clear(); playlists.clear(); songsByName.clear();
 
@@ -239,6 +244,8 @@ public class LibraryService extends JobIntentService
      */
     private void registerCachedSongs()
     {
+        if(!configured) return;
+
         try
         {
             if(spotifyCacheFile.exists())
@@ -370,8 +377,7 @@ public class LibraryService extends JobIntentService
      */
     public static void configureLibrary(Context appContext)
     {
-        /* init the lists (to make sure they are empty) */
-        if(songs.size() > 0) return;
+        if(configured) return;
 
         serviceContext = appContext;
 
@@ -405,6 +411,28 @@ public class LibraryService extends JobIntentService
         if(SPOTIFY_USER_TOKEN != null)
         {
             spotifyApi.setAccessToken(SPOTIFY_USER_TOKEN);
+
+            //check for token validity
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        System.out.println("SPOTIFY : " + spotifyApi.getService().getMe().email);
+                    }
+                    catch(RetrofitError e)
+                    {
+                        if(e.getResponse() != null && e.getResponse().getStatus() == 401)
+                        {
+                            Log.println(Log.INFO, "[BLADE-SPOTIFY]", "Actualizing token.");
+                            refreshSpotifyToken();
+                        }
+                    }
+                }
+            }.start();
+            try {Thread.sleep(100);} catch(InterruptedException e) {} // wait for token refresh
+
             SongSources.SOURCE_SPOTIFY.setAvailable(true);
         }
 
@@ -415,6 +443,10 @@ public class LibraryService extends JobIntentService
             SongSources.SOURCE_DEEZER.setAvailable(true);
         }
 
+        configured = true;
+
+        //Start playerConnection
+        PlayerConnection.start(null, 0);
         /*
         Thread webLoaderThread = new Thread()
         {
@@ -582,6 +614,7 @@ public class LibraryService extends JobIntentService
      */
     private static void registerSpotifySongs()
     {
+        if(!configured) return;
         if(SPOTIFY_USER_TOKEN == null) return;
 
         // list used for spotify cache
@@ -791,6 +824,7 @@ public class LibraryService extends JobIntentService
      */
     private static void registerDeezerSongs()
     {
+        if(!configured) return;
         if(!deezerApi.isSessionValid()) return;
 
         ArrayList<Song> deezerSongs = new ArrayList<>();
@@ -959,6 +993,7 @@ public class LibraryService extends JobIntentService
      */
     private static void registerSongBetterSources()
     {
+        if(!configured) return;
         if(!REGISTER_SONGS_BETTER_SOURCES) return;
 
         SongSources.Source bestSource = SongSources.SOURCE_DEEZER.getPriority() > SongSources.SOURCE_SPOTIFY.getPriority() ? SongSources.SOURCE_DEEZER : SongSources.SOURCE_SPOTIFY;
@@ -1019,7 +1054,7 @@ public class LibraryService extends JobIntentService
                 for(Song song : spotifySongs)
                 {
                     spw.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
                             + CACHE_SEPARATOR + "\n");
                 }
                 spw.close();

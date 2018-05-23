@@ -267,8 +267,6 @@ public class MainActivity extends AppCompatActivity
                 else PlayerConnection.musicController.getTransportControls().play();
             }
         });
-
-        checkPermission();
     }
 
     @Override
@@ -276,6 +274,8 @@ public class MainActivity extends AppCompatActivity
     {
         super.onStart();
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
+        LibraryService.configureLibrary(getApplicationContext());
+        checkPermission();
     }
 
     @Override
@@ -492,7 +492,7 @@ public class MainActivity extends AppCompatActivity
             Intent service = new Intent(this, LibraryService.class);
             startService(service);
 
-            LibraryService.configureLibrary(getApplicationContext());
+            //LibraryService.configureLibrary(getApplicationContext());
 
             Intent syncIntent = new Intent();
             syncIntent.putExtra("JOB", "LOAD");
@@ -572,17 +572,23 @@ public class MainActivity extends AppCompatActivity
     /* actions */
     private void setPlaylist(ArrayList<Song> songs, int currentPos)
     {
-        if(musicPlayer == null) PlayerConnection.start(songs, currentPos);
-        else musicPlayer.setCurrentPlaylist(songs, currentPos);
+        if(songs.size() == 0)
+        {
+            Toast.makeText(this, getText(R.string.empty), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        //if(musicPlayer == null) PlayerConnection.start(songs, currentPos); else
+        musicPlayer.setCurrentPlaylist(songs, currentPos);
     }
     private void playNext(ArrayList<Song> songs)
     {
-        if(musicPlayer == null) PlayerConnection.start(songs, 0);
-        else musicPlayer.addNextToPlaylist(songs);
+        //if(musicPlayer == null) PlayerConnection.start(songs, 0); else
+        musicPlayer.addNextToPlaylist(songs);
     }
     private void addToPlaylist(ArrayList<Song> songs)
     {
-        if(musicPlayer == null) PlayerConnection.start(songs, 0);
-        else musicPlayer.addToPlaylist(songs);
+        //if(musicPlayer == null) PlayerConnection.start(songs, 0); else
+        musicPlayer.addToPlaylist(songs);
     }
 }

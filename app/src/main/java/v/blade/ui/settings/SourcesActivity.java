@@ -110,6 +110,9 @@ public class SourcesActivity extends AppCompatActivity
                 String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
                         Permissions.EMAIL, Permissions.OFFLINE_ACCESS};
 
+                //test that
+                LibraryService.configureLibrary(getApplicationContext());
+
                 LibraryService.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener()
                 {
                     @Override

@@ -189,7 +189,7 @@ public class PlayerMediaPlayer
                     @Override
                     public void onLoggedOut() {}
                     @Override
-                    public void onLoginFailed(Error error) {spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;}
+                    public void onLoginFailed(Error error) {System.err.println("Login error : " + error.name()); spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;}
                     @Override
                     public void onTemporaryError() {}
                     @Override
@@ -290,7 +290,8 @@ public class PlayerMediaPlayer
     public int getCurrentPosition()
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.getCurrentPosition();
-        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return ((int) spotifyPlayer.getPlaybackState().positionMs);
+        else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
+            if(spotifyPlayer == null) return 0; else return ((int) spotifyPlayer.getPlaybackState().positionMs);
         else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE) return ((int) deezerPlayer.getPosition());
         return 0;
     }

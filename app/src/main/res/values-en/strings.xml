@@ -37,5 +37,6 @@
     <string name="already_syncing">Already syncing...</string>
     <string name="search_lib">Search local library</string>
     <string name="search_web">Web search</string>
+    <string name="empty">This list is empty</string>
     <string name="oncrash">Sorry, Blade just crashed. A report was sent to the developer. We hope next update will fix this bug ! :)</string>
 </resources>
