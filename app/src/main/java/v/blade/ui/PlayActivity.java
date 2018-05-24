@@ -163,11 +163,13 @@ public class PlayActivity extends AppCompatActivity
         playlistDragController.setDragHandleId(R.id.element_more);
         playlistView.setDropListener(playlistDropListener);
 
+        LibraryService.configureLibrary(getApplicationContext());
         if(!PlayerConnection.init(new PlayerConnection.Callback()
         {
             @Override
             public void onConnected()
             {
+                PlayerConnection.musicController.registerCallback(musicCallbacks);
                 musicPlayer = PlayerConnection.getService();
                 refreshState(musicPlayer.getPlayerState());
             }
@@ -175,7 +177,6 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void onDisconnected() {finish();}
         }, getApplicationContext())) finish();
-        PlayerConnection.musicController.registerCallback(musicCallbacks);
 
         //setup handler that will keep seekBar and playTime in sync
         final Handler handler = new Handler();
@@ -209,8 +210,6 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
-
-        LibraryService.configureLibrary(getApplicationContext());
     }
 
     @Override

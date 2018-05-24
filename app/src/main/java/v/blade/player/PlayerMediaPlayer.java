@@ -80,6 +80,7 @@ public class PlayerMediaPlayer
     /* Spotify media player */
     private Player spotifyPlayer;
     private int spotifyPlayerError;
+    private Song spotifyWaiting = null;
 
     /* Deezer media player */
     private TrackPlayer deezerPlayer;
@@ -123,7 +124,7 @@ public class PlayerMediaPlayer
 
                 /* We lost audiofocus definetely ; maybe another player was started or ... */
                 case AudioManager.AUDIOFOCUS_LOSS:
-                    if(isPlaying()) {pause();}
+                    if(isPlaying()) pause();
                     break;
             }
         }
@@ -185,11 +186,28 @@ public class PlayerMediaPlayer
                                 listener.onStateChange();
                             }
                         });
+
+                        //spotifyWaiting
+                        if(spotifyWaiting != null)
+                        {
+                            currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
+                            if(requestAudioFocus())
+                            {
+                                spotifyPlayer.playUri(null, "spotify:track:" + spotifyWaiting.getSources().getSpotify().getId(), 0, 0);
+                                currentState = PLAYER_STATE_PLAYING;
+                                listener.onStateChange();
+                            }
+                            spotifyWaiting = null;
+                        }
                     }
                     @Override
                     public void onLoggedOut() {}
                     @Override
-                    public void onLoginFailed(Error error) {System.err.println("Login error : " + error.name()); spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;}
+                    public void onLoginFailed(Error error)
+                    {
+                        System.err.println("Login error : " + error.name());
+                        spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;
+                    }
                     @Override
                     public void onTemporaryError() {}
                     @Override
@@ -298,7 +316,7 @@ public class PlayerMediaPlayer
     public boolean isPlaying()
     {
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) return mediaPlayer.isPlaying();
-        else return currentState == PLAYER_STATE_PLAYING;
+        else return (currentState == PLAYER_STATE_PLAYING);
     }
     public int getDuration()
     {
@@ -376,8 +394,9 @@ public class PlayerMediaPlayer
             if(spotifyPlayer == null)
             {
                 Toast.makeText(context, context.getString(R.string.player_init) + " Spotify...", Toast.LENGTH_SHORT).show();
+                spotifyWaiting = song;
                 initSpotifyMediaPlayer();
-                try {Thread.sleep(500);} catch (InterruptedException e) {}
+                return;
             }
 
             currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
