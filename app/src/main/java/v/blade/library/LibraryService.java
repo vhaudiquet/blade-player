@@ -1,22 +1,13 @@
 package v.blade.library;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
-import android.os.IBinder;
+import android.os.Looper;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.v4.app.JobIntentService;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.LongSparseArray;
 import com.deezer.sdk.network.connect.DeezerConnect;
@@ -29,7 +20,6 @@ import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
-import v.blade.R;
 import v.blade.ui.PlayerConnection;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -40,10 +30,10 @@ import java.net.URLConnection;
 import java.util.*;
 
 /*
-* LibraryService is the service that handles library caching/restore and synchronyzation
-* It is a background service, but during operations such as restoring/synchronization it appears as a foreground service
+* LibraryService is the class that handles library caching/restore and synchronyzation
+* It was a background service, but it works actually better as a static class that just calls a Thread to do async work
  */
-public class LibraryService extends JobIntentService
+public class LibraryService
 {
     private static final String CACHE_SEPARATOR = "##";
 
@@ -53,10 +43,10 @@ public class LibraryService extends JobIntentService
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
 
     /* library */
-    private static List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
-    private static List<Album> albums = Collections.synchronizedList(new ArrayList<Album>());
-    private static List<Song> songs = Collections.synchronizedList(new ArrayList<Song>());
-    private static List<Playlist> playlists = Collections.synchronizedList(new ArrayList<Playlist>());
+    private static final List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
+    private static final List<Album> albums = Collections.synchronizedList(new ArrayList<Album>());
+    private static final List<Song> songs = Collections.synchronizedList(new ArrayList<Song>());
+    private static final List<Playlist> playlists = Collections.synchronizedList(new ArrayList<Playlist>());
 
     //song handles, that are not part of library but playable (from web sources)
     private static List<Song> handles = Collections.synchronizedList(new ArrayList<Song>());
@@ -96,45 +86,27 @@ public class LibraryService extends JobIntentService
 
     /* synchronization notification management */
     public static volatile boolean synchronization;
+    public static Thread syncThread;
 
-    @Override
-    public void onCreate()
+    public static void registerInit()
     {
-        System.out.println("[BLADE] LibraryService onCreate");
-        super.onCreate();
-        configureLibrary(this.getApplicationContext());
-    }
-    @Override
-    public IBinder onBind(Intent intent) {return null;}
-    @Override
-    protected void onHandleWork(@NonNull Intent intent)
-    {
-        String job = intent.getStringExtra("JOB");
-        if(job == null) return;
-
-        if(job.equalsIgnoreCase("SYNCHRONIZATION"))
+        new Thread()
         {
-            synchronizeLibrary();
-        }
-        else if(job.equalsIgnoreCase("LOAD"))
-        {
-            // get local library from ContentProvider
-            registerLocalSongs();
-            System.out.println("[BLADE-DEBUG] Local songs registered.");
-
-            // get library from disk (if cached)
-            registerCachedSongs();
-            System.out.println("[BLADE-DEBUG] Cached songs registered.");
-
-            sortLibrary();
-        }
+            public void run()
+            {
+                Looper.prepare();
+                registerLocalSongs();
+                registerCachedSongs();
+                sortLibrary();
+            }
+        }.start();
     }
 
     /*
     * Register local library with android ContentProvider
     * Called at every service start
      */
-    private void registerLocalSongs()
+    private static void registerLocalSongs()
     {
         if(!configured) return;
 
@@ -142,7 +114,7 @@ public class LibraryService extends JobIntentService
         artists.clear(); albums.clear(); songs.clear(); playlists.clear(); songsByName.clear();
 
         /* get content resolver and init temp sorted arrays */
-        final ContentResolver musicResolver = getContentResolver();
+        final ContentResolver musicResolver = serviceContext.getContentResolver();
         LongSparseArray<Album> idsorted_albums = new LongSparseArray<>();
         LongSparseArray<Song> idsorted_songs = new LongSparseArray<>();
 
@@ -242,7 +214,7 @@ public class LibraryService extends JobIntentService
     * Register web libraries that were previously cached
     * Called at every service start
      */
-    private void registerCachedSongs()
+    private static void registerCachedSongs()
     {
         if(!configured) return;
 
@@ -281,8 +253,8 @@ public class LibraryService extends JobIntentService
                                 : getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
                                 new SongSources.SongSource(tp[6], SongSources.SOURCE_SPOTIFY), Integer.parseInt(tp[4]));
                         song.setFormat(tp[3]);
-
                         thisList.add(song);
+
                         if(!song.getAlbum().hasAlbumArt())
                         {
                             //the image is supposed to be cached locally, so no need to provide URL
@@ -561,52 +533,31 @@ public class LibraryService extends JobIntentService
     * Synchronize local/cached library with local/web library
     * This method is asynchronous
      */
-    public void synchronizeLibrary()
+    public interface SynchronizeCallback
+    {
+        void synchronizeDone();
+    }
+    public static void synchronizeLibrary(SynchronizeCallback callback)
     {
         synchronization = true;
 
-        /* build notification */
-        if(Build.VERSION.SDK_INT >= 26)
+        syncThread = new Thread()
         {
-            NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            // The id of the channel.
-            String id = "v.blade.librarychannel";
-            // The user-visible name of the channel.
-            CharSequence name = "Library sync";
-            // The user-visible description of the channel.
-            String description = "Library synchronization";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel mChannel = new NotificationChannel(id, name, importance);
-            // Configure the notification channel.
-            mChannel.setDescription(description);
-            mChannel.setShowBadge(false);
-            mChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-            mNotificationManager.createNotificationChannel(mChannel);
-        }
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "v.blade.librarychannel");
-        notificationBuilder.setColor(ContextCompat.getColor(this, R.color.colorPrimary))
-                .setSmallIcon(R.drawable.app_icon_notif) //icon that will be displayed in status bar
-                .setContentTitle("Synchronization...")
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOngoing(true); //disable swipe delete
-        Notification currentNotification = notificationBuilder.build();
-        startForeground(0x43, currentNotification);
-
-        //new Thread()
-        //{
-        //    public void run()
-        //    {
-        //        Looper.prepare();
+            public void run()
+            {
+                Looper.prepare();
                 registerLocalSongs();
                 registerSpotifySongs();
                 registerDeezerSongs();
                 registerSongBetterSources();
                 sortLibrary();
                 synchronization = false;
-
-                stopForeground(true);
-        //    }
-        //}.start();
+                callback.synchronizeDone();
+            }
+        };
+        syncThread.setName("SYNC_THREAD");
+        syncThread.setDaemon(true);
+        syncThread.start();
     }
 
     /*
@@ -1050,7 +1001,8 @@ public class LibraryService extends JobIntentService
             //cache theses
             try
             {
-                BufferedWriter spw = new BufferedWriter(new FileWriter(spotifyCacheFile));
+                betterSourceFile.createNewFile();
+                BufferedWriter spw = new BufferedWriter(new FileWriter(betterSourceFile));
                 for(Song song : spotifySongs)
                 {
                     spw.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
@@ -1198,18 +1150,30 @@ public class LibraryService extends JobIntentService
         ArrayList<LibraryObject> tr = new ArrayList<>();
         String q = s.toLowerCase();
 
-        for(Song song : songs)
-            if(song.getTitle().toLowerCase().contains(q))
-                tr.add(song);
-        for(Album alb : albums)
-            if(alb.getName().toLowerCase().contains(q))
-                tr.add(alb);
-        for(Artist artist : artists)
-            if(artist.getName().toLowerCase().contains(q))
-                tr.add(artist);
-        for(Playlist playlist : playlists)
-            if(playlist.getName().toLowerCase().contains(q))
-                tr.add(playlist);
+        synchronized(songs)
+        {
+            for(Song song : songs)
+                if(song.getTitle().toLowerCase().contains(q))
+                    tr.add(song);
+        }
+        synchronized(albums)
+        {
+            for(Album alb : albums)
+                if(alb.getName().toLowerCase().contains(q))
+                    tr.add(alb);
+        }
+        synchronized(artists)
+        {
+            for(Artist artist : artists)
+                if(artist.getName().toLowerCase().contains(q))
+                    tr.add(artist);
+        }
+        synchronized(playlists)
+        {
+            for(Playlist playlist : playlists)
+                if(playlist.getName().toLowerCase().contains(q))
+                    tr.add(playlist);
+        }
 
         return tr;
     }

@@ -181,7 +181,7 @@ public class PlayerMediaPlayer
                             {
                                 Toast.makeText(context, "Erreur du lecteur Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
                                 currentActivePlayer = NO_PLAYER_ACTIVE;
-                                currentState = PLAYER_STATE_STOPPED;
+                                currentState = PLAYER_STATE_SONGEND;
                                 listener.onStateChange();
                             }
                         });

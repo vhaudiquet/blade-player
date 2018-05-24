@@ -116,6 +116,7 @@ public class MainActivity extends AppCompatActivity
     private ImageView currentPlayAction;
     private boolean currentPlayShown = false;
     private SearchView searchView;
+    private MenuItem syncButton;
 
     /* main list view */
     private ListView mainListView;
@@ -327,6 +328,8 @@ public class MainActivity extends AppCompatActivity
         searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
+        syncButton = menu.findItem(R.id.action_sync);
+
         return true;
     }
 
@@ -378,13 +381,29 @@ public class MainActivity extends AppCompatActivity
         {
             if(LibraryService.synchronization)
             {
-                Toast.makeText(this, getString(R.string.already_syncing), Toast.LENGTH_SHORT).show();
-                return false;
+                LibraryService.syncThread.interrupt();
+                syncButton.setIcon(R.drawable.ic_sync);
+                LibraryService.registerInit();
+                return true;
             }
 
-            Intent syncIntent = new Intent();
-            syncIntent.putExtra("JOB", "SYNCHRONIZATION");
-            LibraryService.enqueueWork(getApplicationContext(), LibraryService.class, 1, syncIntent);
+            syncButton.setIcon(R.drawable.ic_cancel);
+
+            LibraryService.synchronizeLibrary(new LibraryService.SynchronizeCallback()
+            {
+                @Override
+                public void synchronizeDone()
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            syncButton.setIcon(R.drawable.ic_sync);
+                        }
+                    });
+                }
+            });
             return true;
         }
 
@@ -492,11 +511,7 @@ public class MainActivity extends AppCompatActivity
             Intent service = new Intent(this, LibraryService.class);
             startService(service);
 
-            //LibraryService.configureLibrary(getApplicationContext());
-
-            Intent syncIntent = new Intent();
-            syncIntent.putExtra("JOB", "LOAD");
-            LibraryService.enqueueWork(getApplicationContext(), LibraryService.class, 1, syncIntent);
+            LibraryService.registerInit();
         }
         setContentToArtists();
     }
