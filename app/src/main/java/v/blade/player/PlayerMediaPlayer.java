@@ -34,9 +34,9 @@ import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
 import com.spotify.sdk.android.player.*;
 import com.spotify.sdk.android.player.Error;
 import v.blade.R;
-import v.blade.library.LibraryService;
 import v.blade.library.Song;
 import v.blade.library.SongSources;
+import v.blade.library.Source;
 
 public class PlayerMediaPlayer
 {
@@ -143,9 +143,9 @@ public class PlayerMediaPlayer
 
         this.listener = listener;
 
-        if(LibraryService.SPOTIFY_USER_TOKEN != null)
+        if(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN != null)
             initSpotifyMediaPlayer();
-        if(LibraryService.deezerApi != null && LibraryService.deezerApi.isSessionValid())
+        if(Source.SOURCE_DEEZER.deezerApi != null && Source.SOURCE_DEEZER.deezerApi.isSessionValid())
             initDeezerMediaPlayer();
     }
     public void destroy()
@@ -155,7 +155,7 @@ public class PlayerMediaPlayer
     public void initSpotifyMediaPlayer()
     {
         /* init spotify media player */
-        Config playerConfig = new Config(context, LibraryService.SPOTIFY_USER_TOKEN, LibraryService.SPOTIFY_CLIENT_ID);
+        Config playerConfig = new Config(context, Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN, Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID);
         Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
         {
             @Override
@@ -180,7 +180,7 @@ public class PlayerMediaPlayer
                             @Override
                             public void onPlaybackError(Error error)
                             {
-                                Toast.makeText(context, "Erreur du lecteur Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, context.getString(R.string.player_error) + " Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
                                 currentActivePlayer = NO_PLAYER_ACTIVE;
                                 currentState = PLAYER_STATE_SONGEND;
                                 listener.onStateChange();
@@ -230,7 +230,7 @@ public class PlayerMediaPlayer
         /* init deezer media player */
         try
         {
-            deezerPlayer = new TrackPlayer((Application) context.getApplicationContext(), LibraryService.deezerApi, new WifiAndMobileNetworkStateChecker());
+            deezerPlayer = new TrackPlayer((Application) context.getApplicationContext(), Source.SOURCE_DEEZER.deezerApi, new WifiAndMobileNetworkStateChecker());
             deezerPlayer.addOnPlayerStateChangeListener(new OnPlayerStateChangeListener()
             {
                 @Override
@@ -342,7 +342,7 @@ public class PlayerMediaPlayer
 
         /* select appropriate mediaplayer and start playback */
         SongSources.SongSource bestSource = song.getSources().getSourceByPriority(0);
-        if(bestSource.getSource() == SongSources.SOURCE_LOCAL_LIB)
+        if(bestSource.getSource() == Source.SOURCE_LOCAL_LIB)
         {
             currentActivePlayer = LOCAL_PLAYER_ACTIVE;
 
@@ -367,7 +367,7 @@ public class PlayerMediaPlayer
             }
             catch(Exception e) {} //ignored.
         }
-        else if(bestSource.getSource() == SongSources.SOURCE_DEEZER)
+        else if(bestSource.getSource() == Source.SOURCE_DEEZER)
         {
             if(deezerPlayer == null || deezerPlayer.getPlayerState().equals(PlayerState.RELEASED)) initDeezerMediaPlayer();
 
@@ -389,7 +389,7 @@ public class PlayerMediaPlayer
                 listener.onStateChange();
             }
         }
-        else if(bestSource.getSource() == SongSources.SOURCE_SPOTIFY)
+        else if(bestSource.getSource() == Source.SOURCE_SPOTIFY)
         {
             if(spotifyPlayer == null)
             {

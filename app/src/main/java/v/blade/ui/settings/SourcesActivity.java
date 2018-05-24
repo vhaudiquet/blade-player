@@ -20,7 +20,7 @@ import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import v.blade.R;
 import v.blade.library.LibraryService;
-import v.blade.library.SongSources;
+import v.blade.library.Source;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
@@ -39,7 +39,7 @@ public class SourcesActivity extends AppCompatActivity
         @Override
         public void drop(int from, int to)
         {
-            SongSources.Source toSwap = adapter.sources.get(from);
+            Source toSwap = adapter.sources.get(from);
 
             // we reduced this source priority ; priority.set(to), increase all priorities on the way by 1
             if(from < to)
@@ -62,10 +62,10 @@ public class SourcesActivity extends AppCompatActivity
                 }
             }
 
-            Collections.sort(adapter.sources, new Comparator<SongSources.Source>()
+            Collections.sort(adapter.sources, new Comparator<Source>()
             {
                 @Override
-                public int compare(SongSources.Source o1, SongSources.Source o2)
+                public int compare(Source o1, Source o2)
                 {
                     return o2.getPriority() - o1.getPriority();
                 }
@@ -75,8 +75,8 @@ public class SourcesActivity extends AppCompatActivity
             //reload songs from source
             SharedPreferences accountsPrefs = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = accountsPrefs.edit();
-            editor.putInt("spotify_prior", SongSources.SOURCE_SPOTIFY.getPriority());
-            editor.putInt("deezer_prior", SongSources.SOURCE_DEEZER.getPriority());
+            editor.putInt("spotify_prior", Source.SOURCE_SPOTIFY.getPriority());
+            editor.putInt("deezer_prior", Source.SOURCE_DEEZER.getPriority());
             editor.apply();
 
             Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
@@ -88,24 +88,24 @@ public class SourcesActivity extends AppCompatActivity
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id)
         {
-            SongSources.Source source = adapter.sources.get(position);
+            Source source = adapter.sources.get(position);
             if(source.isAvailable())
             {
                 Toast.makeText(SourcesActivity.this, getString(R.string.already_connected), Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if(source == SongSources.SOURCE_SPOTIFY)
+            if(source == Source.SOURCE_SPOTIFY)
             {
                 AuthenticationRequest.Builder builder =
-                        new AuthenticationRequest.Builder(LibraryService.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
-                                LibraryService.SPOTIFY_REDIRECT_URI).setShowDialog(true);
+                        new AuthenticationRequest.Builder(Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
+                                Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI).setShowDialog(true);
                 builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
                         "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(SourcesActivity.this, SPOTIFY_REQUEST_CODE, request);
             }
-            else if(source == SongSources.SOURCE_DEEZER)
+            else if(source == Source.SOURCE_DEEZER)
             {
                 String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
                         Permissions.EMAIL, Permissions.OFFLINE_ACCESS};
@@ -113,17 +113,17 @@ public class SourcesActivity extends AppCompatActivity
                 //test that
                 LibraryService.configureLibrary(getApplicationContext());
 
-                LibraryService.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener()
+                Source.SOURCE_DEEZER.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener()
                 {
                     @Override
                     public void onComplete(Bundle bundle)
                     {
-                        LibraryService.DEEZER_USER_SESSION.save(LibraryService.deezerApi, SourcesActivity.this.getApplicationContext());
-                        SongSources.SOURCE_DEEZER.setAvailable(true);
-                        SongSources.SOURCE_DEEZER.setPriority(adapter.sources.get(0).getPriority()+1);
+                        Source.SOURCE_DEEZER.DEEZER_USER_SESSION.save(Source.SOURCE_DEEZER.deezerApi, SourcesActivity.this.getApplicationContext());
+                        Source.SOURCE_DEEZER.setAvailable(true);
+                        Source.SOURCE_DEEZER.setPriority(adapter.sources.get(0).getPriority()+1);
                         SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = pref.edit();
-                        editor.putInt("deezer_prior", SongSources.SOURCE_DEEZER.getPriority());
+                        editor.putInt("deezer_prior", Source.SOURCE_DEEZER.getPriority());
                         editor.apply();
                         adapter.notifyDataSetChanged();
 
@@ -190,8 +190,8 @@ public class SourcesActivity extends AppCompatActivity
                             BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
                             writer.write("grant_type=authorization_code&");
                             writer.write("code=" + code + "&");
-                            writer.write("redirect_uri=" + LibraryService.SPOTIFY_REDIRECT_URI + "&");
-                            writer.write("client_id=" + LibraryService.SPOTIFY_CLIENT_ID + "&");
+                            writer.write("redirect_uri=" + Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI + "&");
+                            writer.write("client_id=" + Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID + "&");
                             writer.write("client_secret=" + "3166d3b40ff74582b03cb23d6701c297");
                             writer.flush();
                             writer.close();
@@ -213,32 +213,32 @@ public class SourcesActivity extends AppCompatActivity
                                 {
                                     param = param.replaceFirst("\"access_token\":\"", "");
                                     param = param.replaceFirst("\"", "");
-                                    LibraryService.SPOTIFY_USER_TOKEN = param;
+                                    Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN = param;
                                     SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                                     SharedPreferences.Editor editor = pref.edit();
-                                    editor.putString("spotify_token", LibraryService.SPOTIFY_USER_TOKEN);
+                                    editor.putString("spotify_token", Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
                                     editor.commit();
                                 }
                                 else if(param.startsWith("\"refresh_token\":\""))
                                 {
                                     param = param.replaceFirst("\"refresh_token\":\"", "");
                                     param = param.replaceFirst("\"", "");
-                                    LibraryService.SPOTIFY_REFRESH_TOKEN = param;
+                                    Source.SOURCE_SPOTIFY.SPOTIFY_REFRESH_TOKEN = param;
                                     SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                                     SharedPreferences.Editor editor = pref.edit();
-                                    editor.putString("spotify_refresh_token", LibraryService.SPOTIFY_REFRESH_TOKEN);
+                                    editor.putString("spotify_refresh_token", Source.SOURCE_SPOTIFY.SPOTIFY_REFRESH_TOKEN);
                                     editor.commit();
                                 }
                             }
 
-                            SongSources.SOURCE_SPOTIFY.setAvailable(true);
-                            SongSources.SOURCE_SPOTIFY.setPriority(adapter.sources.get(0).getPriority()+1);
+                            Source.SOURCE_SPOTIFY.setAvailable(true);
+                            Source.SOURCE_SPOTIFY.setPriority(adapter.sources.get(0).getPriority()+1);
                             SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                             SharedPreferences.Editor editor = pref.edit();
-                            editor.putInt("spotify_prior", SongSources.SOURCE_SPOTIFY.getPriority());
+                            editor.putInt("spotify_prior", Source.SOURCE_SPOTIFY.getPriority());
                             editor.apply();
                             adapter.notifyDataSetChanged();
-                            LibraryService.spotifyApi.setAccessToken(LibraryService.SPOTIFY_USER_TOKEN);
+                            Source.SOURCE_SPOTIFY.spotifyApi.setAccessToken(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
 
                             Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                         }
@@ -260,7 +260,7 @@ public class SourcesActivity extends AppCompatActivity
 
     public static class SourceAdapter extends BaseAdapter
     {
-        public ArrayList<SongSources.Source> sources;
+        public ArrayList<Source> sources;
         private Context context;
 
         class ViewHolder
@@ -275,11 +275,11 @@ public class SourcesActivity extends AppCompatActivity
             this.context = context;
 
             sources = new ArrayList<>();
-            sources.add(SongSources.SOURCE_SPOTIFY);
-            sources.add(SongSources.SOURCE_DEEZER);
-            Collections.sort(sources, new Comparator<SongSources.Source>() {
+            sources.add(Source.SOURCE_SPOTIFY);
+            sources.add(Source.SOURCE_DEEZER);
+            Collections.sort(sources, new Comparator<Source>() {
                 @Override
-                public int compare(SongSources.Source o1, SongSources.Source o2) {
+                public int compare(Source o1, Source o2) {
                     return o2.getPriority() - o1.getPriority();
                 }
             });
@@ -312,7 +312,7 @@ public class SourcesActivity extends AppCompatActivity
             }
             else mViewHolder = (ViewHolder) convertView.getTag();
 
-            SongSources.Source source = sources.get(position);
+            Source source = sources.get(position);
             mViewHolder.source.setImageResource(source.getLogoImage());
             mViewHolder.status.setText(source.isAvailable() ? context.getString(R.string.connected) : context.getString(R.string.disconnected));
             return convertView;
