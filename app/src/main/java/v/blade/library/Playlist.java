@@ -23,6 +23,10 @@ public class Playlist extends LibraryObject
 {
     private ArrayList<Song> content;
 
+    private boolean mine = true;
+    private String owner;
+    private boolean collaborative = false;
+
     public Playlist(String name, ArrayList<Song> content)
     {
         this.name = name;
@@ -30,4 +34,14 @@ public class Playlist extends LibraryObject
     }
 
     public ArrayList<Song> getContent() {return content;}
+    public void setOwner(String owner)
+    {
+        this.mine = false;
+        this.owner = owner;
+    }
+
+    public void setCollaborative() {this.collaborative = true;}
+    public boolean isMine() {return this.mine;}
+    public boolean isCollaborative() {return this.collaborative;}
+    public String getOwner() {return this.owner;}
 }

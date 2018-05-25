@@ -182,7 +182,7 @@ public class PlayerMediaPlayer
                             {
                                 Toast.makeText(context, context.getString(R.string.player_error) + " Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
                                 currentActivePlayer = NO_PLAYER_ACTIVE;
-                                currentState = PLAYER_STATE_SONGEND;
+                                currentState = PLAYER_STATE_PAUSED;
                                 listener.onStateChange();
                             }
                         });
@@ -206,7 +206,10 @@ public class PlayerMediaPlayer
                     public void onLoginFailed(Error error)
                     {
                         System.err.println("Login error : " + error.name());
+                        Toast.makeText(context, context.getString(R.string.player_login_error) + " Spotify", Toast.LENGTH_SHORT).show();
                         spotifyPlayerError = WEBPLAYER_ERROR_LOGIN;
+                        currentState = PLAYER_STATE_PAUSED;
+                        listener.onStateChange();
                     }
                     @Override
                     public void onTemporaryError() {}
@@ -218,10 +221,13 @@ public class PlayerMediaPlayer
             @Override
             public void onError(Throwable throwable)
             {
+                Toast.makeText(context, context.getString(R.string.player_unknown_error) + " Spotify", Toast.LENGTH_SHORT).show();
                 System.err.println("Spotify player error : " + throwable.getLocalizedMessage());
                 System.err.println("Caused by : " + throwable.getCause().getLocalizedMessage());
                 spotifyPlayerError = WEBPLAYER_ERROR_OTHER;
                 spotifyPlayer = null;
+                currentState = PLAYER_STATE_PAUSED;
+                listener.onStateChange();
             }
         });
     }
@@ -391,7 +397,7 @@ public class PlayerMediaPlayer
         }
         else if(bestSource.getSource() == Source.SOURCE_SPOTIFY)
         {
-            if(spotifyPlayer == null)
+            if((spotifyPlayer == null) || (spotifyPlayerError != WEBPLAYER_ERROR_NONE))
             {
                 Toast.makeText(context, context.getString(R.string.player_init) + " Spotify...", Toast.LENGTH_SHORT).show();
                 spotifyWaiting = song;
@@ -400,24 +406,10 @@ public class PlayerMediaPlayer
             }
 
             currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
-            if(spotifyPlayerError == WEBPLAYER_ERROR_NONE)
+            if(requestAudioFocus())
             {
-                if(requestAudioFocus())
-                {
-                    spotifyPlayer.playUri(null, "spotify:track:" + bestSource.getId(), 0, 0);
-                    currentState = PLAYER_STATE_PLAYING;
-                    listener.onStateChange();
-                }
-            }
-            else
-            {
-                if(spotifyPlayerError == WEBPLAYER_ERROR_LOGIN)
-                    Toast.makeText(context, context.getString(R.string.player_login_error) + " Spotify", Toast.LENGTH_SHORT).show();
-                else
-                    Toast.makeText(context, context.getString(R.string.player_unknown_error) + " Spotify", Toast.LENGTH_SHORT).show();
-
-                currentActivePlayer = NO_PLAYER_ACTIVE;
-                currentState = PLAYER_STATE_SONGEND;
+                spotifyPlayer.playUri(null, "spotify:track:" + bestSource.getId(), 0, 0);
+                currentState = PLAYER_STATE_PLAYING;
                 listener.onStateChange();
             }
         }

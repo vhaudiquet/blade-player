@@ -37,6 +37,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -103,10 +104,11 @@ public class MainActivity extends AppCompatActivity
     private int currentContext = CONTEXT_NONE;
 
     /* specific context (back button) handling */
-    private Bundle backBundle, back2Bundle;
-    private boolean fromPlaylists;
-    private boolean globalSearch = false;
-    private LibraryObject currentObject = null;
+    private static Bundle backBundle, back2Bundle;
+    private static LibraryObject backObject, back2Object;
+    private static boolean fromPlaylists;
+    private static boolean globalSearch = false;
+    private static LibraryObject currentObject = null;
 
     /* currently playing display */
     private RelativeLayout currentPlay;
@@ -137,15 +139,15 @@ public class MainActivity extends AppCompatActivity
                     setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
-                    backBundle = new Bundle(); saveInstanceState(backBundle);
+                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
                     Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Album> albums = currentArtist.getAlbums();
                     currentObject = currentArtist;
                     setContentToAlbums(albums, currentArtist.getName());
                     break;
                 case CONTEXT_ALBUMS:
-                    if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle);}
-                    else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle);}
+                    if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;}
+                    else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle); back2Object = currentObject;}
 
                     Album currentAlbum = (Album) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> asongs = currentAlbum.getSongs();
@@ -154,7 +156,7 @@ public class MainActivity extends AppCompatActivity
                     break;
                 case CONTEXT_PLAYLISTS:
                     fromPlaylists = true;
-                    backBundle = new Bundle(); saveInstanceState(backBundle);
+                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
                     Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> psongs = currentPlaylist.getContent();
                     currentObject = currentPlaylist;
@@ -276,7 +278,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        restoreInstanceState(savedInstanceState);
+        System.out.println("currentObject = " + currentObject);
+        restoreInstanceState(savedInstanceState, currentObject);
     }
 
     @Override
@@ -306,12 +309,12 @@ public class MainActivity extends AppCompatActivity
         }
         else if(back2Bundle != null)
         {
-            restoreInstanceState(back2Bundle);
+            restoreInstanceState(back2Bundle, back2Object);
             back2Bundle = null;
         }
         else if(backBundle != null)
         {
-            restoreInstanceState(backBundle);
+            restoreInstanceState(backBundle, backObject);
             backBundle = null;
         }
         else
@@ -621,21 +624,18 @@ public class MainActivity extends AppCompatActivity
     {
         if(bundle == null) return;
 
+        Log.println(Log.WARN, "BLADE-DEBUG", "SaveInstanceState : " + currentObject);
+
         bundle.putInt("currentContext", currentContext);
-        bundle.putSerializable("currentObject", currentObject);
         bundle.putBoolean("fromPlaylists", fromPlaylists);
         bundle.putInt("listSelection", mainListView.getFirstVisiblePosition());
-
     }
-    private void restoreInstanceState(Bundle bundle)
+    private void restoreInstanceState(Bundle bundle, LibraryObject currentObject)
     {
         if(bundle == null) return;
 
         int restoreContext = bundle.getInt("currentContext");
         fromPlaylists = bundle.getBoolean("fromPlaylists");
-        currentObject = (LibraryObject) bundle.getSerializable("currentObject");
-
-        System.out.println("Restore instanceState : " + currentContext + " ; " + currentObject);
 
         switch(restoreContext)
         {

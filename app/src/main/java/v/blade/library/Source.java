@@ -189,6 +189,7 @@ public abstract class Source
         public String SPOTIFY_USER_TOKEN;
         public String SPOTIFY_REFRESH_TOKEN;
         public final SpotifyApi spotifyApi = new SpotifyApi();
+        private UserPrivate mePrivate;
         private File spotifyCacheFile;
         private File spotifyPlaylistsCache;
 
@@ -223,7 +224,7 @@ public abstract class Source
                     {
                         try
                         {
-                            System.out.println("SPOTIFY : " + spotifyApi.getService().getMe().email);
+                            mePrivate = spotifyApi.getService().getMe();
                         }
                         catch(RetrofitError e)
                         {
@@ -231,6 +232,7 @@ public abstract class Source
                             {
                                 Log.println(Log.INFO, "[BLADE-SPOTIFY]", "Actualizing token.");
                                 refreshSpotifyToken();
+                                mePrivate = spotifyApi.getService().getMe();
                             }
                         }
                     }
@@ -444,6 +446,8 @@ public abstract class Source
 
                         Playlist list = new Playlist(playlistBase.name, thisList);
                         list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SOURCE_SPOTIFY));
+                        if(playlistBase.collaborative) list.setCollaborative();
+                        if(playlistBase.owner.id != mePrivate.id) list.setOwner(playlistBase.owner.display_name);
                         spotifyPlaylists.add(list);
                         LibraryService.getPlaylists().add(list);
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
