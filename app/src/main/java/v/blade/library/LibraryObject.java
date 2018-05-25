@@ -17,7 +17,9 @@
  */
 package v.blade.library;
 
-public class LibraryObject
+import java.io.Serializable;
+
+public class LibraryObject implements Serializable
 {
     protected String name;
     protected SongSources sources;

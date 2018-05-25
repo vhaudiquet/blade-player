@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity
         public void onDisconnected() {}
     };
 
-    /* current activity context */
+    /* current activity context (instanceState) */
     private static final int CONTEXT_NONE = 0;
     private static final int CONTEXT_ARTISTS = 1;
     private static final int CONTEXT_ALBUMS = 2;
@@ -101,12 +101,12 @@ public class MainActivity extends AppCompatActivity
     private static final int CONTEXT_PLAYLISTS = 4;
     private static final int CONTEXT_SEARCH = 5;
     private int currentContext = CONTEXT_NONE;
+
     /* specific context (back button) handling */
-    private boolean fromArtists = false; // we came to this context from the "artists" view
-    private Artist artistFrom;
-    private boolean fromAlbum = false; // we came to this context from an album view
-    private boolean fromPlaylists = false; // we came to this context from playlist view
+    private Bundle backBundle, back2Bundle;
+    private boolean fromPlaylists;
     private boolean globalSearch = false;
+    private LibraryObject currentObject = null;
 
     /* currently playing display */
     private RelativeLayout currentPlay;
@@ -137,25 +137,31 @@ public class MainActivity extends AppCompatActivity
                     setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
+                    backBundle = new Bundle(); saveInstanceState(backBundle);
                     Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
-                    fromArtists = true;
-                    artistFrom = currentArtist;
                     ArrayList<Album> albums = currentArtist.getAlbums();
+                    currentObject = currentArtist;
                     setContentToAlbums(albums, currentArtist.getName());
                     break;
                 case CONTEXT_ALBUMS:
+                    if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle);}
+                    else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle);}
+
                     Album currentAlbum = (Album) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
-                    fromAlbum = true;
                     ArrayList<Song> asongs = currentAlbum.getSongs();
+                    currentObject = currentAlbum;
                     setContentToSongs(asongs, currentAlbum.getName());
                     break;
                 case CONTEXT_PLAYLISTS:
                     fromPlaylists = true;
+                    backBundle = new Bundle(); saveInstanceState(backBundle);
                     Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> psongs = currentPlaylist.getContent();
+                    currentObject = currentPlaylist;
                     setContentToSongs(psongs, currentPlaylist.getName());
                     break;
                 case CONTEXT_SEARCH:
+                    currentObject = null;
                     LibraryObject selected = ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     if(selected instanceof Artist)
                         setContentToAlbums(((Artist) selected).getAlbums(), selected.getName());
@@ -229,6 +235,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -268,6 +275,8 @@ public class MainActivity extends AppCompatActivity
                 else PlayerConnection.musicController.getTransportControls().play();
             }
         });
+
+        restoreInstanceState(savedInstanceState);
     }
 
     @Override
@@ -295,22 +304,15 @@ public class MainActivity extends AppCompatActivity
         {
             drawer.closeDrawer(GravityCompat.START);
         }
-        else if(fromAlbum)
+        else if(back2Bundle != null)
         {
-            if(fromArtists) setContentToAlbums(artistFrom.getAlbums(), artistFrom.getName());
-            else setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
-            fromAlbum = false;
+            restoreInstanceState(back2Bundle);
+            back2Bundle = null;
         }
-        else if(fromArtists)
+        else if(backBundle != null)
         {
-            setContentToArtists();
-            fromArtists = false;
-            artistFrom = null;
-        }
-        else if(fromPlaylists)
-        {
-            setContentToPlaylists();
-            fromPlaylists = false;
+            restoreInstanceState(backBundle);
+            backBundle = null;
         }
         else
         {
@@ -426,34 +428,34 @@ public class MainActivity extends AppCompatActivity
                 searchView.setIconified(false);
                 searchView.setQueryHint(getString(R.string.search_web));
                 // Set to empty activity
-                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
+                fromPlaylists = false; currentObject = null;
                 setContentToSearch(new ArrayList<LibraryObject>());
                 break;
 
             case R.id.nav_artists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
+                fromPlaylists = false; currentObject = null;
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
+                fromPlaylists = false; currentObject = null;
                 // Replace current activity content with album view
                 setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
+                fromPlaylists = false; currentObject = null;
                 // Replace current activity content with song list
                 setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromArtists = false; fromAlbum = false; artistFrom = null; fromPlaylists = false;
+                fromPlaylists = false; currentObject = null;
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
                 break;
@@ -514,7 +516,7 @@ public class MainActivity extends AppCompatActivity
 
             LibraryService.registerInit();
         }
-        setContentToArtists();
+        if(currentContext == CONTEXT_NONE) setContentToArtists();
     }
 
     /* UI Change methods (Artists/Albums/Songs/Playlists...) */
@@ -553,7 +555,7 @@ public class MainActivity extends AppCompatActivity
     }
     private void setContentToSearch(ArrayList<LibraryObject> searchResult)
     {
-        fromArtists = false; fromAlbum = false; artistFrom = null;
+        currentObject = null; fromPlaylists = false;
         this.setTitle(getResources().getString(R.string.action_search));
         currentContext = CONTEXT_SEARCH;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, searchResult);
@@ -606,5 +608,57 @@ public class MainActivity extends AppCompatActivity
     {
         //if(musicPlayer == null) PlayerConnection.start(songs, 0); else
         musicPlayer.addToPlaylist(songs);
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState)
+    {
+        saveInstanceState(outState);
+        super.onSaveInstanceState(outState);
+    }
+
+    private void saveInstanceState(Bundle bundle)
+    {
+        if(bundle == null) return;
+
+        bundle.putInt("currentContext", currentContext);
+        bundle.putSerializable("currentObject", currentObject);
+        bundle.putBoolean("fromPlaylists", fromPlaylists);
+        bundle.putInt("listSelection", mainListView.getFirstVisiblePosition());
+
+    }
+    private void restoreInstanceState(Bundle bundle)
+    {
+        if(bundle == null) return;
+
+        int restoreContext = bundle.getInt("currentContext");
+        fromPlaylists = bundle.getBoolean("fromPlaylists");
+        currentObject = (LibraryObject) bundle.getSerializable("currentObject");
+
+        System.out.println("Restore instanceState : " + currentContext + " ; " + currentObject);
+
+        switch(restoreContext)
+        {
+            case CONTEXT_ARTISTS:
+                setContentToArtists();
+                break;
+
+            case CONTEXT_ALBUMS:
+                if(currentObject == null) setContentToAlbums(LibraryService.getAlbums(), getString(R.string.albums));
+                else setContentToAlbums(((Artist) currentObject).getAlbums(), ((Artist) currentObject).getName());
+                break;
+
+            case CONTEXT_SONGS:
+                if(currentObject == null) setContentToSongs(LibraryService.getSongs(), getString(R.string.songs));
+                else if(fromPlaylists) setContentToSongs(((Playlist) currentObject).getContent(), ((Playlist) currentObject).getName());
+                else setContentToSongs(((Album) currentObject).getSongs(), ((Album) currentObject).getName());
+                break;
+
+            case CONTEXT_PLAYLISTS:
+                setContentToPlaylists();
+                break;
+        }
+
+        mainListView.setSelection(bundle.getInt("listSelection"));
     }
 }

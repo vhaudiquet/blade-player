@@ -94,7 +94,7 @@ public class PlayerMediaPlayer
         {
             if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction()))
             {
-                if (mediaPlayer.isPlaying()) pause();
+                if (isPlaying()) pause();
             }
         }
     };
