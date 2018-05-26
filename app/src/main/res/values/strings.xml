@@ -22,6 +22,9 @@
     <string name="add_to_current_playlist">Ajouter à la liste en cours de lecture</string>
     <string name="added_ok"> chansons ont été ajoutées à la playlist</string>
     <string name="added_next_ok"> chansons ont été insérées à la position courante</string>
+    <string name="add_to_playlist">Ajouter à la liste...</string>
+    <string name="remove_from_playlist">Supprimer de la liste</string>
+    <string name="added_fail">Impossible d\'ajouter à la playlist</string>
 
     <string name="title_activity_play">En écoute</string>
 
@@ -54,4 +57,6 @@
     <string name="collaborative">Collaborative</string>
 
     <string name="oncrash">Désolé, Blade viens de crasher. Un rapport a été envoyé au développeur. La prochaine mise à jour résoudra sûrement ce bug ! :)</string>
+
+    <string name="cancel">Annuler</string>
 </resources>

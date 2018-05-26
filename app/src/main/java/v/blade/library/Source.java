@@ -1,9 +1,12 @@
 package v.blade.library;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
@@ -53,6 +56,10 @@ public abstract class Source
     public abstract void initConfig(SharedPreferences accountsPrefs);
     public abstract String getUserName();
 
+    public interface OperationCallback {void onSucess(); void onFailure();}
+    public abstract void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback);
+    public abstract void removeSongFromPlaylist(Song song, Playlist list, OperationCallback callback);
+
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
         @Override
@@ -76,6 +83,8 @@ public abstract class Source
         public void registerSongs()
         {
             if(!LibraryService.configured) return;
+
+            System.out.println("[BLADE-LOCAL] Registering songs...");
 
             //empty lists
             LibraryService.getArtists().clear();
@@ -159,6 +168,8 @@ public abstract class Source
                 playlistCursor.close();
             }
 
+            System.out.println("[BLADE-LOCAL] Songs registered ; getting AlbumArts...");
+
             /* now let's get all albumarts */
             Cursor albumCursor = musicResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
             if(albumCursor!=null && albumCursor.moveToFirst())
@@ -179,6 +190,39 @@ public abstract class Source
                 } while (albumCursor.moveToNext());
                 albumCursor.close();
             }
+
+            System.out.println("[BLADE-LOCAL] AlbumArts loaded.");
+        }
+
+        @Override
+        public void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback)
+        {
+            if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_LOCAL_LIB) {callback.onFailure(); return;}
+
+            int count = list.getContent().size();
+            ContentValues[] values = new ContentValues[songs.size()];
+            for (int i = 0; i < songs.size(); i++)
+            {
+                SongSources.SongSource local = songs.get(i).getSources().getLocal();
+                if(local == null) {callback.onFailure(); return;}
+
+                values[i] = new ContentValues();
+                values[i].put(MediaStore.Audio.Playlists.Members.PLAY_ORDER, i + count + 1);
+                values[i].put(MediaStore.Audio.Playlists.Members.AUDIO_ID, (long) songs.get(i).getSources().getLocal().getId());
+            }
+            Uri uri = MediaStore.Audio.Playlists.Members.getContentUri("external", (long) list.getSources().getLocal().getId());
+            ContentResolver resolver = LibraryService.appContext.getContentResolver();
+            int num = resolver.bulkInsert(uri, values);
+            resolver.notifyChange(Uri.parse("content://media"), null);
+
+            list.getContent().addAll(songs);
+
+            callback.onSucess();
+        }
+        @Override
+        public void removeSongFromPlaylist(Song index, Playlist list, OperationCallback callback)
+        {
+
         }
     };
     public static Spotify SOURCE_SPOTIFY = new Spotify();
@@ -242,9 +286,9 @@ public abstract class Source
                                 mePrivate = spotifyApi.getService().getMe();
                             }
                         }
+                        LibraryService.onSpotifyConfigDone();
                     }
                 }.start();
-                try {Thread.sleep(100);} catch(InterruptedException e) {} // wait for token refresh (TODO : better)
 
                 setAvailable(true);
             }
@@ -255,6 +299,7 @@ public abstract class Source
         {
             if(!LibraryService.configured) return;
 
+            System.out.println("[BLADE-SPOTIFY] Registering cached songs...");
             try
             {
                 if(spotifyCacheFile.exists())
@@ -283,8 +328,8 @@ public abstract class Source
                         BufferedReader sppr = new BufferedReader(new FileReader(f));
                         String id = sppr.readLine();
                         boolean isMine = Boolean.parseBoolean(sppr.readLine());
-                        String owner = null;
-                        if(!isMine) owner = sppr.readLine();
+                        String owner = null; String ownerID = null;
+                        if(!isMine) {owner = sppr.readLine(); ownerID = sppr.readLine();}
                         boolean isCollab = Boolean.parseBoolean(sppr.readLine());
                         while(sppr.ready())
                         {
@@ -306,7 +351,7 @@ public abstract class Source
                         sppr.close();
 
                         Playlist p = new Playlist(f.getName(), thisList);
-                        if(!isMine) p.setOwner(owner);
+                        if(!isMine) p.setOwner(owner, ownerID);
                         if(isCollab) p.setCollaborative();
                         p.getSources().addSource(new SongSources.SongSource(id, SOURCE_SPOTIFY));
                         LibraryService.getPlaylists().add(p);
@@ -318,6 +363,7 @@ public abstract class Source
                 Log.println(Log.ERROR, "[BLADE-SPOTIFY]", "Cache restore : IOException");
                 e.printStackTrace();
             }
+            System.out.println("[BLADE-SPOTIFY] Cached songs registered.");
         }
 
         @Override
@@ -333,6 +379,8 @@ public abstract class Source
             SpotifyService service = spotifyApi.getService();
             try
             {
+                if(mePrivate == null) mePrivate = service.getMe();
+
                 //requests
                 HashMap<String, Object> params = new HashMap<>();
                 params.put("limit", 50);
@@ -461,7 +509,7 @@ public abstract class Source
                         Playlist list = new Playlist(playlistBase.name, thisList);
                         list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SOURCE_SPOTIFY));
                         if(playlistBase.collaborative) list.setCollaborative();
-                        if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name);
+                        if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name, playlistBase.owner.id);
                         spotifyPlaylists.add(list);
                         LibraryService.getPlaylists().add(list);
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
@@ -499,7 +547,11 @@ public abstract class Source
                         BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
                         pwriter.write((String) p.getSources().getSpotify().getId()); pwriter.newLine();
                         pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
-                        if(!p.isMine()) {pwriter.write(p.getOwner()); pwriter.newLine();}
+                        if(!p.isMine())
+                        {
+                            pwriter.write(p.getOwner()); pwriter.newLine();
+                            pwriter.write((String) p.getOwnerID()); pwriter.newLine();
+                        }
                         pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
                         for(Song song : p.getContent())
                         {
@@ -598,6 +650,60 @@ public abstract class Source
             return tr;
         }
 
+        @Override
+        public void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback)
+        {
+            if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_SPOTIFY) {callback.onFailure(); return;}
+            if(!list.isMine() && !list.isCollaborative()) {callback.onFailure(); return;}
+
+            new Thread()
+            {
+                public void run()
+                {
+                    Looper.prepare();
+
+                    HashMap<String, Object> parameters = new HashMap<>();
+                    String sSongs = "";
+                    for(Song s : songs)
+                    {
+                        SongSources.SongSource spot = s.getSources().getSpotify();
+
+                        if(spot == null)
+                        {
+                            //TODO : find the song on spotify, and if it is not continue
+                            continue;
+                        }
+
+                        sSongs += ("spotify:track:" + spot.getId() + ",");
+                    }
+                    sSongs = sSongs.substring(0, sSongs.length()-1);
+                    parameters.put("uris", sSongs);
+
+                    try
+                    {
+                        spotifyApi.getService().addTracksToPlaylist((list.isCollaborative() ? (String) list.getOwnerID() : mePrivate.id), (String) list.getSources().getSpotify().getId(), parameters,
+                                new HashMap<>());
+                        callback.onSucess();
+                    }
+                    catch(RetrofitError error)
+                    {
+                        if(error.getResponse() == null) {callback.onFailure(); return;}
+                        if(error.getResponse().getStatus() == 401)
+                        {
+                            refreshSpotifyToken();
+                            addSongsToPlaylist(songs, list, callback);
+                        }
+                        else callback.onFailure();
+                    }
+                }
+            }.start();
+        }
+        @Override
+        public void removeSongFromPlaylist(Song index, Playlist list, OperationCallback callback)
+        {
+
+        }
+
         private void refreshSpotifyToken()
         {
             try
@@ -691,6 +797,8 @@ public abstract class Source
         {
             if(!LibraryService.configured) return;
 
+            System.out.println("[BLADE-DEEZER] Registering cached songs...");
+
             try
             {
                 if(deezerCacheFile.exists())
@@ -719,8 +827,8 @@ public abstract class Source
                         BufferedReader sppr = new BufferedReader(new FileReader(f));
                         Long id = Long.parseLong(sppr.readLine());
                         boolean isMine = Boolean.parseBoolean(sppr.readLine());
-                        String owner = null;
-                        if(!isMine) owner = sppr.readLine();
+                        String owner = null; long ownerID = 0;
+                        if(!isMine) {owner = sppr.readLine(); ownerID = Long.parseLong(sppr.readLine());}
                         boolean isCollab = Boolean.parseBoolean(sppr.readLine());
                         while(sppr.ready())
                         {
@@ -743,7 +851,7 @@ public abstract class Source
                         sppr.close();
 
                         Playlist p = new Playlist(f.getName(), thisList);
-                        if(!isMine) p.setOwner(owner);
+                        if(!isMine) p.setOwner(owner, ownerID);
                         if(isCollab) p.setCollaborative();
                         p.getSources().addSource(new SongSources.SongSource(id, SOURCE_DEEZER));
                         LibraryService.getPlaylists().add(p);
@@ -755,6 +863,7 @@ public abstract class Source
                 Log.println(Log.ERROR, "[BLADE-DEEZER]", "Cache restore : IOException");
                 e.printStackTrace();
             }
+            System.out.println("[BLADE-DEEZER] Cached songs registered.");
         }
 
         @Override
@@ -874,7 +983,7 @@ public abstract class Source
 
                     Playlist list = new Playlist(playlist.getTitle(), thisList);
                     if(playlist.isCollaborative()) list.setCollaborative();
-                    if(!playlist.getCreator().equals(me)) list.setOwner(playlist.getCreator().getName());
+                    if(!playlist.getCreator().equals(me)) list.setOwner(playlist.getCreator().getName(), playlist.getCreator().getId());
                     list.getSources().addSource(new SongSources.SongSource(playlist.getId(), SOURCE_DEEZER));
                     LibraryService.getPlaylists().add(list);
                     deezerPlaylists.add(list);
@@ -904,7 +1013,11 @@ public abstract class Source
                         BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
                         pwriter.write(String.valueOf((long) p.getSources().getDeezer().getId())); pwriter.newLine();
                         pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
-                        if(!p.isMine()) {pwriter.write(p.getOwner()); pwriter.newLine();}
+                        if(!p.isMine())
+                        {
+                            pwriter.write(p.getOwner()); pwriter.newLine();
+                            pwriter.write(String.valueOf((long) p.getOwnerID())); pwriter.newLine();
+                        }
                         pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
                         for(Song song : p.getContent())
                         {
@@ -973,6 +1086,17 @@ public abstract class Source
             }
 
             return tr;
+        }
+
+        @Override
+        public void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback)
+        {
+
+        }
+        @Override
+        public void removeSongFromPlaylist(Song index, Playlist list, OperationCallback callback)
+        {
+
         }
     }
 }

@@ -58,4 +58,10 @@ public class SongSources
             if(s != null && s.getSource() == Source.SOURCE_DEEZER) return s;
         return null;
     }
+    public SongSource getLocal()
+    {
+        for(SongSource s : sources)
+            if(s != null && s.getSource() == Source.SOURCE_LOCAL_LIB) return s;
+        return null;
+    }
 }

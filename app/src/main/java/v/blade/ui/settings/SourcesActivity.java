@@ -18,6 +18,7 @@ import com.mobeta.android.dslv.DragSortListView;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
+import retrofit.RetrofitError;
 import v.blade.R;
 import v.blade.library.LibraryService;
 import v.blade.library.Source;
@@ -101,7 +102,8 @@ public class SourcesActivity extends AppCompatActivity
                         new AuthenticationRequest.Builder(Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
                                 Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI).setShowDialog(true);
                 builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
-                        "playlist-read-private", "playlist-read-collaborative", "user-library-read"});
+                        "playlist-read-private", "playlist-read-collaborative", "user-library-read", "user-library-modify",
+                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(SourcesActivity.this, SPOTIFY_REQUEST_CODE, request);
             }
@@ -241,7 +243,14 @@ public class SourcesActivity extends AppCompatActivity
                             adapter.notifyDataSetChanged();
                             Source.SOURCE_SPOTIFY.spotifyApi.setAccessToken(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
 
-                            Source.SOURCE_SPOTIFY.mePrivate = Source.SOURCE_SPOTIFY.spotifyApi.getService().getMe();
+                            try
+                            {
+                                Source.SOURCE_SPOTIFY.mePrivate = Source.SOURCE_SPOTIFY.spotifyApi.getService().getMe();
+                            }
+                            catch(RetrofitError e)
+                            {
+                                e.printStackTrace();
+                            }
 
                             Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                         }

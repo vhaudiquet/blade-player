@@ -41,4 +41,8 @@
     <string name="empty">This list is empty</string>
     <string name="oncrash">Sorry, Blade just crashed. A report was sent to the developer. We hope next update will fix this bug ! :)</string>
     <string name="collaborative">Collaborative</string>
+    <string name="add_to_playlist">Add to playlist...</string>
+    <string name="cancel">Cancel</string>
+    <string name="added_fail">Could not add to playlist</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
 </resources>

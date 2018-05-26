@@ -10,6 +10,7 @@ import com.deezer.sdk.network.request.DeezerRequest;
 import com.deezer.sdk.network.request.DeezerRequestFactory;
 import com.deezer.sdk.network.request.JsonUtils;
 import kaaes.spotify.webapi.android.models.Track;
+import retrofit.RetrofitError;
 import v.blade.ui.PlayerConnection;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -24,6 +25,7 @@ import java.util.*;
  */
 public class LibraryService
 {
+    private static final boolean LOG_REGISTER_SONG = false;
     static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
@@ -141,6 +143,13 @@ public class LibraryService
 
         configured = true;
 
+        //wait for spotify callback
+    }
+    /*
+    * Spotify config init and player init are all async, so i need to wait for them to then call playerConnection init...
+     */
+    public static void onSpotifyConfigDone()
+    {
         //Start playerConnection
         PlayerConnection.start(null, 0);
     }
@@ -159,7 +168,7 @@ public class LibraryService
             {
                 if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
                 {
-                    System.out.println("[REGISTER] Found song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
+                    if(LOG_REGISTER_SONG) System.out.println("[REGISTER] Found song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
                     s.getSources().addSource(source);
                     s.getAlbum().getSources().addSource(source);
                     s.getArtist().getSources().addSource(source);
@@ -181,7 +190,7 @@ public class LibraryService
                     s.getAlbum().addSong(s);
                     s.setHandled(false);
                     handles.remove(s);
-                    System.out.println("[REGISTER] Found handled song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
+                    if(LOG_REGISTER_SONG) System.out.println("[REGISTER] Found handled song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
                     return s;
                 }
             }
@@ -223,7 +232,7 @@ public class LibraryService
         if(snames != null) snames.add(song);
         else {ArrayList<Song> sn = new ArrayList<>(); sn.add(song); songsByName.put(name.toLowerCase(), sn);}
 
-        System.out.println("[REGISTER] Registered : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName() + " - SOURCE " + source.getSource());
+        if(LOG_REGISTER_SONG) System.out.println("[REGISTER] Registered : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName() + " - SOURCE " + source.getSource());
         return song;
     }
 
@@ -282,14 +291,22 @@ public class LibraryService
                     //query spotify for this song
                     HashMap<String, Object> args = new HashMap<>();
                     args.put("limit", 1);
-                    List<Track> t = Source.SOURCE_SPOTIFY.spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
-                    if(t != null && t.size() > 0 && t.get(0) != null)
+                    try
                     {
-                        SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, Source.SOURCE_SPOTIFY);
-                        s.getSources().addSource(source);
-                        s.getArtist().getSources().addSource(source);
-                        s.getAlbum().getSources().addSource(source);
-                        spotifySongs.add(s);
+                        List<Track> t = Source.SOURCE_SPOTIFY.spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
+                        if(t != null && t.size() > 0 && t.get(0) != null)
+                        {
+                            SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, Source.SOURCE_SPOTIFY);
+                            s.getSources().addSource(source);
+                            s.getArtist().getSources().addSource(source);
+                            s.getAlbum().getSources().addSource(source);
+                            spotifySongs.add(s);
+                        }
+                    }
+                    catch (RetrofitError error)
+                    {
+                        //TODO : handle error
+                        continue;
                     }
                 }
             }
@@ -554,7 +571,7 @@ public class LibraryService
                     s.getSources().addSource(source);
                     s.getAlbum().getSources().addSource(source);
                     s.getArtist().getSources().addSource(source);
-                    System.out.println("[HANDLE] Found registered song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
+                    if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found registered song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
                     return s;
                 }
             }
@@ -565,7 +582,7 @@ public class LibraryService
                 s.getSources().addSource(source);
                 s.getAlbum().getSources().addSource(source);
                 s.getArtist().getSources().addSource(source);
-                System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
+                if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
                 return s;
             }
 
@@ -588,7 +605,7 @@ public class LibraryService
         s.getSources().addSource(source);
         s.setHandled(true);
         handles.add(s);
-        System.out.println("[HANDLE] Handled : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName() + " SOURCE " + source.getSource());
+        if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Handled : " + name + " - " + songAlbum.getName() + " - " + songArtist.getName() + " SOURCE " + source.getSource());
         return s;
     }
 

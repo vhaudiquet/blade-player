@@ -41,6 +41,7 @@ public class LibraryObjectAdapter extends BaseAdapter
     private ImageView.OnClickListener moreClickListener;
     private ImageView.OnTouchListener moreTouchListener;
     private int moreImageRessource = 0;
+    private boolean hideMore;
 
     private boolean repaintSongBackground = false;
     private int selectedPosition;
@@ -84,8 +85,8 @@ public class LibraryObjectAdapter extends BaseAdapter
     {this.moreClickListener = clickListener;}
     public void registerMoreTouchListener(ImageView.OnTouchListener touchListener)
     {this.moreTouchListener = touchListener;}
-    public void setMoreImage(int ressource)
-    {this.moreImageRessource = ressource;}
+    public void setMoreImage(int ressource) {this.moreImageRessource = ressource;}
+    public void setHideMore(boolean hideMore) {this.hideMore = hideMore;}
     public void repaintSongBackground() {repaintSongBackground = true;}
     public void setSelectedPosition(int selectedPosition) {this.selectedPosition  = selectedPosition;}
     public void resetList(List objects)
@@ -140,6 +141,7 @@ public class LibraryObjectAdapter extends BaseAdapter
             if(moreClickListener != null) more.setOnClickListener(moreClickListener);
             if(moreTouchListener != null) more.setOnTouchListener(moreTouchListener);
             if(moreImageRessource != 0) more.setImageResource(moreImageRessource);
+            if(hideMore) more.setVisibility(View.INVISIBLE);
 
             convertView.setTag(mViewHolder);
         }

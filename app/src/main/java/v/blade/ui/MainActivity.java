@@ -23,6 +23,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -188,6 +189,7 @@ public class MainActivity extends AppCompatActivity
             final LibraryObject object = (LibraryObject) v.getTag();
 
             PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
+
             popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
             {
                 @Override
@@ -223,11 +225,98 @@ public class MainActivity extends AppCompatActivity
                             addToPlaylist(playlist2);
                             Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
                             break;
+
+                        case R.id.action_add_to_list:
+                            if(currentContext == CONTEXT_SONGS && fromPlaylists)
+                            {
+                                ((Playlist) currentObject).getSources().getSourceByPriority(0).getSource()
+                                        .removeSongFromPlaylist((Song) object, ((Playlist) currentObject), new Source.OperationCallback()
+                                        {
+                                            @Override
+                                            public void onSucess() {}
+
+                                            @Override
+                                            public void onFailure() {}
+                                        });
+                            }
+
+                            List<Song> toAdd = new ArrayList<>();
+                            if(object instanceof Song) toAdd.add((Song) object);
+                            else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
+                            else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
+                            else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
+
+                            LibraryObjectAdapter adapter = new LibraryObjectAdapter(MainActivity.this, LibraryService.getPlaylists());
+                            adapter.setHideMore(true);
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
+                                    .setTitle(getString(R.string.add_to_playlist))
+                                    .setAdapter(adapter,
+                                            new DialogInterface.OnClickListener()
+                                            {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which)
+                                                {
+                                                    Playlist clicked = LibraryService.getPlaylists().get(which);
+                                                    clicked.getSources().getSourceByPriority(0).getSource()
+                                                            .addSongsToPlaylist(toAdd, clicked, new Source.OperationCallback() {
+                                                                @Override
+                                                                public void onSucess()
+                                                                {
+                                                                    runOnUiThread(new Runnable()
+                                                                    {
+                                                                        @Override
+                                                                        public void run()
+                                                                        {
+                                                                            Toast.makeText(MainActivity.this, toAdd.size() + " " + getString(R.string.added_ok) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
+
+                                                                }
+
+                                                                @Override
+                                                                public void onFailure()
+                                                                {
+                                                                    runOnUiThread(new Runnable()
+                                                                    {
+                                                                        @Override
+                                                                        public void run()
+                                                                        {
+                                                                            Toast.makeText(MainActivity.this, getString(R.string.added_fail) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
+
+                                                                }
+                                                            });
+                                                }
+                                            })
+                                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
+                                    {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which)
+                                        {
+                                            dialog.cancel();
+                                        }
+                                    });
+                            AlertDialog dialog = builder.create();
+                            dialog.setOnShowListener(new DialogInterface.OnShowListener()
+                            {
+                                @Override
+                                public void onShow(DialogInterface arg0)
+                                {
+                                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                                }
+                            });
+                            dialog.show();
+                            break;
                     }
                     return false;
                 }
             });
             getMenuInflater().inflate(R.menu.menu_object_more, popupMenu.getMenu());
+            if(currentContext == CONTEXT_PLAYLISTS)
+                popupMenu.getMenu().findItem(R.id.action_add_to_list).setVisible(false);
+            else if(currentContext == CONTEXT_SONGS && fromPlaylists)
+                popupMenu.getMenu().findItem(R.id.action_add_to_list).setTitle(getString(R.string.remove_from_playlist));
             popupMenu.show();
         }
     };
