@@ -121,6 +121,7 @@ public class SourcesActivity extends AppCompatActivity
                         Source.SOURCE_DEEZER.DEEZER_USER_SESSION.save(Source.SOURCE_DEEZER.deezerApi, SourcesActivity.this.getApplicationContext());
                         Source.SOURCE_DEEZER.setAvailable(true);
                         Source.SOURCE_DEEZER.setPriority(adapter.sources.get(0).getPriority()+1);
+                        Source.SOURCE_DEEZER.me = Source.SOURCE_DEEZER.deezerApi.getCurrentUser();
                         SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = pref.edit();
                         editor.putInt("deezer_prior", Source.SOURCE_DEEZER.getPriority());
@@ -240,6 +241,8 @@ public class SourcesActivity extends AppCompatActivity
                             adapter.notifyDataSetChanged();
                             Source.SOURCE_SPOTIFY.spotifyApi.setAccessToken(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
 
+                            Source.SOURCE_SPOTIFY.mePrivate = Source.SOURCE_SPOTIFY.spotifyApi.getService().getMe();
+
                             Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                         }
                         catch(Exception e)
@@ -314,7 +317,7 @@ public class SourcesActivity extends AppCompatActivity
 
             Source source = sources.get(position);
             mViewHolder.source.setImageResource(source.getLogoImage());
-            mViewHolder.status.setText(source.isAvailable() ? context.getString(R.string.connected) : context.getString(R.string.disconnected));
+            mViewHolder.status.setText(source.isAvailable() ? context.getString(R.string.connected) + " (" + source.getUserName() + ")" : context.getString(R.string.disconnected));
             return convertView;
         }
     }

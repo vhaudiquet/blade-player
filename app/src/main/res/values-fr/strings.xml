@@ -40,4 +40,5 @@
     <string name="search_web">Recherche web</string>
     <string name="empty">Cette liste est vide</string>
     <string name="oncrash">Désolé, Blade viens de crasher. Un rapport a été envoyé au développeur. La prochaine mise à jour résoudra sûrement ce bug ! :)</string>
+    <string name="collaborative">Collaborative</string>
 </resources>

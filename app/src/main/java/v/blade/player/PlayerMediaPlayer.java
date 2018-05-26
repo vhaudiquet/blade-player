@@ -267,7 +267,11 @@ public class PlayerMediaPlayer
             if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
                 mediaPlayer.start();
             else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
-                spotifyPlayer.resume(null);
+            {
+                if(spotifyPlayer != null && spotifyPlayerError == WEBPLAYER_ERROR_NONE)
+                    spotifyPlayer.resume(null);
+                else playSong(currentSong);
+            }
             else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE)
                 deezerPlayer.play();
 

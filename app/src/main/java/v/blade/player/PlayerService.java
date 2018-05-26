@@ -52,6 +52,8 @@ public class PlayerService extends Service
         @Override
         public void onStateChange()
         {
+            if(currentPlaylist == null) return;
+
             /* we reached song end ; go to new song */
             if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_SONGEND)
             {

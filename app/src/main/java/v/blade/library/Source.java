@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
+import com.deezer.sdk.model.User;
 import com.deezer.sdk.network.connect.DeezerConnect;
 import com.deezer.sdk.network.connect.SessionStore;
 import com.deezer.sdk.network.request.DeezerRequest;
@@ -50,9 +51,12 @@ public abstract class Source
     public abstract void registerCachedSongs();
     public abstract void registerSongs();
     public abstract void initConfig(SharedPreferences accountsPrefs);
+    public abstract String getUserName();
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
+        @Override
+        public String getUserName() {return "";}
         @Override
         public List<LibraryObject> query(String query) {return new ArrayList<>();}
 
@@ -189,7 +193,7 @@ public abstract class Source
         public String SPOTIFY_USER_TOKEN;
         public String SPOTIFY_REFRESH_TOKEN;
         public final SpotifyApi spotifyApi = new SpotifyApi();
-        private UserPrivate mePrivate;
+        public UserPrivate mePrivate;
         private File spotifyCacheFile;
         private File spotifyPlaylistsCache;
 
@@ -197,6 +201,9 @@ public abstract class Source
         {
             super(R.drawable.ic_spotify, R.drawable.ic_spotify_logo, "SPOTIFY");
         }
+
+        @Override
+        public String getUserName() {return mePrivate == null ? "" : mePrivate.email;}
 
         @Override
         public void initConfig(SharedPreferences accountsPrefs)
@@ -274,6 +281,11 @@ public abstract class Source
                     {
                         ArrayList<Song> thisList = new ArrayList<>();
                         BufferedReader sppr = new BufferedReader(new FileReader(f));
+                        String id = sppr.readLine();
+                        boolean isMine = Boolean.parseBoolean(sppr.readLine());
+                        String owner = null;
+                        if(!isMine) owner = sppr.readLine();
+                        boolean isCollab = Boolean.parseBoolean(sppr.readLine());
                         while(sppr.ready())
                         {
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
@@ -294,7 +306,9 @@ public abstract class Source
                         sppr.close();
 
                         Playlist p = new Playlist(f.getName(), thisList);
-                        p.getSources().addSource(new SongSources.SongSource(0, SOURCE_SPOTIFY));
+                        if(!isMine) p.setOwner(owner);
+                        if(isCollab) p.setCollaborative();
+                        p.getSources().addSource(new SongSources.SongSource(id, SOURCE_SPOTIFY));
                         LibraryService.getPlaylists().add(p);
                     }
                 }
@@ -447,7 +461,7 @@ public abstract class Source
                         Playlist list = new Playlist(playlistBase.name, thisList);
                         list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SOURCE_SPOTIFY));
                         if(playlistBase.collaborative) list.setCollaborative();
-                        if(playlistBase.owner.id != mePrivate.id) list.setOwner(playlistBase.owner.display_name);
+                        if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name);
                         spotifyPlaylists.add(list);
                         LibraryService.getPlaylists().add(list);
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
@@ -483,6 +497,10 @@ public abstract class Source
                         File thisPlaylist = new File(spotifyPlaylistsCache.getAbsolutePath() + "/" + p.getName());
                         thisPlaylist.createNewFile();
                         BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
+                        pwriter.write((String) p.getSources().getSpotify().getId()); pwriter.newLine();
+                        pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
+                        if(!p.isMine()) {pwriter.write(p.getOwner()); pwriter.newLine();}
+                        pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
                         for(Song song : p.getContent())
                         {
                             pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
@@ -567,10 +585,13 @@ public abstract class Source
             }
             catch(RetrofitError e)
             {
-                if(e.getResponse().getStatus() == 401)
+                if(e.getResponse() != null)
                 {
-                    refreshSpotifyToken();
-                    return query(query);
+                    if(e.getResponse().getStatus() == 401)
+                    {
+                        refreshSpotifyToken();
+                        return query(query);
+                    }
                 }
                 e.printStackTrace();
             }
@@ -636,11 +657,16 @@ public abstract class Source
         public DeezerConnect deezerApi;
         private File deezerCacheFile;
         private File deezerPlaylistsCache;
+        public User me;
 
         Deezer()
         {
             super(R.drawable.ic_deezer, R.drawable.ic_deezer, "DEEZER");
         }
+
+
+        @Override
+        public String getUserName() {return me == null ? "" : me.getName();}
 
         @Override
         public void initConfig(SharedPreferences accountsPrefs)
@@ -656,6 +682,7 @@ public abstract class Source
             if(DEEZER_USER_SESSION.restore(deezerApi, LibraryService.appContext))
             {
                 SOURCE_DEEZER.setAvailable(true);
+                me = deezerApi.getCurrentUser();
             }
         }
 
@@ -690,6 +717,11 @@ public abstract class Source
                     {
                         ArrayList<Song> thisList = new ArrayList<>();
                         BufferedReader sppr = new BufferedReader(new FileReader(f));
+                        Long id = Long.parseLong(sppr.readLine());
+                        boolean isMine = Boolean.parseBoolean(sppr.readLine());
+                        String owner = null;
+                        if(!isMine) owner = sppr.readLine();
+                        boolean isCollab = Boolean.parseBoolean(sppr.readLine());
                         while(sppr.ready())
                         {
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
@@ -711,7 +743,9 @@ public abstract class Source
                         sppr.close();
 
                         Playlist p = new Playlist(f.getName(), thisList);
-                        p.getSources().addSource(new SongSources.SongSource(0, SOURCE_DEEZER));
+                        if(!isMine) p.setOwner(owner);
+                        if(isCollab) p.setCollaborative();
+                        p.getSources().addSource(new SongSources.SongSource(id, SOURCE_DEEZER));
                         LibraryService.getPlaylists().add(p);
                     }
                 }
@@ -839,6 +873,8 @@ public abstract class Source
                     }
 
                     Playlist list = new Playlist(playlist.getTitle(), thisList);
+                    if(playlist.isCollaborative()) list.setCollaborative();
+                    if(!playlist.getCreator().equals(me)) list.setOwner(playlist.getCreator().getName());
                     list.getSources().addSource(new SongSources.SongSource(playlist.getId(), SOURCE_DEEZER));
                     LibraryService.getPlaylists().add(list);
                     deezerPlaylists.add(list);
@@ -866,6 +902,10 @@ public abstract class Source
                         File thisPlaylist = new File(deezerPlaylistsCache.getAbsolutePath() + "/" + p.getName());
                         thisPlaylist.createNewFile();
                         BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
+                        pwriter.write(String.valueOf((long) p.getSources().getDeezer().getId())); pwriter.newLine();
+                        pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
+                        if(!p.isMine()) {pwriter.write(p.getOwner()); pwriter.newLine();}
+                        pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
                         for(Song song : p.getContent())
                         {
                             pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR

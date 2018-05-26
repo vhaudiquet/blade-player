@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity
                     setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
+                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = null;
                     Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Album> albums = currentArtist.getAlbums();
                     currentObject = currentArtist;
@@ -148,7 +148,6 @@ public class MainActivity extends AppCompatActivity
                 case CONTEXT_ALBUMS:
                     if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;}
                     else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle); back2Object = currentObject;}
-
                     Album currentAlbum = (Album) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> asongs = currentAlbum.getSongs();
                     currentObject = currentAlbum;
@@ -629,6 +628,7 @@ public class MainActivity extends AppCompatActivity
         bundle.putInt("currentContext", currentContext);
         bundle.putBoolean("fromPlaylists", fromPlaylists);
         bundle.putInt("listSelection", mainListView.getFirstVisiblePosition());
+        bundle.putBoolean("currentPlayShown", currentPlayShown);
     }
     private void restoreInstanceState(Bundle bundle, LibraryObject currentObject)
     {
@@ -636,6 +636,8 @@ public class MainActivity extends AppCompatActivity
 
         int restoreContext = bundle.getInt("currentContext");
         fromPlaylists = bundle.getBoolean("fromPlaylists");
+
+        MainActivity.currentObject = currentObject;
 
         switch(restoreContext)
         {
@@ -660,5 +662,10 @@ public class MainActivity extends AppCompatActivity
         }
 
         mainListView.setSelection(bundle.getInt("listSelection"));
+
+        if(bundle.getBoolean("currentPlayShown") && PlayerConnection.getService() != null)
+        {
+            showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
+        }
     }
 }
