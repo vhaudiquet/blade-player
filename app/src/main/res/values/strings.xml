@@ -61,4 +61,6 @@
     <string name="oncrash">Désolé, Blade viens de crasher. Un rapport a été envoyé au développeur. La prochaine mise à jour résoudra sûrement ce bug ! :)</string>
 
     <string name="cancel">Annuler</string>
+
+    <string name="sync_fail_load">Attendez la fin du chargement de la bibliothèque avant de synchroniser</string>
 </resources>

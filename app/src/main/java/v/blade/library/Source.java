@@ -696,6 +696,7 @@ public abstract class Source
 
                         sSongs += ("spotify:track:" + spot.getId() + ",");
                     }
+                    if(sSongs.length() == 0) {callback.onFailure(); return;}
                     sSongs = sSongs.substring(0, sSongs.length()-1);
                     parameters.put("uris", sSongs);
 
@@ -1222,6 +1223,7 @@ public abstract class Source
 
                 ids.add((long) deezer.getId());
             }
+            if(ids.size() == 0) {callback.onFailure(); return;}
 
             DeezerRequest request = DeezerRequestFactory.requestPlaylistAddTracks((long) list.getSources().getDeezer().getId(), ids);
             new Thread()

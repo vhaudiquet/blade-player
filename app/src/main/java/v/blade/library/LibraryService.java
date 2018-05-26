@@ -61,6 +61,7 @@ public class LibraryService
 
     /* synchronization notification management */
     public static volatile boolean synchronization;
+    public static volatile boolean loadingDone;
     public static Thread syncThread;
 
     public static void registerInit()
@@ -115,6 +116,8 @@ public class LibraryService
                 e.printStackTrace();
             }
         }
+
+        loadingDone = true;
     }
 
     /*
@@ -241,12 +244,16 @@ public class LibraryService
     * Synchronize local/cached library with local/web library
     * This method is asynchronous
      */
+    public static final int ERROR_LOADING_NOT_DONE = 1;
     public interface SynchronizeCallback
     {
         void synchronizeDone();
+        void synchronizeFail(int error);
     }
     public static void synchronizeLibrary(SynchronizeCallback callback)
     {
+        if(!loadingDone) {callback.synchronizeFail(ERROR_LOADING_NOT_DONE); return;}
+
         synchronization = true;
 
         syncThread = new Thread()
@@ -254,6 +261,20 @@ public class LibraryService
             public void run()
             {
                 Looper.prepare();
+
+                //copy all songs in library to HANDLES so that they don't need complete resync (better sources search, img load)
+                synchronized (songs)
+                {
+                    for(Song s : songs) {handles.add(s); s.setHandled(true);}
+                }
+                synchronized (albums)
+                {
+                    for(Album a : albums) {albumHandles.add(a); a.setHandled(true);}
+                }
+                synchronized (artists)
+                {
+                    for(Artist a : artists) {artistHandles.add(a); a.setHandled(true);}
+                }
 
                 for(Source s : Source.SOURCES) s.registerSongs();
 

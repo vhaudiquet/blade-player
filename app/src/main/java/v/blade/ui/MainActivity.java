@@ -451,6 +451,24 @@ public class MainActivity extends AppCompatActivity
                         }
                     });
                 }
+                @Override
+                public void synchronizeFail(int error)
+                {
+                    runOnUiThread(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            syncButton.setIcon(R.drawable.ic_sync);
+                            switch (error)
+                            {
+                                case LibraryService.ERROR_LOADING_NOT_DONE:
+                                    Toast.makeText(MainActivity.this, getText(R.string.sync_fail_load), Toast.LENGTH_SHORT).show();
+                                    break;
+                            }
+                        }
+                    });
+                }
             });
             return true;
         }
