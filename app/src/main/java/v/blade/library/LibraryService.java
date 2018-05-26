@@ -114,6 +114,17 @@ public class LibraryService
         }
 
         loadingDone = true;
+
+        new Thread()
+        {
+            public void run()
+            {
+                for(Source s : Source.SOURCES)
+                {
+                    s.loadCachedArts();
+                }
+            }
+        }.start();
     }
 
     /*

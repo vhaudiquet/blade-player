@@ -52,6 +52,7 @@ public abstract class Source
 
     public abstract List<LibraryObject> query(String query);
     public abstract void registerCachedSongs();
+    public abstract void loadCachedArts();
     public abstract void registerSongs();
     public abstract void initConfig(SharedPreferences accountsPrefs);
     public abstract String getUserName();
@@ -63,6 +64,8 @@ public abstract class Source
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
+        private LongSparseArray<Album> idsorted_albums;
+
         @Override
         public String getUserName() {return "";}
         @Override
@@ -96,7 +99,7 @@ public abstract class Source
 
             /* get content resolver and init temp sorted arrays */
             final ContentResolver musicResolver = LibraryService.appContext.getContentResolver();
-            LongSparseArray<Album> idsorted_albums = new LongSparseArray<>();
+            idsorted_albums = new LongSparseArray<>();
             LongSparseArray<Song> idsorted_songs = new LongSparseArray<>();
 
             /* let's get all music files of the user, and register them and their attributes */
@@ -169,10 +172,16 @@ public abstract class Source
                 playlistCursor.close();
             }
 
-            System.out.println("[BLADE-LOCAL] Songs registered ; getting AlbumArts...");
+            System.out.println("[BLADE-LOCAL] Songs registered");
+        }
 
-            /* now let's get all albumarts */
-            Cursor albumCursor = musicResolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
+        @Override
+        public void loadCachedArts()
+        {
+            if(idsorted_albums == null) return;
+
+            Cursor albumCursor = LibraryService.appContext.getContentResolver().
+                    query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
             if(albumCursor!=null && albumCursor.moveToFirst())
             {
                 int idCol = albumCursor.getColumnIndex(MediaStore.Audio.Albums._ID);
@@ -192,7 +201,7 @@ public abstract class Source
                 albumCursor.close();
             }
 
-            System.out.println("[BLADE-LOCAL] AlbumArts loaded.");
+            idsorted_albums = null;
         }
 
         @Override
@@ -265,6 +274,8 @@ public abstract class Source
         private File spotifyCacheFile;
         private File spotifyPlaylistsCache;
 
+        private ArrayList<Album> spotifyCachedAlbums;
+
         Spotify()
         {
             super(R.drawable.ic_spotify, R.drawable.ic_spotify_logo, "SPOTIFY");
@@ -323,6 +334,7 @@ public abstract class Source
         {
             if(!LibraryService.configured) return;
 
+            spotifyCachedAlbums = new ArrayList<Album>();
             System.out.println("[BLADE-SPOTIFY] Registering cached songs...");
             try
             {
@@ -337,10 +349,11 @@ public abstract class Source
                                 Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
                         song.setFormat(tp[3]);
 
-                        if(!song.getAlbum().hasAlbumArt())
+                        if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
                         {
                             //the image is supposed to be cached locally, so no need to provide URL
-                            LibraryService.loadAlbumArt(song.getAlbum(), "", false);
+                            spotifyCachedAlbums.add(song.getAlbum());
+                            song.getAlbum().setAlbumArtLoading();
                         }
                     }
                     spr.close();
@@ -366,10 +379,11 @@ public abstract class Source
                             song.setFormat(tp[3]);
                             thisList.add(song);
 
-                            if(!song.getAlbum().hasAlbumArt())
+                            if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
                             {
                                 //the image is supposed to be cached locally, so no need to provide URL
-                                LibraryService.loadAlbumArt(song.getAlbum(), "", false);
+                                spotifyCachedAlbums.add(song.getAlbum());
+                                song.getAlbum().setAlbumArtLoading();
                             }
                         }
                         sppr.close();
@@ -388,6 +402,19 @@ public abstract class Source
                 e.printStackTrace();
             }
             System.out.println("[BLADE-SPOTIFY] Cached songs registered.");
+        }
+
+        @Override
+        public void loadCachedArts()
+        {
+            if(spotifyCachedAlbums == null) return;
+
+            for(Album alb : spotifyCachedAlbums)
+            {
+                LibraryService.loadAlbumArt(alb, "", false);
+            }
+
+            spotifyCachedAlbums = null;
         }
 
         @Override
@@ -886,6 +913,8 @@ public abstract class Source
         private File deezerPlaylistsCache;
         public User me;
 
+        private ArrayList<Album> deezerCachedAlbums;
+
         Deezer()
         {
             super(R.drawable.ic_deezer, R.drawable.ic_deezer, "DEEZER");
@@ -918,6 +947,7 @@ public abstract class Source
         {
             if(!LibraryService.configured) return;
 
+            deezerCachedAlbums = new ArrayList<>();
             System.out.println("[BLADE-DEEZER] Registering cached songs...");
 
             try
@@ -933,10 +963,11 @@ public abstract class Source
                                 Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER));
                         song.setFormat(tp[3]);
 
-                        if(!song.getAlbum().hasAlbumArt())
+                        if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
                         {
                             //the image is supposed to be cached locally, so no need to provide URL
-                            LibraryService.loadAlbumArt(song.getAlbum(), "", false);
+                            deezerCachedAlbums.add(song.getAlbum());
+                            song.getAlbum().setAlbumArtLoading();
                         }
                     }
                     spr.close();
@@ -963,10 +994,11 @@ public abstract class Source
                             song.setFormat(tp[3]);
                             thisList.add(song);
 
-                            if(!song.getAlbum().hasAlbumArt())
+                            if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
                             {
                                 //the image is supposed to be cached locally, so no need to provide URL
-                                LibraryService.loadAlbumArt(song.getAlbum(), "", false);
+                                deezerCachedAlbums.add(song.getAlbum());
+                                song.getAlbum().setAlbumArtLoading();
                             }
                         }
                         sppr.close();
@@ -985,6 +1017,19 @@ public abstract class Source
                 e.printStackTrace();
             }
             System.out.println("[BLADE-DEEZER] Cached songs registered.");
+        }
+
+        @Override
+        public void loadCachedArts()
+        {
+            if(deezerCachedAlbums == null) return;
+
+            for(Album alb : deezerCachedAlbums)
+            {
+                LibraryService.loadAlbumArt(alb, "", false);
+            }
+
+            deezerCachedAlbums = null;
         }
 
         @Override

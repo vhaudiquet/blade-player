@@ -31,6 +31,7 @@ public class Album extends LibraryObject
     private Bitmap miniatureArt;
     private boolean hasArt = false;
     private String albumArtPath;
+    private boolean albumArtLoad;
 
     public Album(String name, Artist artist)
     {
@@ -51,5 +52,8 @@ public class Album extends LibraryObject
         this.hasArt = true;
         this.miniatureArt = miniatureArt;
         this.albumArtPath = path;
+        this.albumArtLoad = false;
     }
+    public void setAlbumArtLoading() {this.albumArtLoad = true;}
+    public boolean getAlbumArtLoading() {return this.albumArtLoad;}
 }
