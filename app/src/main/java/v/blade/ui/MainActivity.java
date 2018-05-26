@@ -233,11 +233,32 @@ public class MainActivity extends AppCompatActivity
                                         .removeSongFromPlaylist((Song) object, ((Playlist) currentObject), new Source.OperationCallback()
                                         {
                                             @Override
-                                            public void onSucess() {}
+                                            public void onSucess()
+                                            {
+                                                runOnUiThread(new Runnable()
+                                                {
+                                                    @Override
+                                                    public void run()
+                                                    {
+                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_ok) + " " + ((Playlist) currentObject).getName(), Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                            }
 
                                             @Override
-                                            public void onFailure() {}
+                                            public void onFailure()
+                                            {
+                                                runOnUiThread(new Runnable()
+                                                {
+                                                    @Override
+                                                    public void run()
+                                                    {
+                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_fail) + " " + ((Playlist) currentObject).getName(), Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                            }
                                         });
+                                break;
                             }
 
                             List<Song> toAdd = new ArrayList<>();

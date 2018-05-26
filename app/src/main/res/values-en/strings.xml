@@ -45,4 +45,6 @@
     <string name="cancel">Cancel</string>
     <string name="added_fail">Could not add to playlist</string>
     <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="delete_ok">was removed from playlist</string>
+    <string name="delete_fail">could not be removed from playlist</string>
 </resources>

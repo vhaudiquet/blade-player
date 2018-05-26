@@ -183,7 +183,16 @@ public class PlayerMediaPlayer
                                 Toast.makeText(context, context.getString(R.string.player_error) + " Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
                                 currentActivePlayer = NO_PLAYER_ACTIVE;
                                 currentState = PLAYER_STATE_PAUSED;
+                                spotifyPlayerError = WEBPLAYER_ERROR_OTHER;
                                 listener.onStateChange();
+
+                                if(error.equals(Error.kSpErrorFailed))
+                                {
+                                    //try to actualize spotify token and reinit player
+                                    Source.SOURCE_SPOTIFY.checkAndRefreshSpotifyToken();
+                                    spotifyWaiting = currentSong;
+                                    initSpotifyMediaPlayer();
+                                }
                             }
                         });
 

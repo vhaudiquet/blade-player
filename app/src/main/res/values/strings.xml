@@ -25,6 +25,8 @@
     <string name="add_to_playlist">Ajouter à la liste...</string>
     <string name="remove_from_playlist">Supprimer de la liste</string>
     <string name="added_fail">Impossible d\'ajouter à la playlist</string>
+    <string name="delete_ok">a bien été supprimé de la playlist</string>
+    <string name="delete_fail">n\'a pas pu être supprimé de la playlist</string>
 
     <string name="title_activity_play">En écoute</string>
 

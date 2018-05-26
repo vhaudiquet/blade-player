@@ -101,7 +101,7 @@ public class PlayerNotification
                 .setColor(ContextCompat.getColor(mService, R.color.colorPrimary))
                 .setSmallIcon(R.drawable.app_icon_notif) //icon that will be displayed in status bar
                 .setContentIntent(contentIntent) //intent that will be sent on notification click
-                .setLargeIcon(playing.getAlbum().getAlbumArtMiniature())
+                .setLargeIcon(mService.getCurrentArt())
                 .setContentTitle(playing.getTitle())
                 .setContentText(playing.getArtist().getName() + " - " + playing.getAlbum().getName())
                 .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(mService, PlaybackStateCompat.ACTION_STOP)) //intent on notification slide ?
