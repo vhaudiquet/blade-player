@@ -696,7 +696,7 @@ public abstract class Source
                         {
                             if(SOURCE_SPOTIFY.searchForSong(s))
                                 spot = s.getSources().getSpotify();
-                            else continue;
+                            else {songs.remove(s); continue;}
                         }
 
                         sSongs += ("spotify:track:" + spot.getId() + ",");
@@ -1239,23 +1239,6 @@ public abstract class Source
             if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_DEEZER) {callback.onFailure(); return;}
             if(!list.isMine() && !list.isCollaborative()) {callback.onFailure(); return;}
 
-            ArrayList<Long> ids = new ArrayList<>();
-            for(Song s : list.getContent())
-            {
-                SongSources.SongSource deezer = s.getSources().getDeezer();
-
-                if(deezer == null)
-                {
-                    if(SOURCE_DEEZER.searchForSong(s))
-                        deezer = s.getSources().getDeezer();
-                    else continue;
-                }
-
-                ids.add((long) deezer.getId());
-            }
-            if(ids.size() == 0) {callback.onFailure(); return;}
-
-            DeezerRequest request = DeezerRequestFactory.requestPlaylistAddTracks((long) list.getSources().getDeezer().getId(), ids);
             new Thread()
             {
                 public void run()
@@ -1264,7 +1247,24 @@ public abstract class Source
                     {
                         Looper.prepare();
 
-                        deezerApi.requestSync(request);
+                        ArrayList<Long> ids = new ArrayList<>();
+                        for(Song s : songs)
+                        {
+                            SongSources.SongSource deezer = s.getSources().getDeezer();
+                            if(deezer == null)
+                            {
+                                if(SOURCE_DEEZER.searchForSong(s))
+                                    deezer = s.getSources().getDeezer();
+                                else {songs.remove(s); continue;}
+                            }
+
+                            ids.add((long) deezer.getId());
+                        }
+                        if(ids.size() == 0) {callback.onFailure(); return;}
+
+                        DeezerRequest request = DeezerRequestFactory.requestPlaylistAddTracks((long) list.getSources().getDeezer().getId(), ids);
+                        boolean b = Boolean.parseBoolean(deezerApi.requestSync(request));
+                        if(!b) {callback.onFailure(); return;}
 
                         //add songs to RAM list
                         list.getContent().addAll(songs);
@@ -1277,7 +1277,7 @@ public abstract class Source
                             for(Song song : songs)
                             {
                                 writer.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + String.valueOf((long) song.getSources().getDeezer().getId())
+                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
                                         + CACHE_SEPARATOR);
                                 writer.newLine();
                             }
@@ -1313,7 +1313,7 @@ public abstract class Source
                     {
                         Looper.prepare();
 
-                        deezerApi.requestSync(request);
+                        System.out.println(deezerApi.requestSync(request));
 
                         //remove song from RAM list
                         list.getContent().remove(song);
@@ -1336,7 +1336,7 @@ public abstract class Source
                             for(Song song : list.getContent())
                             {
                                 writer.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + String.valueOf((long) song.getSources().getDeezer().getId())
+                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
                                         + CACHE_SEPARATOR);
                                 writer.newLine();
                             }
@@ -1364,15 +1364,18 @@ public abstract class Source
             try
             {
                 com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(Source.SOURCE_DEEZER.deezerApi.requestSync(search))).get(0);
+                System.out.println("t = " + t + "; for song " + s);
                 if (t != null)
                 {
+                    System.out.println("id = " + t.getId());
                     SongSources.SongSource source = new SongSources.SongSource(t.getId(), Source.SOURCE_DEEZER);
                     s.getSources().addSource(source);
                     s.getAlbum().getSources().addSource(source);
                     s.getArtist().getSources().addSource(source);
+                    return true;
                 }
             }
-            catch (Exception e) {} //ignored
+            catch (Exception e) {e.printStackTrace();} //ignored
 
             return false;
         }

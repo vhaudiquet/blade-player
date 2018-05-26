@@ -110,7 +110,8 @@ public class SourcesActivity extends AppCompatActivity
             else if(source == Source.SOURCE_DEEZER)
             {
                 String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
-                        Permissions.EMAIL, Permissions.OFFLINE_ACCESS};
+                        Permissions.EMAIL, Permissions.OFFLINE_ACCESS, Permissions.DELETE_LIBRARY,
+                Permissions.MANAGE_COMMUNITY};
 
                 //test that
                 LibraryService.configureLibrary(getApplicationContext());

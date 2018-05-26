@@ -189,6 +189,11 @@ public class LibraryService
                     s.getAlbum().addSong(s);
                     s.setHandled(false);
                     handles.remove(s);
+
+                    //register song by name
+                    if(snames != null) snames.add(s);
+                    else {ArrayList<Song> sn = new ArrayList<>(); sn.add(s); songsByName.put(name.toLowerCase(), sn);}
+
                     if(LOG_REGISTER_SONG) System.out.println("[REGISTER] Found handled song " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " SOURCE " + source.getSource());
                     return s;
                 }
