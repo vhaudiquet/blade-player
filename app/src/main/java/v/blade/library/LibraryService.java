@@ -6,10 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Looper;
 import android.util.Log;
-import com.deezer.sdk.network.request.DeezerRequest;
-import com.deezer.sdk.network.request.DeezerRequestFactory;
-import com.deezer.sdk.network.request.JsonUtils;
-import kaaes.spotify.webapi.android.models.Track;
 import retrofit.RetrofitError;
 import v.blade.ui.PlayerConnection;
 import v.blade.ui.settings.SettingsActivity;
@@ -310,17 +306,10 @@ public class LibraryService
                 if(s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_SPOTIFY && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                 {
                     //query spotify for this song
-                    HashMap<String, Object> args = new HashMap<>();
-                    args.put("limit", 1);
                     try
                     {
-                        List<Track> t = Source.SOURCE_SPOTIFY.spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
-                        if(t != null && t.size() > 0 && t.get(0) != null)
+                        if(Source.SOURCE_SPOTIFY.searchForSong(s))
                         {
-                            SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, Source.SOURCE_SPOTIFY);
-                            s.getSources().addSource(source);
-                            s.getArtist().getSources().addSource(source);
-                            s.getAlbum().getSources().addSource(source);
                             spotifySongs.add(s);
                         }
                     }
@@ -340,16 +329,8 @@ public class LibraryService
                     {
                         if(s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_SPOTIFY && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                         {
-                            //query spotify for this song
-                            HashMap<String, Object> args = new HashMap<>();
-                            args.put("limit", 1);
-                            List<Track> t = Source.SOURCE_SPOTIFY.spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName()).tracks.items;
-                            if(t != null && t.size() > 0 && t.get(0) != null)
+                            if(Source.SOURCE_SPOTIFY.searchForSong(s))
                             {
-                                SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, Source.SOURCE_SPOTIFY);
-                                s.getSources().addSource(source);
-                                s.getArtist().getSources().addSource(source);
-                                s.getAlbum().getSources().addSource(source);
                                 spotifySongs.add(s);
                             }
                         }
@@ -384,23 +365,10 @@ public class LibraryService
                 {
                     if (s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_DEEZER && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                     {
-                        //query deezer for this song
-                        DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
-                        search.addParam("limit", "1");
-                        try
+                        if(Source.SOURCE_DEEZER.searchForSong(s))
                         {
-                            com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(Source.SOURCE_DEEZER.deezerApi.requestSync(search))).get(0);
-                            if (t != null)
-                            {
-                                //System.out.println("Found better source for : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName());
-                                SongSources.SongSource source = new SongSources.SongSource(t.getId(), Source.SOURCE_DEEZER);
-                                s.getSources().addSource(source);
-                                s.getAlbum().getSources().addSource(source);
-                                s.getArtist().getSources().addSource(source);
-                                deezerSongs.add(s);
-                            }
+                            deezerSongs.add(s);
                         }
-                        catch (Exception e) {} //ignored
                     }
                 }
             }
@@ -417,22 +385,10 @@ public class LibraryService
                             {
                                 if(s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_DEEZER && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                                 {
-                                    //query deezer for this song
-                                    DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
-                                    try
+                                    if(Source.SOURCE_DEEZER.searchForSong(s))
                                     {
-                                        com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(Source.SOURCE_DEEZER.deezerApi.requestSync(search))).get(0);
-                                        if (t != null)
-                                        {
-                                            //System.out.println("Found better source for : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName());
-                                            SongSources.SongSource source = new SongSources.SongSource(t.getId(), Source.SOURCE_DEEZER);
-                                            s.getSources().addSource(source);
-                                            s.getAlbum().getSources().addSource(source);
-                                            s.getArtist().getSources().addSource(source);
-                                            deezerSongs.add(s);
-                                        }
+                                       deezerSongs.add(s);
                                     }
-                                    catch(Exception e) {} //ignored
                                 }
                             }
                         }

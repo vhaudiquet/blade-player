@@ -59,6 +59,7 @@ public abstract class Source
     public interface OperationCallback {void onSucess(); void onFailure();}
     public abstract void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback);
     public abstract void removeSongFromPlaylist(Song song, Playlist list, OperationCallback callback);
+    public abstract boolean searchForSong(Song song);
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
@@ -244,6 +245,9 @@ public abstract class Source
                 e.printStackTrace();
             }
         }
+
+        @Override
+        public boolean searchForSong(Song song) {return false;}
     };
     public static Spotify SOURCE_SPOTIFY = new Spotify();
     public static Deezer SOURCE_DEEZER = new Deezer();
@@ -690,8 +694,9 @@ public abstract class Source
 
                         if(spot == null)
                         {
-                            //TODO : find the song on spotify, and if it is not continue
-                            continue;
+                            if(SOURCE_SPOTIFY.searchForSong(s))
+                                spot = s.getSources().getSpotify();
+                            else continue;
                         }
 
                         sSongs += ("spotify:track:" + spot.getId() + ",");
@@ -870,6 +875,30 @@ public abstract class Source
             {
                 e.printStackTrace();
             }
+        }
+
+        @Override
+        public boolean searchForSong(Song s)
+        {
+            if(s.getSources().getSpotify() != null) return true;
+
+            try
+            {
+                HashMap<String, Object> args = new HashMap<>();
+                args.put("limit", 1);
+                List<Track> t = Source.SOURCE_SPOTIFY.spotifyApi.getService().searchTracks(s.getTitle() + " album:" + s.getAlbum().getName() + " artist:" + s.getArtist().getName(), args).tracks.items;
+                if(t != null && t.size() > 0 && t.get(0) != null)
+                {
+                    SongSources.SongSource source = new SongSources.SongSource(t.get(0).id, Source.SOURCE_SPOTIFY);
+                    s.getSources().addSource(source);
+                    s.getArtist().getSources().addSource(source);
+                    s.getAlbum().getSources().addSource(source);
+                    return true;
+                }
+            }
+            catch(RetrofitError e) {} //ignored
+
+            return false;
         }
     }
     public static class Deezer extends Source
@@ -1217,8 +1246,9 @@ public abstract class Source
 
                 if(deezer == null)
                 {
-                    //TODO : find the song on deezer, and if it is not continue
-                    continue;
+                    if(SOURCE_DEEZER.searchForSong(s))
+                        deezer = s.getSources().getDeezer();
+                    else continue;
                 }
 
                 ids.add((long) deezer.getId());
@@ -1322,6 +1352,29 @@ public abstract class Source
                     }
                 }
             }.start();
+        }
+
+        @Override
+        public boolean searchForSong(Song s)
+        {
+            if(s.getSources().getDeezer() != null) return true;
+
+            DeezerRequest search = DeezerRequestFactory.requestSearchTracks("track:\"" + s.getTitle() + "\" album:\"" + s.getAlbum().getName() + "\" artist:\"" + s.getArtist().getName() + "\"");
+            search.addParam("limit", "1");
+            try
+            {
+                com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(Source.SOURCE_DEEZER.deezerApi.requestSync(search))).get(0);
+                if (t != null)
+                {
+                    SongSources.SongSource source = new SongSources.SongSource(t.getId(), Source.SOURCE_DEEZER);
+                    s.getSources().addSource(source);
+                    s.getAlbum().getSources().addSource(source);
+                    s.getArtist().getSources().addSource(source);
+                }
+            }
+            catch (Exception e) {} //ignored
+
+            return false;
         }
     }
 }
