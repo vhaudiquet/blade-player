@@ -18,6 +18,7 @@
 package v.blade.ui;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -258,76 +259,8 @@ public class MainActivity extends AppCompatActivity
                                                 });
                                             }
                                         });
-                                break;
                             }
-
-                            List<Song> toAdd = new ArrayList<>();
-                            if(object instanceof Song) toAdd.add((Song) object);
-                            else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
-                            else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
-                            else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
-
-                            LibraryObjectAdapter adapter = new LibraryObjectAdapter(MainActivity.this, LibraryService.getPlaylists());
-                            adapter.setHideMore(true);
-                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
-                                    .setTitle(getString(R.string.add_to_playlist))
-                                    .setAdapter(adapter,
-                                            new DialogInterface.OnClickListener()
-                                            {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int which)
-                                                {
-                                                    Playlist clicked = LibraryService.getPlaylists().get(which);
-                                                    clicked.getSources().getSourceByPriority(0).getSource()
-                                                            .addSongsToPlaylist(toAdd, clicked, new Source.OperationCallback() {
-                                                                @Override
-                                                                public void onSucess()
-                                                                {
-                                                                    runOnUiThread(new Runnable()
-                                                                    {
-                                                                        @Override
-                                                                        public void run()
-                                                                        {
-                                                                            Toast.makeText(MainActivity.this, toAdd.size() + " " + getString(R.string.added_ok) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
-                                                                        }
-                                                                    });
-
-                                                                }
-
-                                                                @Override
-                                                                public void onFailure()
-                                                                {
-                                                                    runOnUiThread(new Runnable()
-                                                                    {
-                                                                        @Override
-                                                                        public void run()
-                                                                        {
-                                                                            Toast.makeText(MainActivity.this, getString(R.string.added_fail) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
-                                                                        }
-                                                                    });
-
-                                                                }
-                                                            });
-                                                }
-                                            })
-                                    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
-                                    {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which)
-                                        {
-                                            dialog.cancel();
-                                        }
-                                    });
-                            AlertDialog dialog = builder.create();
-                            dialog.setOnShowListener(new DialogInterface.OnShowListener()
-                            {
-                                @Override
-                                public void onShow(DialogInterface arg0)
-                                {
-                                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                                }
-                            });
-                            dialog.show();
+                            else showAddToPlaylist(MainActivity.this, object);
                             break;
                     }
                     return false;
@@ -777,5 +710,77 @@ public class MainActivity extends AppCompatActivity
         {
             showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
         }
+    }
+
+    /* shared dialogs */
+    static void showAddToPlaylist(Activity context, LibraryObject object)
+    {
+        List<Song> toAdd = new ArrayList<>();
+        if(object instanceof Song) toAdd.add((Song) object);
+        else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
+        else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
+        else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
+
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, LibraryService.getPlaylists());
+        adapter.setHideMore(true);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setTitle(context.getString(R.string.add_to_playlist))
+                .setAdapter(adapter,
+                        new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which)
+                            {
+                                Playlist clicked = LibraryService.getPlaylists().get(which);
+                                clicked.getSources().getSourceByPriority(0).getSource()
+                                        .addSongsToPlaylist(toAdd, clicked, new Source.OperationCallback() {
+                                            @Override
+                                            public void onSucess()
+                                            {
+                                                context.runOnUiThread(new Runnable()
+                                                {
+                                                    @Override
+                                                    public void run()
+                                                    {
+                                                        Toast.makeText(context, toAdd.size() + " " + context.getString(R.string.added_ok) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+
+                                            }
+
+                                            @Override
+                                            public void onFailure()
+                                            {
+                                                context.runOnUiThread(new Runnable()
+                                                {
+                                                    @Override
+                                                    public void run()
+                                                    {
+                                                        Toast.makeText(context, context.getString(R.string.added_fail) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+
+                                            }
+                                        });
+                            }
+                        })
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which)
+                    {
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener()
+        {
+            @Override
+            public void onShow(DialogInterface arg0)
+            {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            }
+        });
+        dialog.show();
     }
 }

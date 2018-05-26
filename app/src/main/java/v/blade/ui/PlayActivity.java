@@ -31,6 +31,7 @@ import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
+import v.blade.library.LibraryObject;
 import v.blade.library.LibraryService;
 import v.blade.library.Song;
 import v.blade.player.PlayerService;
@@ -99,6 +100,35 @@ public class PlayActivity extends AppCompatActivity
             }
 
             LibraryService.currentCallback.onLibraryChange();
+        }
+    };
+
+    /* more button actions/menu */
+    private ImageView.OnClickListener moreListener = new View.OnClickListener()
+    {
+        @Override
+        public void onClick(View v)
+        {
+            final LibraryObject object = (LibraryObject) v.getTag();
+
+            PopupMenu popupMenu = new PopupMenu(PlayActivity.this, v);
+
+            popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
+            {
+                @Override
+                public boolean onMenuItemClick(MenuItem item)
+                {
+                    switch(item.getItemId())
+                    {
+                        case R.id.action_add_to_list:
+                            MainActivity.showAddToPlaylist(PlayActivity.this, PlayerConnection.getService().getCurrentSong());
+                            break;
+                    }
+                    return false;
+                }
+            });
+            getMenuInflater().inflate(R.menu.play_more, popupMenu.getMenu());
+            popupMenu.show();
         }
     };
 
@@ -210,6 +240,8 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+
+        moreAction.setOnClickListener(moreListener);
     }
 
     @Override
