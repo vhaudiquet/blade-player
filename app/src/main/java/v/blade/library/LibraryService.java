@@ -270,11 +270,11 @@ public class LibraryService
                 }
                 synchronized (albums)
                 {
-                    for(Album a : albums) {albumHandles.add(a); a.setHandled(true);}
+                    for(Album a : albums) {albumHandles.add(a); a.setHandled(true); a.getSongs().clear();}
                 }
                 synchronized (artists)
                 {
-                    for(Artist a : artists) {artistHandles.add(a); a.setHandled(true);}
+                    for(Artist a : artists) {artistHandles.add(a); a.setHandled(true); a.getAlbums().clear();}
                 }
 
                 for(Source s : Source.SOURCES) s.registerSongs();

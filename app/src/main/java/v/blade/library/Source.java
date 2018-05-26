@@ -566,25 +566,7 @@ public abstract class Source
                     for(File f : spotifyPlaylistsCache.listFiles()) f.delete();
                     for(Playlist p : spotifyPlaylists)
                     {
-                        File thisPlaylist = new File(spotifyPlaylistsCache.getAbsolutePath() + "/" + p.getName());
-                        thisPlaylist.createNewFile();
-                        BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
-                        pwriter.write((String) p.getSources().getSpotify().getId()); pwriter.newLine();
-                        pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
-                        if(!p.isMine())
-                        {
-                            pwriter.write(p.getOwner()); pwriter.newLine();
-                            pwriter.write((String) p.getOwnerID()); pwriter.newLine();
-                        }
-                        pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
-                        for(Song song : p.getContent())
-                        {
-                            pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                    + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
-                                    + CACHE_SEPARATOR);
-                            pwriter.newLine();
-                        }
-                        pwriter.close();
+                        cachePlaylist(p);
                     }
                 }
                 catch(IOException e)
@@ -714,19 +696,7 @@ public abstract class Source
                         list.getContent().addAll(songs);
 
                         //add song to cached list
-                        File thisPlaylistCache = new File( spotifyPlaylistsCache.getAbsolutePath() + "/" + list.getName());
-                        try
-                        {
-                            BufferedWriter writer = new BufferedWriter(new FileWriter(thisPlaylistCache));
-                            for(Song song : songs)
-                            {
-                                writer.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
-                                        + CACHE_SEPARATOR);
-                                writer.newLine();
-                            }
-                        }
-                        catch(IOException e) {}
+                        cachePlaylist(list);
 
                         callback.onSucess();
                     }
@@ -769,28 +739,7 @@ public abstract class Source
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
 
                         //remove song from cached list (by rewriting the whole list)
-                        File thisPlaylistCache = new File(spotifyPlaylistsCache.getAbsolutePath() + "/" + list.getName());
-                        try
-                        {
-                            thisPlaylistCache.createNewFile();
-                            BufferedWriter writer = new BufferedWriter(new FileWriter(thisPlaylistCache));
-                            writer.write(String.valueOf((long) list.getSources().getDeezer().getId())); writer.newLine();
-                            writer.write(String.valueOf(list.isMine())); writer.newLine();
-                            if(!list.isMine())
-                            {
-                                writer.write(list.getOwner()); writer.newLine();
-                                writer.write(String.valueOf((long) list.getOwnerID())); writer.newLine();
-                            }
-                            writer.write(String.valueOf(list.isCollaborative())); writer.newLine();
-                            for(Song song : list.getContent())
-                            {
-                                writer.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
-                                        + CACHE_SEPARATOR);
-                                writer.newLine();
-                            }
-                        }
-                        catch(IOException e) {}
+                        cachePlaylist(list);
 
                         callback.onSucess();
                     }
@@ -899,6 +848,33 @@ public abstract class Source
             catch(RetrofitError e) {} //ignored
 
             return false;
+        }
+
+        private void cachePlaylist(Playlist p)
+        {
+            try
+            {
+                File thisPlaylist = new File(spotifyPlaylistsCache.getAbsolutePath() + "/" + p.getName());
+                thisPlaylist.createNewFile();
+                BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
+                pwriter.write((String) p.getSources().getSpotify().getId()); pwriter.newLine();
+                pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
+                if(!p.isMine())
+                {
+                    pwriter.write(p.getOwner()); pwriter.newLine();
+                    pwriter.write((String) p.getOwnerID()); pwriter.newLine();
+                }
+                pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
+                for(Song song : p.getContent())
+                {
+                    pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
+                            + CACHE_SEPARATOR);
+                    pwriter.newLine();
+                }
+                pwriter.close();
+            }
+            catch (IOException e) {e.printStackTrace();}
         }
     }
     public static class Deezer extends Source
@@ -1153,25 +1129,7 @@ public abstract class Source
                     for(File f : deezerPlaylistsCache.listFiles()) f.delete();
                     for(Playlist p : deezerPlaylists)
                     {
-                        File thisPlaylist = new File(deezerPlaylistsCache.getAbsolutePath() + "/" + p.getName());
-                        thisPlaylist.createNewFile();
-                        BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
-                        pwriter.write(String.valueOf((long) p.getSources().getDeezer().getId())); pwriter.newLine();
-                        pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
-                        if(!p.isMine())
-                        {
-                            pwriter.write(p.getOwner()); pwriter.newLine();
-                            pwriter.write(String.valueOf((long) p.getOwnerID())); pwriter.newLine();
-                        }
-                        pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
-                        for(Song song : p.getContent())
-                        {
-                            pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                    + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
-                                    + CACHE_SEPARATOR);
-                            pwriter.newLine();
-                        }
-                        pwriter.close();
+                        cachePlaylist(p);
                     }
                 }
                 catch(IOException e)
@@ -1270,19 +1228,7 @@ public abstract class Source
                         list.getContent().addAll(songs);
 
                         //add song to cached list
-                        File thisPlaylistCache = new File( deezerPlaylistsCache.getAbsolutePath() + "/" + list.getName());
-                        try
-                        {
-                            BufferedWriter writer = new BufferedWriter(new FileWriter(thisPlaylistCache));
-                            for(Song song : songs)
-                            {
-                                writer.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
-                                        + CACHE_SEPARATOR);
-                                writer.newLine();
-                            }
-                        }
-                        catch(IOException e) {}
+                        cachePlaylist(list);
 
                         callback.onSucess();
                     }
@@ -1320,28 +1266,7 @@ public abstract class Source
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
 
                         //remove song from cached list (by recaching it)
-                        File thisPlaylistCache = new File( deezerPlaylistsCache.getAbsolutePath() + "/" + list.getName());
-                        try
-                        {
-                            thisPlaylistCache.createNewFile();
-                            BufferedWriter writer = new BufferedWriter(new FileWriter(thisPlaylistCache));
-                            writer.write(String.valueOf((long) list.getSources().getDeezer().getId())); writer.newLine();
-                            writer.write(String.valueOf(list.isMine())); writer.newLine();
-                            if(!list.isMine())
-                            {
-                                writer.write(list.getOwner()); writer.newLine();
-                                writer.write(String.valueOf((long) list.getOwnerID())); writer.newLine();
-                            }
-                            writer.write(String.valueOf(list.isCollaborative())); writer.newLine();
-                            for(Song song : list.getContent())
-                            {
-                                writer.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
-                                        + CACHE_SEPARATOR);
-                                writer.newLine();
-                            }
-                        }
-                        catch(IOException e) {}
+                        cachePlaylist(list);
 
                         callback.onSucess();
                     }
@@ -1364,10 +1289,8 @@ public abstract class Source
             try
             {
                 com.deezer.sdk.model.Track t = ((List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(Source.SOURCE_DEEZER.deezerApi.requestSync(search))).get(0);
-                System.out.println("t = " + t + "; for song " + s);
                 if (t != null)
                 {
-                    System.out.println("id = " + t.getId());
                     SongSources.SongSource source = new SongSources.SongSource(t.getId(), Source.SOURCE_DEEZER);
                     s.getSources().addSource(source);
                     s.getAlbum().getSources().addSource(source);
@@ -1378,6 +1301,33 @@ public abstract class Source
             catch (Exception e) {e.printStackTrace();} //ignored
 
             return false;
+        }
+
+        private void cachePlaylist(Playlist p)
+        {
+            try
+            {
+                File thisPlaylist = new File(deezerPlaylistsCache.getAbsolutePath() + "/" + p.getName());
+                thisPlaylist.createNewFile();
+                BufferedWriter pwriter = new BufferedWriter(new FileWriter(thisPlaylist));
+                pwriter.write(String.valueOf((long) p.getSources().getDeezer().getId())); pwriter.newLine();
+                pwriter.write(String.valueOf(p.isMine())); pwriter.newLine();
+                if(!p.isMine())
+                {
+                    pwriter.write(p.getOwner()); pwriter.newLine();
+                    pwriter.write(String.valueOf((long) p.getOwnerID())); pwriter.newLine();
+                }
+                pwriter.write(String.valueOf(p.isCollaborative())); pwriter.newLine();
+                for(Song song : p.getContent())
+                {
+                    pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getDeezer().getId()
+                            + CACHE_SEPARATOR);
+                    pwriter.newLine();
+                }
+                pwriter.close();
+            }
+            catch (IOException e) {e.printStackTrace();}
         }
     }
 }
