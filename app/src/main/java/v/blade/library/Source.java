@@ -61,6 +61,7 @@ public abstract class Source
     public abstract void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback);
     public abstract void removeSongFromPlaylist(Song song, Playlist list, OperationCallback callback);
     public abstract boolean searchForSong(Song song);
+    public abstract void disconnect();
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
@@ -257,6 +258,8 @@ public abstract class Source
 
         @Override
         public boolean searchForSong(Song song) {return false;}
+        @Override
+        public void disconnect() {}
     };
     public static Spotify SOURCE_SPOTIFY = new Spotify();
     public static Deezer SOURCE_DEEZER = new Deezer();
@@ -327,6 +330,25 @@ public abstract class Source
 
                 setAvailable(true);
             }
+        }
+
+        @Override
+        public void disconnect()
+        {
+            setAvailable(false);
+            setPriority(0);
+            SPOTIFY_USER_TOKEN = null;
+            SPOTIFY_REFRESH_TOKEN = null;
+            mePrivate = null;
+
+            SharedPreferences accountsPrefs = LibraryService.appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = accountsPrefs.edit();
+            editor.remove("spotify_token");
+            editor.remove("spotify_refresh_token");
+            editor.remove("spotify_prior");
+            editor.apply();
+
+            //wait for resync
         }
 
         @Override
@@ -941,6 +963,24 @@ public abstract class Source
                 me = deezerApi.getCurrentUser();
             }
         }
+
+        @Override
+        public void disconnect()
+        {
+            setAvailable(false);
+            setPriority(0);
+            deezerApi.logout(LibraryService.appContext);
+            DEEZER_USER_SESSION.clear(LibraryService.appContext);
+            me = null;
+
+            SharedPreferences accountsPrefs = LibraryService.appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = accountsPrefs.edit();
+            editor.remove("deezer_prior");
+            editor.apply();
+
+            //wait for resync
+        }
+
 
         @Override
         public void registerCachedSongs()

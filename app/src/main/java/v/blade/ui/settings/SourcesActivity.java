@@ -92,7 +92,19 @@ public class SourcesActivity extends AppCompatActivity
             Source source = adapter.sources.get(position);
             if(source.isAvailable())
             {
-                Toast.makeText(SourcesActivity.this, getString(R.string.already_connected), Toast.LENGTH_SHORT).show();
+                //disconnect
+                source.disconnect();
+
+                Collections.sort(adapter.sources, new Comparator<Source>() {
+                    @Override
+                    public int compare(Source o1, Source o2) {
+                        return o2.getPriority() - o1.getPriority();
+                    }
+                });
+                adapter.notifyDataSetChanged();
+
+                Toast.makeText(SourcesActivity.this, getText(R.string.disconnect_ok), Toast.LENGTH_SHORT).show();
+
                 return;
             }
 
@@ -103,7 +115,7 @@ public class SourcesActivity extends AppCompatActivity
                                 Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI).setShowDialog(true);
                 builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
                         "playlist-read-private", "playlist-read-collaborative", "user-library-read", "user-library-modify",
-                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify"});
+                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify", "app-remote-control"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(SourcesActivity.this, SPOTIFY_REQUEST_CODE, request);
             }
@@ -129,6 +141,12 @@ public class SourcesActivity extends AppCompatActivity
                         SharedPreferences.Editor editor = pref.edit();
                         editor.putInt("deezer_prior", Source.SOURCE_DEEZER.getPriority());
                         editor.apply();
+                        Collections.sort(adapter.sources, new Comparator<Source>() {
+                            @Override
+                            public int compare(Source o1, Source o2) {
+                                return o2.getPriority() - o1.getPriority();
+                            }
+                        });
                         adapter.notifyDataSetChanged();
 
                         Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
@@ -241,6 +259,12 @@ public class SourcesActivity extends AppCompatActivity
                             SharedPreferences.Editor editor = pref.edit();
                             editor.putInt("spotify_prior", Source.SOURCE_SPOTIFY.getPriority());
                             editor.apply();
+                            Collections.sort(adapter.sources, new Comparator<Source>() {
+                                @Override
+                                public int compare(Source o1, Source o2) {
+                                    return o2.getPriority() - o1.getPriority();
+                                }
+                            });
                             adapter.notifyDataSetChanged();
                             Source.SOURCE_SPOTIFY.spotifyApi.setAccessToken(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
 

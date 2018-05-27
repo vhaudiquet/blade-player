@@ -154,6 +154,13 @@ public class PlayerMediaPlayer
     }
     public void initSpotifyMediaPlayer()
     {
+        //we are doing re-init, something went wrong
+        if(spotifyPlayer != null)
+        {
+            spotifyPlayer.destroy();
+            spotifyPlayer = null;
+        }
+
         /* init spotify media player */
         Config playerConfig = new Config(context, Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN, Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID);
         Spotify.getPlayer(playerConfig, context, new SpotifyPlayer.InitializationObserver()
@@ -278,7 +285,21 @@ public class PlayerMediaPlayer
             else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
             {
                 if(spotifyPlayer != null && spotifyPlayerError == WEBPLAYER_ERROR_NONE)
-                    spotifyPlayer.resume(null);
+                    spotifyPlayer.resume(new Player.OperationCallback()
+                    {
+                        @Override
+                        public void onSuccess() {}
+
+                        @Override
+                        public void onError(Error error)
+                        {
+                            Toast.makeText(context, context.getString(R.string.player_error) + " Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
+                            currentActivePlayer = NO_PLAYER_ACTIVE;
+                            currentState = PLAYER_STATE_PAUSED;
+                            spotifyPlayerError = WEBPLAYER_ERROR_OTHER;
+                            listener.onStateChange();
+                        }
+                    });
                 else playSong(currentSong);
             }
             else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE)
@@ -311,7 +332,7 @@ public class PlayerMediaPlayer
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE)
             mediaPlayer.stop();
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE)
-            spotifyPlayer.destroy();
+            {spotifyPlayer.destroy(); spotifyPlayer = null;}
         else if(currentActivePlayer == DEEZER_PLAYER_ACTIVE)
             deezerPlayer.stop();
 
@@ -421,7 +442,21 @@ public class PlayerMediaPlayer
             currentActivePlayer = SPOTIFY_PLAYER_ACTIVE;
             if(requestAudioFocus())
             {
-                spotifyPlayer.playUri(null, "spotify:track:" + bestSource.getId(), 0, 0);
+                spotifyPlayer.playUri(new Player.OperationCallback()
+                {
+                    @Override
+                    public void onSuccess() {}
+
+                    @Override
+                    public void onError(Error error)
+                    {
+                        Toast.makeText(context, context.getString(R.string.player_error) + " Spotify : " + error.name(), Toast.LENGTH_SHORT).show();
+                        currentActivePlayer = NO_PLAYER_ACTIVE;
+                        currentState = PLAYER_STATE_PAUSED;
+                        spotifyPlayerError = WEBPLAYER_ERROR_OTHER;
+                        listener.onStateChange();
+                    }
+                }, "spotify:track:" + bestSource.getId(), 0, 0);
                 currentState = PLAYER_STATE_PLAYING;
                 listener.onStateChange();
             }

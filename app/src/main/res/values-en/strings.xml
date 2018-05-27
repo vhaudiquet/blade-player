@@ -23,7 +23,6 @@
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
     <string name="sources">Music sources</string>
-    <string name="already_connected">Useless, you\'re already connected</string>
     <string name="register_better_sources_expl">Blade will try for your songs that come from web services to find the best web service to play them, depending on priority</string>
     <string name="save_playlists_to_library_expl">Save playlist\'s songs to the library (Artist/Album/Songs views)</string>
     <string name="desc">Blade is an Android music player made by Valentin HAUDIQUET (@Valou3433). The goal of the project is to make an app capable to play songs from local library, Spotify, Deezer and SoundCloud.</string>
@@ -48,4 +47,5 @@
     <string name="delete_ok">was removed from playlist</string>
     <string name="delete_fail">could not be removed from playlist</string>
     <string name="sync_fail_load">Wait for the library loading to synchronize</string>
+    <string name="disconnect_ok">You are now disconnected. Please re-sync library !</string>
 </resources>

@@ -230,8 +230,9 @@ public class MainActivity extends AppCompatActivity
                         case R.id.action_add_to_list:
                             if(currentContext == CONTEXT_SONGS && fromPlaylists)
                             {
-                                ((Playlist) currentObject).getSources().getSourceByPriority(0).getSource()
-                                        .removeSongFromPlaylist((Song) object, ((Playlist) currentObject), new Source.OperationCallback()
+                                Playlist p = ((Playlist) currentObject);
+                                p.getSources().getSourceByPriority(0).getSource()
+                                        .removeSongFromPlaylist((Song) object, p, new Source.OperationCallback()
                                         {
                                             @Override
                                             public void onSucess()
@@ -241,7 +242,7 @@ public class MainActivity extends AppCompatActivity
                                                     @Override
                                                     public void run()
                                                     {
-                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_ok) + " " + ((Playlist) currentObject).getName(), Toast.LENGTH_SHORT).show();
+                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_ok) + " " + p.getName(), Toast.LENGTH_SHORT).show();
                                                     }
                                                 });
                                             }
@@ -254,7 +255,7 @@ public class MainActivity extends AppCompatActivity
                                                     @Override
                                                     public void run()
                                                     {
-                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_fail) + " " + ((Playlist) currentObject).getName(), Toast.LENGTH_SHORT).show();
+                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_fail) + " " + p.getName(), Toast.LENGTH_SHORT).show();
                                                     }
                                                 });
                                             }
@@ -491,34 +492,34 @@ public class MainActivity extends AppCompatActivity
                 searchView.setIconified(false);
                 searchView.setQueryHint(getString(R.string.search_web));
                 // Set to empty activity
-                fromPlaylists = false; currentObject = null;
+                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
                 setContentToSearch(new ArrayList<LibraryObject>());
                 break;
 
             case R.id.nav_artists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null;
+                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null;
+                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
                 // Replace current activity content with album view
                 setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null;
+                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
                 // Replace current activity content with song list
                 setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null;
+                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
                 break;
