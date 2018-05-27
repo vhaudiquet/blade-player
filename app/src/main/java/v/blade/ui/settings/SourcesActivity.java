@@ -115,7 +115,7 @@ public class SourcesActivity extends AppCompatActivity
                                 Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI).setShowDialog(true);
                 builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
                         "playlist-read-private", "playlist-read-collaborative", "user-library-read", "user-library-modify",
-                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify", "app-remote-control"});
+                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify"});
                 AuthenticationRequest request = builder.build();
                 AuthenticationClient.openLoginActivity(SourcesActivity.this, SPOTIFY_REQUEST_CODE, request);
             }

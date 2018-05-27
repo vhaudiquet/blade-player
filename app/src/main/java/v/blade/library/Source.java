@@ -285,7 +285,7 @@ public abstract class Source
         }
 
         @Override
-        public String getUserName() {return mePrivate == null ? "" : mePrivate.email;}
+        public String getUserName() {return mePrivate == null ? "" : (mePrivate.display_name == null ? mePrivate.id : mePrivate.display_name);}
 
         @Override
         public void initConfig(SharedPreferences accountsPrefs)
@@ -582,7 +582,7 @@ public abstract class Source
                         Playlist list = new Playlist(playlistBase.name, thisList);
                         list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SOURCE_SPOTIFY));
                         if(playlistBase.collaborative) list.setCollaborative();
-                        if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name, playlistBase.owner.id);
+                        if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name == null ? playlistBase.owner.id : playlistBase.owner.display_name, playlistBase.owner.id);
                         spotifyPlaylists.add(list);
                         LibraryService.getPlaylists().add(list);
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
