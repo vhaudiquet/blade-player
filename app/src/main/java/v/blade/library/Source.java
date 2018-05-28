@@ -62,6 +62,7 @@ public abstract class Source
     public abstract void removeSongFromPlaylist(Song song, Playlist list, OperationCallback callback);
     public abstract boolean searchForSong(Song song);
     public abstract void disconnect();
+    public abstract void addPlaylist(String name, OperationCallback callback, boolean isPublic, boolean isCollaborative);
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
@@ -260,6 +261,41 @@ public abstract class Source
         public boolean searchForSong(Song song) {return false;}
         @Override
         public void disconnect() {}
+
+        @Override
+        public void addPlaylist(String name, OperationCallback callback, boolean isPublic, boolean isCollaborative)
+        {
+            ContentResolver contentResolver = LibraryService.appContext.getContentResolver();
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.Audio.Playlists.NAME, name);
+            contentValues.put(MediaStore.Audio.Playlists.DATE_ADDED, System.currentTimeMillis());
+            contentValues.put(MediaStore.Audio.Playlists.DATE_MODIFIED, System.currentTimeMillis());
+            Uri uri = contentResolver.insert(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, contentValues);
+
+            if(uri != null)
+            {
+                long mPlaylistId = -1;
+                Cursor c = contentResolver.query(uri,  new String[] {
+                        MediaStore.Audio.Playlists._ID,
+                        MediaStore.Audio.Playlists.NAME,
+                        MediaStore.Audio.Playlists.DATA}, null, null, null);
+                if (c != null)
+                {
+                    mPlaylistId = c.getLong(c.getColumnIndex(MediaStore.Audio.Playlists._ID));
+                    c.close();
+
+                    //add playlist in RAM
+                    Playlist list = new Playlist(name, new ArrayList<>());
+                    list.getSources().addSource(new SongSources.SongSource(mPlaylistId, SOURCE_LOCAL_LIB));
+                    LibraryService.getPlaylists().add(list);
+                    if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                    callback.onSucess();
+                }
+                else callback.onFailure();
+            }
+            else callback.onFailure();
+        }
     };
     public static Spotify SOURCE_SPOTIFY = new Spotify();
     public static Deezer SOURCE_DEEZER = new Deezer();
@@ -541,9 +577,7 @@ public abstract class Source
                     {
                         ArrayList<Song> thisList = new ArrayList<>();
                         HashMap<String, Object> map = new HashMap<>();
-                        map.put("fields", "total");
-                        int trackNbr = service.getPlaylistTracks(playlistBase.owner.id, playlistBase.id, map).total;
-                        map.remove("fields");
+                        int trackNbr = playlistBase.tracks.total;
 
                         int poffset = 0;
                         while(trackNbr > 0)
@@ -924,6 +958,46 @@ public abstract class Source
                 pwriter.close();
             }
             catch (IOException e) {e.printStackTrace();}
+        }
+
+        @Override
+        public void addPlaylist(String name, OperationCallback callback, boolean isPublic, boolean isCollaborative)
+        {
+            HashMap<String, Object> params = new HashMap<>();
+            params.put("public", isPublic);
+            params.put("collaborative", isCollaborative);
+            //params.put("description", desc);
+
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        kaaes.spotify.webapi.android.models.Playlist p = spotifyApi.getService().createPlaylist(name, params);
+
+                        //add playlist to RAM
+                        Playlist playlist = new Playlist(name, new ArrayList<>());
+                        if(isCollaborative) playlist.setCollaborative();
+                        playlist.getSources().addSource(new SongSources.SongSource(p.id, SOURCE_SPOTIFY));
+
+                        //add playlist to cache
+                        cachePlaylist(playlist);
+
+                        callback.onSucess();
+                    }
+                    catch(RetrofitError error)
+                    {
+                        if(error.getResponse() == null) {callback.onFailure(); return;}
+                        if(error.getResponse().getStatus() == 401)
+                        {
+                            refreshSpotifyToken();
+                            addPlaylist(name, callback, isPublic, isCollaborative);
+                        }
+                        else callback.onFailure();
+                    }
+                }
+            }.start();
         }
     }
     public static class Deezer extends Source
@@ -1413,6 +1487,39 @@ public abstract class Source
                 pwriter.close();
             }
             catch (IOException e) {e.printStackTrace();}
+        }
+
+        @Override
+        public void addPlaylist(String name, OperationCallback callback, boolean isPublic, boolean isCollaborative)
+        {
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        DeezerRequest request = DeezerRequestFactory.requestCurrentUserCreatePlaylist(name);
+                        com.deezer.sdk.model.Playlist playlist = (com.deezer.sdk.model.Playlist) JsonUtils.deserializeJson(deezerApi.requestSync(request));
+                        DeezerRequest request1 = DeezerRequestFactory.requestPlaylistUpdate(playlist.getId(), name, "", isPublic, isCollaborative);
+                        deezerApi.requestSync(request1);
+
+                        //add playlist to RAM
+                        Playlist list = new Playlist(name, new ArrayList<>());
+                        if(isCollaborative) list.setCollaborative();
+                        list.getSources().addSource(new SongSources.SongSource(playlist.getId(), SOURCE_DEEZER));
+
+                        //add playlist to cache
+                        cachePlaylist(list);
+
+                        callback.onSucess();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        callback.onFailure();
+                    }
+                }
+            }.start();
         }
     }
 }
