@@ -63,6 +63,7 @@ public abstract class Source
     public abstract boolean searchForSong(Song song);
     public abstract void disconnect();
     public abstract void addPlaylist(String name, OperationCallback callback, boolean isPublic, boolean isCollaborative);
+    public abstract void removePlaylist(Playlist playlist, OperationCallback callback);
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "LOCAL")
     {
@@ -293,6 +294,25 @@ public abstract class Source
                     callback.onSucess();
                 }
                 else callback.onFailure();
+            }
+            else callback.onFailure();
+        }
+        @Override
+        public void removePlaylist(Playlist list, OperationCallback callback)
+        {
+            if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_LOCAL_LIB) {callback.onFailure(); return;}
+
+            ContentResolver contentResolver = LibraryService.appContext.getContentResolver();
+            String where = MediaStore.Audio.Playlists._ID + "=?";
+            String[] whereVal = {Long.toString((long) list.getSources().getLocal().getId())};
+            int deleteCount = contentResolver.delete(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, where, whereVal);
+            if(deleteCount >= 1)
+            {
+                //remove playlist from ram
+                LibraryService.getPlaylists().remove(list);
+                if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                callback.onSucess();
             }
             else callback.onFailure();
         }
@@ -659,6 +679,8 @@ public abstract class Source
             }
             catch (RetrofitError error)
             {
+                error.printStackTrace();
+
                 if(error.getResponse() == null) return;
                 if(error.getResponse().getStatus() == 401)
                 {
@@ -668,7 +690,6 @@ public abstract class Source
                     return;
                 }
 
-                error.printStackTrace();
                 System.err.println("ERROR BODY : " + error.getBody());
                 SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
                 spotifyError.printStackTrace();
@@ -680,6 +701,7 @@ public abstract class Source
         public List<LibraryObject> query(String query)
         {
             ArrayList<LibraryObject> tr = new ArrayList<>();
+            HashMap<Album, String> urls = new HashMap<>();
 
             try
             {
@@ -699,7 +721,7 @@ public abstract class Source
                         if(!song.getAlbum().hasAlbumArt())
                         {
                             if(t.album.images.get(0) != null)
-                                LibraryService.loadAlbumArt(song.getAlbum(), t.album.images.get(0).url, false);
+                                urls.put(song.getAlbum(), t.album.images.get(0).url);
                         }
                     }
                     for(kaaes.spotify.webapi.android.models.AlbumSimple a : albums.albums.items)
@@ -718,7 +740,7 @@ public abstract class Source
                             {
                                 Image albumImage = a.images.get(0);
                                 if(albumImage != null)
-                                    LibraryService.loadAlbumArt(album, albumImage.url, false);
+                                    urls.put(album, a.images.get(0).url);
                             }
                         }
                     }
@@ -736,6 +758,19 @@ public abstract class Source
                 }
                 e.printStackTrace();
             }
+
+            new Thread()
+            {
+                public void run()
+                {
+                    Looper.prepare();
+
+                    for(Album a : urls.keySet())
+                    {
+                        LibraryService.loadAlbumArt(a, urls.get(a), false);
+                    }
+                }
+            }.start();
             return tr;
         }
 
@@ -993,6 +1028,42 @@ public abstract class Source
                         {
                             refreshSpotifyToken();
                             addPlaylist(name, callback, isPublic, isCollaborative);
+                        }
+                        else callback.onFailure();
+                    }
+                }
+            }.start();
+        }
+        @Override
+        public void removePlaylist(Playlist list, OperationCallback callback)
+        {
+            if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_SPOTIFY) {callback.onFailure(); return;}
+
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        spotifyApi.getService().unfollowPlaylist(list.isMine() ? mePrivate.id : (String) list.getOwnerID(), (String) list.getSources().getSpotify().getId());
+
+                        //remove playlist from RAM
+                        LibraryService.getPlaylists().remove(list);
+                        if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                        //remove playlist from cache
+                        File thisPlaylist = new File(spotifyPlaylistsCache.getAbsolutePath() + "/" + list.getName());
+                        thisPlaylist.delete();
+
+                        callback.onSucess();
+                    }
+                    catch(RetrofitError error)
+                    {
+                        if(error.getResponse() == null) {callback.onFailure(); return;}
+                        if(error.getResponse().getStatus() == 401)
+                        {
+                            refreshSpotifyToken();
+                            removePlaylist(list, callback);
                         }
                         else callback.onFailure();
                     }
@@ -1307,6 +1378,7 @@ public abstract class Source
         public List<LibraryObject> query(String query)
         {
             ArrayList<LibraryObject> tr = new ArrayList<>();
+            HashMap<Album, String> urls = new HashMap<>();
 
             if(isAvailable())
             {
@@ -1325,7 +1397,7 @@ public abstract class Source
 
                         if(!currentSong.getAlbum().hasAlbumArt())
                         {
-                            LibraryService.loadAlbumArt(currentSong.getAlbum(), t.getAlbum().getBigImageUrl(), false);
+                            urls.put(currentSong.getAlbum(), t.getAlbum().getBigImageUrl());
                         }
                     }
                     for(com.deezer.sdk.model.Album alb : albums)
@@ -1340,13 +1412,25 @@ public abstract class Source
 
                         if(!album.hasAlbumArt())
                         {
-                            LibraryService.loadAlbumArt(album, alb.getBigImageUrl(), false);
+                            urls.put(album, alb.getBigImageUrl());
                         }
                     }
                 }
                 catch(Exception e) {}
             }
 
+            new Thread()
+            {
+                public void run()
+                {
+                    Looper.prepare();
+
+                    for(Album a : urls.keySet())
+                    {
+                        LibraryService.loadAlbumArt(a, urls.get(a), false);
+                    }
+                }
+            }.start();
             return tr;
         }
 
@@ -1514,6 +1598,37 @@ public abstract class Source
                         callback.onSucess();
                     }
                     catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        callback.onFailure();
+                    }
+                }
+            }.start();
+        }
+        @Override
+        public void removePlaylist(Playlist list, OperationCallback callback)
+        {
+            if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_DEEZER) {callback.onFailure(); return;}
+
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        deezerApi.requestSync(DeezerRequestFactory.requestPlaylistDelete((long) list.getSources().getDeezer().getId()));
+
+                        //remove playlist from RAM
+                        LibraryService.getPlaylists().remove(list);
+                        if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                        //remove playlist from cache
+                        File thisPlaylist = new File(deezerPlaylistsCache.getAbsolutePath() + "/" + list.getName());
+                        thisPlaylist.delete();
+
+                        callback.onSucess();
+                    }
+                    catch(Exception e)
                     {
                         e.printStackTrace();
                         callback.onFailure();
