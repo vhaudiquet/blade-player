@@ -228,6 +228,17 @@ public abstract class Source
                     String thisAlbum = musicCursor.getString(albumColumn);
                     long thisDuration = musicCursor.getLong(songDurationColumn);
 
+                    //resolve null artist name
+                    if(thisArtist == null || thisArtist.equals("<unknown>"))
+                        thisArtist = LibraryService.appContext.getString(R.string.unknown_artist);
+
+                    //resolve null album name
+                    if(thisAlbum == null || thisAlbum.equals("<unknown>"))
+                        thisAlbum = LibraryService.appContext.getString(R.string.unknown_album);
+
+                    //set to empty string to avoid crashes (NullPointer), should not happen but who knows
+                    if(thisTitle == null) thisTitle = "";
+
                     Song s = LibraryService.registerSong(thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
                     s.setFormat(musicCursor.getString(formatColumn));
                     idsorted_songs.put(thisId, s);

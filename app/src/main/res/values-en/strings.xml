@@ -48,4 +48,6 @@
     <string name="delete_fail">could not be removed from playlist</string>
     <string name="sync_fail_load">Wait for the library loading to synchronize</string>
     <string name="disconnect_ok">You are now disconnected. Please re-sync library !</string>
+    <string name="unknown_artist">Unknown Artist</string>
+    <string name="unknown_album">Unknown Album</string>
 </resources>

@@ -63,4 +63,7 @@
     <string name="cancel">Annuler</string>
 
     <string name="sync_fail_load">Attendez la fin du chargement de la bibliothèque avant de synchroniser</string>
+
+    <string name="unknown_artist">Artiste inconnu</string>
+    <string name="unknown_album">Album inconnu</string>
 </resources>
