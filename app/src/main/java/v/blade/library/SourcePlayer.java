@@ -13,4 +13,6 @@ public abstract class SourcePlayer
     //public abstract void stop(PlayerCallback callback);
     public abstract void seekTo(int msec);
     public abstract int getCurrentPosition();
+
+    public int getDuration() {return 0;}
 }

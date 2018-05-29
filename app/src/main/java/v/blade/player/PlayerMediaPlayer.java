@@ -27,6 +27,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
 import v.blade.library.Song;
+import v.blade.library.Source;
 import v.blade.library.SourcePlayer;
 
 public class PlayerMediaPlayer
@@ -183,7 +184,7 @@ public class PlayerMediaPlayer
     }
     public int getDuration()
     {
-        //if(currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer()) return mediaPlayer.getDuration();
+        if(currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer()) return currentActivePlayer.getDuration();
         return ((int) currentSong.getDuration());
     }
     public void setVolume(float left, float right)

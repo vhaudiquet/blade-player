@@ -93,7 +93,11 @@ public class MainActivity extends AppCompatActivity
         }
 
         @Override
-        public void onDisconnected() {}
+        public void onDisconnected()
+        {
+            musicPlayer = null;
+            hideCurrentPlay();
+        }
     };
 
     /* current activity context (instanceState) */
@@ -650,6 +654,16 @@ public class MainActivity extends AppCompatActivity
         if(play) currentPlayAction.setImageResource(R.drawable.ic_action_pause);
         else currentPlayAction.setImageResource(R.drawable.ic_play_action);
     }
+    private void hideCurrentPlay()
+    {
+        if(currentPlayShown)
+        {
+            currentPlay.setVisibility(View.INVISIBLE);
+            mainListView.getLayoutParams().height = LinearLayout.LayoutParams.MATCH_PARENT;
+            mainListView.requestLayout();
+            currentPlayShown = false;
+        }
+    }
 
     /* actions */
     private void setPlaylist(ArrayList<Song> songs, int currentPos)
@@ -660,18 +674,18 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
-        //if(musicPlayer == null) PlayerConnection.start(songs, currentPos); else
-        musicPlayer.setCurrentPlaylist(songs, currentPos);
+        if(musicPlayer == null) PlayerConnection.start(songs, currentPos);
+        else musicPlayer.setCurrentPlaylist(songs, currentPos);
     }
     private void playNext(ArrayList<Song> songs)
     {
-        //if(musicPlayer == null) PlayerConnection.start(songs, 0); else
-        musicPlayer.addNextToPlaylist(songs);
+        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+        else musicPlayer.addNextToPlaylist(songs);
     }
     private void addToPlaylist(ArrayList<Song> songs)
     {
-        //if(musicPlayer == null) PlayerConnection.start(songs, 0); else
-        musicPlayer.addToPlaylist(songs);
+        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+        else musicPlayer.addToPlaylist(songs);
     }
 
     @Override

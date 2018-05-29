@@ -160,6 +160,12 @@ public abstract class Source
             {
                 return mediaPlayer.getCurrentPosition();
             }
+
+            @Override
+            public int getDuration()
+            {
+                return mediaPlayer.getDuration();
+            }
         };
 
         @Override
@@ -232,11 +238,11 @@ public abstract class Source
                     if(thisArtist == null || thisArtist.equals("<unknown>"))
                         thisArtist = LibraryService.appContext.getString(R.string.unknown_artist);
 
-                    //resolve null album name
+                    //resolve null album name (should not happen)
                     if(thisAlbum == null || thisAlbum.equals("<unknown>"))
                         thisAlbum = LibraryService.appContext.getString(R.string.unknown_album);
 
-                    //set to empty string to avoid crashes (NullPointer), should not happen but who knows
+                    //set to empty string to avoid crashes (NullPointer), should definitely not happen but who knows
                     if(thisTitle == null) thisTitle = "";
 
                     Song s = LibraryService.registerSong(thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
@@ -615,7 +621,6 @@ public abstract class Source
                         }
 
                         player.init();
-                        LibraryService.onSpotifyConfigDone();
                     }
                 }.start();
 

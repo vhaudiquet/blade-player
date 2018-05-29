@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory;
 import android.os.Looper;
 import android.util.Log;
 import retrofit.RetrofitError;
-import v.blade.ui.PlayerConnection;
 import v.blade.ui.settings.SettingsActivity;
 
 import java.io.*;
@@ -152,16 +151,6 @@ public class LibraryService
         for(Source s : Source.SOURCES) s.initConfig(accountsPrefs);
 
         configured = true;
-
-        //wait for spotify callback
-    }
-    /*
-    * Spotify config init and player init are all async, so i need to wait for them to then call playerConnection init...
-     */
-    public static void onSpotifyConfigDone()
-    {
-        //Start playerConnection
-        PlayerConnection.start(null, 0);
     }
 
     /*
