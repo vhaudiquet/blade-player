@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 public class Artist extends LibraryObject
 {
-    private ArrayList<Album> albums;
+    private final ArrayList<Album> albums;
 
     public Artist(String name)
     {
@@ -37,8 +37,12 @@ public class Artist extends LibraryObject
     {
         int songCount = 0;
 
-        for (Album album : albums) {
-            songCount += album.getSongs().size();
+        synchronized (albums)
+        {
+            for (Album album : albums)
+            {
+                songCount += album.getSongs().size();
+            }
         }
 
         return songCount;

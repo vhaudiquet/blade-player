@@ -148,6 +148,7 @@ public class SourcesActivity extends AppCompatActivity
                             }
                         });
                         adapter.notifyDataSetChanged();
+                        Source.SOURCE_DEEZER.getPlayer().init();
 
                         Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                     }
@@ -277,6 +278,7 @@ public class SourcesActivity extends AppCompatActivity
                                 e.printStackTrace();
                             }
 
+                            Source.SOURCE_SPOTIFY.getPlayer().init();
                             Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
                         }
                         catch(Exception e)

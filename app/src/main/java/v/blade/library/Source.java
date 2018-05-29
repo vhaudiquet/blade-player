@@ -1,27 +1,34 @@
 package v.blade.library;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.app.Application;
+import android.content.*;
 import android.database.Cursor;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.LongSparseArray;
+import android.widget.Toast;
 import com.deezer.sdk.model.User;
 import com.deezer.sdk.network.connect.DeezerConnect;
 import com.deezer.sdk.network.connect.SessionStore;
 import com.deezer.sdk.network.request.DeezerRequest;
 import com.deezer.sdk.network.request.DeezerRequestFactory;
 import com.deezer.sdk.network.request.JsonUtils;
+import com.deezer.sdk.player.TrackPlayer;
+import com.deezer.sdk.player.event.OnPlayerStateChangeListener;
+import com.deezer.sdk.player.event.PlayerState;
+import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
+import com.spotify.sdk.android.player.*;
+import com.spotify.sdk.android.player.Error;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.*;
 import retrofit.RetrofitError;
 import v.blade.R;
+import v.blade.player.PlayerMediaPlayer;
 import v.blade.ui.settings.SettingsActivity;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -56,6 +63,7 @@ public abstract class Source
     public abstract void registerSongs();
     public abstract void initConfig(SharedPreferences accountsPrefs);
     public abstract String getUserName();
+    public abstract SourcePlayer getPlayer();
 
     public interface OperationCallback {void onSucess(); void onFailure();}
     public abstract void addSongsToPlaylist(List<Song> songs, Playlist list, OperationCallback callback);
@@ -69,8 +77,95 @@ public abstract class Source
     {
         private LongSparseArray<Album> idsorted_albums;
 
+        private SourcePlayer player = new SourcePlayer()
+        {
+            MediaPlayer mediaPlayer;
+
+            @Override
+            public void init()
+            {
+                mediaPlayer = new MediaPlayer();
+                setListener(PlayerMediaPlayer.playerListener);
+            }
+
+            @Override
+            public void setListener(PlayerListener listener)
+            {
+                if(mediaPlayer == null) return;
+
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener()
+                {
+                    @Override
+                    public void onCompletion(MediaPlayer mp)
+                    {
+                        listener.onSongCompletion();
+                    }
+                });
+            }
+
+            @Override
+            public void play(PlayerCallback callback)
+            {
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                mediaPlayer.start();
+                if(callback != null) callback.onSucess();
+            }
+
+            @Override
+            public void pause(PlayerCallback callback)
+            {
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                mediaPlayer.pause();
+                if(callback != null) callback.onSucess();
+            }
+
+            @Override
+            public void playSong(Song song, PlayerCallback callback)
+            {
+                SongSources.SongSource local = song.getSources().getLocal();
+                if(local == null) {if(callback != null) callback.onFailure(); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                if(song.getFormat().equals("audio/x-ms-wma"))
+                {
+                    Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getSources().getLocal().getId());
+
+                try
+                {
+                    mediaPlayer.reset();
+                    mediaPlayer.setDataSource(LibraryService.appContext, songUri);
+                    mediaPlayer.prepareAsync();
+                    mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
+                    {
+                        @Override
+                        public void onPrepared(MediaPlayer mp) {play(callback);}
+                    });
+                }
+                catch(Exception e) {if(callback != null) callback.onFailure();}
+            }
+
+            @Override
+            public void seekTo(int msec)
+            {
+                mediaPlayer.seekTo(msec);
+            }
+
+            @Override
+            public int getCurrentPosition()
+            {
+                return mediaPlayer.getCurrentPosition();
+            }
+        };
+
         @Override
         public String getUserName() {return "";}
+        @Override
+        public SourcePlayer getPlayer() {return player;}
         @Override
         public List<LibraryObject> query(String query) {return new ArrayList<>();}
 
@@ -78,6 +173,7 @@ public abstract class Source
         public void initConfig(SharedPreferences accountsPrefs)
         {
             setPriority(999);
+            player.init();
         }
 
         @Override
@@ -335,10 +431,136 @@ public abstract class Source
 
         private ArrayList<Album> spotifyCachedAlbums;
 
+        public SourcePlayer player = new SourcePlayer()
+        {
+            SpotifyPlayer spotifyPlayer;
+
+            @Override
+            public void init()
+            {
+                Config playerConfig = new Config(LibraryService.appContext, SPOTIFY_USER_TOKEN, SPOTIFY_CLIENT_ID);
+                com.spotify.sdk.android.player.Spotify.getPlayer(playerConfig, LibraryService.appContext, new SpotifyPlayer.InitializationObserver()
+                {
+                    @Override
+                    public void onInitialized(final SpotifyPlayer p)
+                    {
+                        spotifyPlayer = p;
+                        setListener(PlayerMediaPlayer.playerListener);
+                        spotifyPlayer.addConnectionStateCallback(new ConnectionStateCallback()
+                        {
+                            @Override
+                            public void onLoggedIn() {}
+                            @Override
+                            public void onLoggedOut() {}
+                            @Override
+                            public void onLoginFailed(Error error)
+                            {
+                                Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.player_login_error) + " Spotify", Toast.LENGTH_SHORT).show();
+                            }
+                            @Override
+                            public void onTemporaryError() {}
+                            @Override
+                            public void onConnectionMessage(String s) {}
+                        });
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable)
+                    {
+                        Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.player_unknown_error) + " Spotify", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void setListener(PlayerListener listener)
+            {
+                spotifyPlayer.addNotificationCallback(new Player.NotificationCallback()
+                {
+                    @Override
+                    public void onPlaybackEvent(PlayerEvent playerEvent)
+                    {
+                        if(playerEvent.equals(PlayerEvent.kSpPlaybackNotifyAudioDeliveryDone))
+                        {
+                            listener.onSongCompletion();
+                        }
+                    }
+
+                    @Override
+                    public void onPlaybackError(Error error) {}
+                });
+            }
+
+            @Override
+            public void play(PlayerCallback callback)
+            {
+                if(spotifyPlayer == null) {callback.onFailure(); return;}
+
+                spotifyPlayer.resume(new Player.OperationCallback()
+                {
+                    @Override
+                    public void onSuccess() {callback.onSucess();}
+                    @Override
+                    public void onError(Error error) {callback.onFailure();}
+                });
+            }
+
+            @Override
+            public void pause(PlayerCallback callback)
+            {
+                if(spotifyPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                spotifyPlayer.pause(new Player.OperationCallback()
+                {
+                    @Override
+                    public void onSuccess() {if(callback != null) callback.onSucess();}
+                    @Override
+                    public void onError(Error error) {if(callback != null) callback.onFailure();}
+                });
+            }
+
+            @Override
+            public void playSong(Song song, PlayerCallback callback)
+            {
+                SongSources.SongSource spot = song.getSources().getSpotify();
+                if(spot == null) {if(callback != null) callback.onFailure(); return;}
+
+                if(spotifyPlayer == null)
+                {
+                    if(callback != null) callback.onFailure();
+                    return;
+                }
+
+                spotifyPlayer.playUri(new Player.OperationCallback()
+                {
+                    @Override
+                    public void onSuccess() {if(callback != null) callback.onSucess();}
+
+                    @Override
+                    public void onError(Error error) {if(callback != null) callback.onFailure();}
+                }, "spotify:track:" + spot.getId(), 0, 0);
+            }
+
+            @Override
+            public void seekTo(int msec)
+            {
+                spotifyPlayer.seekToPosition(null, msec);
+            }
+
+            @Override
+            public int getCurrentPosition()
+            {
+                return (int) spotifyPlayer.getPlaybackState().positionMs;
+            }
+        };
+
         Spotify()
         {
             super(R.drawable.ic_spotify, R.drawable.ic_spotify_logo, "SPOTIFY");
         }
+
+        @Override
+        public SourcePlayer getPlayer() {return player;}
 
         @Override
         public String getUserName() {return mePrivate == null ? "" : (mePrivate.display_name == null ? mePrivate.id : mePrivate.display_name);}
@@ -380,6 +602,8 @@ public abstract class Source
                                 mePrivate = spotifyApi.getService().getMe();
                             }
                         }
+
+                        player.init();
                         LibraryService.onSpotifyConfigDone();
                     }
                 }.start();
@@ -1082,11 +1306,91 @@ public abstract class Source
 
         private ArrayList<Album> deezerCachedAlbums;
 
+        public SourcePlayer player = new SourcePlayer()
+        {
+            TrackPlayer deezerPlayer;
+
+            @Override
+            public void init()
+            {
+                try
+                {
+                    deezerPlayer = new TrackPlayer((Application) LibraryService.appContext.getApplicationContext(), deezerApi, new WifiAndMobileNetworkStateChecker());
+                    setListener(PlayerMediaPlayer.playerListener);
+                }
+                catch(Exception e)
+                {
+                    System.err.println("Deezer player error : " + e.getLocalizedMessage());
+                    e.printStackTrace();
+                    deezerPlayer = null;
+                }
+            }
+
+            @Override
+            public void setListener(PlayerListener listener)
+            {
+                deezerPlayer.addOnPlayerStateChangeListener(new OnPlayerStateChangeListener()
+                {
+                    @Override
+                    public void onPlayerStateChange(PlayerState playerState, long l)
+                    {
+                        if(playerState.equals(PlayerState.PLAYBACK_COMPLETED))
+                        {
+                            listener.onSongCompletion();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void play(PlayerCallback callback)
+            {
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                deezerPlayer.play();
+                if(callback != null) callback.onSucess();
+            }
+
+            @Override
+            public void pause(PlayerCallback callback)
+            {
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                deezerPlayer.pause();
+                if(callback != null) callback.onFailure();
+            }
+
+            @Override
+            public void playSong(Song song, PlayerCallback callback)
+            {
+                SongSources.SongSource deezer = song.getSources().getDeezer();
+                if(deezer == null) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
+
+                deezerPlayer.playTrack((long) deezer.getId());
+                if(callback != null) callback.onSucess();
+            }
+
+            @Override
+            public void seekTo(int msec)
+            {
+                deezerPlayer.seek(msec);
+            }
+
+            @Override
+            public int getCurrentPosition()
+            {
+                return (int) deezerPlayer.getPosition();
+            }
+        };
+
         Deezer()
         {
             super(R.drawable.ic_deezer, R.drawable.ic_deezer, "DEEZER");
         }
 
+        @Override
+        public SourcePlayer getPlayer() {return player;}
 
         @Override
         public String getUserName() {return me == null ? "" : me.getName();}
@@ -1106,6 +1410,7 @@ public abstract class Source
             {
                 SOURCE_DEEZER.setAvailable(true);
                 me = deezerApi.getCurrentUser();
+                player.init();
             }
         }
 
