@@ -8,5 +8,7 @@
                android:id="@+id/element_image"/>
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
+              android:layout_margin="5dp"
+              android:layout_marginTop="10dp"
               android:id="@+id/element_title"/>
 </LinearLayout>

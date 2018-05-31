@@ -23,7 +23,8 @@
                 android:layout_marginTop="55dp"
                 android:id="@+id/libraryList"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="match_parent"
+                android:theme="@style/Theme.ListViewTheme"/>
 
         <RelativeLayout
                 android:layout_alignParentBottom="true"

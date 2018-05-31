@@ -63,4 +63,6 @@
     <string name="name">Name</string>
     <string name="new_playlist">New playlist...</string>
     <string name="playlist_add_fail">Could not create playlist</string>
+    <string name="playback_error">Could not start playback</string>
+    <string name="playback_pause_error">Could not pause playback</string>
 </resources>

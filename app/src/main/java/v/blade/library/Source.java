@@ -2146,11 +2146,101 @@ public abstract class Source
 
         public void addSongToLibrary(Song song, OperationCallback callback)
         {
-            callback.onFailure();
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        SongSources.SongSource deezer = song.getSources().getDeezer();
+                        if(deezer == null)
+                        {
+                            if(!searchForSong(song)) {callback.onFailure(); return;}
+                            deezer = song.getSources().getDeezer();
+                        }
+
+                        deezerApi.requestSync(DeezerRequestFactory.requestCurrentUserAddTrack((long) deezer.getId()));
+
+                        //add to library
+                        if(song.isHandled())
+                        {
+                            //todo : find a better way (registersong is heavy) ; that is just lazyness
+                            LibraryService.registerSong(song.getArtist().getName(), 0, song.getAlbum().getName(),
+                                    0, song.getTrackNumber(), song.getDuration(), song.getName(), deezer);
+                        }
+
+                        //add to cache
+                        try
+                        {
+                            BufferedWriter writer = new BufferedWriter(new FileWriter(deezerCacheFile, true));
+                            writer.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                                    + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + deezer.getId()
+                                    + CACHE_SEPARATOR);
+                            writer.newLine();
+                            writer.close();
+                        }
+                        catch(IOException e) {}
+
+                        callback.onSucess(null);
+                    }
+                    catch(Exception e)
+                    {
+                        e.printStackTrace();
+                        callback.onFailure();
+                    }
+                }
+            }.start();
         }
         public void removeSongFromLibrary(Song song, OperationCallback callback)
         {
-            callback.onFailure();
+            new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        SongSources.SongSource deezer = song.getSources().getDeezer();
+                        if(deezer == null) {callback.onFailure(); return;}
+                        if(!deezer.getLibrary()) {callback.onFailure(); return;}
+
+                        deezerApi.requestSync(DeezerRequestFactory.requestCurrentUserRemoveTrack((long) deezer.getId()));
+
+                        //remove from library
+                        LibraryService.unregisterSong(song, deezer);
+
+                        //remove from cache
+                        try
+                        {
+                            StringBuilder newContent = new StringBuilder();
+
+                            BufferedReader reader = new BufferedReader(new FileReader(deezerCacheFile));
+                            while(reader.ready())
+                            {
+                                String toAdd = (reader.readLine() + "\n");
+                                if(toAdd.equals(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + deezer.getId()
+                                        + CACHE_SEPARATOR))
+                                    toAdd = "";
+
+                                newContent.append(toAdd);
+                            }
+                            reader.close();
+
+                            BufferedWriter writer = new BufferedWriter(new FileWriter(deezerCacheFile));
+                            writer.write(newContent.toString());
+                            writer.close();
+                        }
+                        catch(IOException e) {}
+
+                        callback.onSucess(null);
+                    }
+                    catch(Exception e)
+                    {
+                        e.printStackTrace();
+                        callback.onFailure();
+                    }
+                }
+            }.start();
         }
         public void addAlbumToLibrary(Album album, OperationCallback callback)
         {

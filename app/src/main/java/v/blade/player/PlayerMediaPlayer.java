@@ -26,6 +26,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
+import v.blade.R;
 import v.blade.library.Song;
 import v.blade.library.Source;
 import v.blade.library.SourcePlayer;
@@ -134,7 +135,7 @@ public class PlayerMediaPlayer
                 @Override
                 public void onFailure()
                 {
-                    Toast.makeText(context, "Could not start playback...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -157,7 +158,7 @@ public class PlayerMediaPlayer
             @Override
             public void onFailure()
             {
-                Toast.makeText(context, "Could not pause playback...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, context.getString(R.string.playback_pause_error), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -217,7 +218,7 @@ public class PlayerMediaPlayer
             @Override
             public void onFailure()
             {
-                Toast.makeText(context, "Could not start playback...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
             }
         });
     }

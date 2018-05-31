@@ -251,7 +251,7 @@ public class LibraryService
         sources.removeSource(toUnregister);
 
         boolean isInLibrary = false;
-        for(SongSources.SongSource s : sources.sources) if(s.getLibrary()) {isInLibrary = true; break;}
+        for(SongSources.SongSource s : sources.sources) if(s != null) if(s.getLibrary()) {isInLibrary = true; break;}
         if(!isInLibrary)
         {
             //remove from library

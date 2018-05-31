@@ -337,13 +337,20 @@ public class MainActivity extends AppCompatActivity
                 }
             });
             getMenuInflater().inflate(R.menu.menu_object_more, popupMenu.getMenu());
+
             if(currentContext == CONTEXT_PLAYLISTS)
             {
                 popupMenu.getMenu().findItem(R.id.action_add_to_list).setVisible(false);
                 popupMenu.getMenu().findItem(R.id.action_manage_libraries).setTitle(R.string.delete);
             }
             else if(currentContext == CONTEXT_SONGS && fromPlaylists)
+            {
                 popupMenu.getMenu().findItem(R.id.action_add_to_list).setTitle(getString(R.string.remove_from_playlist));
+            }
+
+            if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS)
+                popupMenu.getMenu().findItem(R.id.action_manage_libraries).setVisible(false);
+
             popupMenu.show();
         }
     };
