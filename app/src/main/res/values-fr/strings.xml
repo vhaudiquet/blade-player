@@ -44,10 +44,23 @@
     <string name="cancel">Annuler</string>
     <string name="added_fail">Impossible d\'ajouter à la playlist</string>
     <string name="remove_from_playlist">Supprimer de la liste</string>
-    <string name="delete_ok">a bien été supprimé de la playlist</string>
-    <string name="delete_fail">n\'a pas pu être supprimé de la playlist</string>
+    <string name="delete_from_playlist_ok">a bien été supprimé de la playlist</string>
+    <string name="delete_from_playlist_fail">n\'a pas pu être supprimé de la playlist</string>
     <string name="sync_fail_load">Attendez la fin du chargement de la bibliothèque avant de synchroniser</string>
     <string name="disconnect_ok">Vous êtes maintenant déconnecté. Re-synchronyser la bibliothèque !</string>
     <string name="unknown_artist">Artiste inconnu</string>
     <string name="unknown_album">Album inconnu</string>
+    <string name="manage_libraries">Gérer les bibliothèques</string>
+    <string name="delete">Supprimer</string>
+    <string name="yes">Oui</string>
+    <string name="are_you_sure_delete">Êtes vous sûr de vouloir supprimer cet élément ?</string>
+    <string name="delete_ok">a bien été supprimé</string>
+    <string name="delete_fail">n\'a pas pu être supprimé</string>
+    <string name="library_added">a été ajouté à la bibliothèque</string>
+    <string name="library_add_fail">n\'a pas pu être ajouté à la bibliothèque</string>
+    <string name="library_removed">a été supprimé de la bibliothèque</string>
+    <string name="library_remove_fail">n\'a pas pu être supprimé de la bibliothèque</string>
+    <string name="name">Nom</string>
+    <string name="new_playlist">Nouvelle liste...</string>
+    <string name="playlist_add_fail">Impossible de créer la playlist</string>
 </resources>

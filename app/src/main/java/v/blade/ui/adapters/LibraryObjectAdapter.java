@@ -189,9 +189,11 @@ public class LibraryObjectAdapter extends BaseAdapter
         else if(obj instanceof Playlist)
         {
             //set subtitle : song numbers
-            mViewHolder.subtitle.setText(((Playlist) obj).getContent().size() + " " + context.getResources().getString(R.string.songs).toLowerCase() +
+            if(((Playlist) obj).getContent() != null)
+                mViewHolder.subtitle.setText(((Playlist) obj).getContent().size() + " " + context.getResources().getString(R.string.songs).toLowerCase() +
                     (((Playlist) obj).isCollaborative() ? (" - " + context.getString(R.string.collaborative)) : "") +
                     (((Playlist) obj).isMine() ? "" : (" - " + ((Playlist) obj).getOwner())));
+            else mViewHolder.subtitle.setText("");
 
             //set image to default playlist image
             mViewHolder.image.setImageResource(R.drawable.ic_playlists);

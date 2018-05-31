@@ -89,12 +89,13 @@ public class LibraryService
             {
                 if(betterSourceFile.exists())
                 {
+                    RandomAccessFile raf = new RandomAccessFile(betterSourceFile.getAbsolutePath(), "r");
                     //better sources
                     Source bestSource = Source.SOURCE_DEEZER.getPriority() > Source.SOURCE_SPOTIFY.getPriority() ? Source.SOURCE_DEEZER : Source.SOURCE_SPOTIFY;
-                    BufferedReader spr = new BufferedReader(new FileReader(betterSourceFile));
-                    while(spr.ready())
+
+                    while(raf.getFilePointer() < raf.length())
                     {
-                        String[] tp = spr.readLine().split(CACHE_SEPARATOR);
+                        String[] tp = raf.readUTF().split(CACHE_SEPARATOR);
                         Song song = bestSource == Source.SOURCE_DEEZER ?
                                 getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
                                         new SongSources.SongSource(Long.parseLong(tp[6]), bestSource), Integer.parseInt(tp[4])) :
@@ -102,7 +103,7 @@ public class LibraryService
                                         new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]));
                         song.setFormat(tp[3]);
                     }
-                    spr.close();
+                    raf.close();
                 }
             }
             catch(IOException e)
@@ -159,6 +160,9 @@ public class LibraryService
     static Song registerSong(String artist, long artistId, String album, long albumId,
                                      int albumTrack, long duration, String name, SongSources.SongSource source)
     {
+        //REGISTER : this song is in the library of this source
+        source.setLibrary(true);
+
         //check if the song is already registered
         ArrayList<Song> snames = songsByName.get(name.toLowerCase());
         if(snames != null)
@@ -240,6 +244,54 @@ public class LibraryService
         return song;
     }
 
+    static void unregisterSong(Song song, SongSources.SongSource toUnregister)
+    {
+        //remove songsource
+        SongSources sources = song.getSources();
+        sources.removeSource(toUnregister);
+
+        boolean isInLibrary = false;
+        for(SongSources.SongSource s : sources.sources) if(s.getLibrary()) {isInLibrary = true; break;}
+        if(!isInLibrary)
+        {
+            //remove from library
+            LibraryService.getSongs().remove(song);
+            if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+            //remove from album and set handled + remove album if last one song
+            song.getAlbum().getSongs().remove(song);
+            song.setHandled(true);
+            LibraryService.handles.add(song);
+
+            boolean albumHandled = true;
+            for(Song s : song.getAlbum().getSongs()) if(!s.isHandled()) albumHandled = false;
+            if(albumHandled)
+            {
+                //remove from library
+                LibraryService.getSongs().remove(song);
+                if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                //remove from artist and set handled + remove artist if last one album
+                song.getArtist().getAlbums().remove(song.getAlbum());
+                song.getAlbum().setHandled(true);
+                LibraryService.albumHandles.add(song.getAlbum());
+
+                boolean artistHandled = true;
+                for(Album a : song.getArtist().getAlbums()) if(!a.isHandled()) artistHandled = false;
+
+                if(artistHandled)
+                {
+                    //remove from library
+                    LibraryService.getArtists().remove(song.getArtist());
+                    if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                    //set handled
+                    song.getArtist().setHandled(true);
+                    artistHandles.add(song.getArtist());
+                }
+            }
+        }
+    }
 
     /*
     * Synchronize local/cached library with local/web library
@@ -346,15 +398,17 @@ public class LibraryService
             //cache theses
             try
             {
-                betterSourceFile.createNewFile();
-                BufferedWriter spw = new BufferedWriter(new FileWriter(betterSourceFile));
+                //TODO : for now we keep betterSources forever, find a way to get rid of unused ones
+                if(betterSourceFile.exists()) betterSourceFile.createNewFile();
+                RandomAccessFile randomAccessFile = new RandomAccessFile(betterSourceFile.getAbsolutePath(), "rw");
+                randomAccessFile.seek(randomAccessFile.length());
                 for(Song song : spotifySongs)
                 {
-                    spw.append(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
+                    randomAccessFile.writeUTF(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSourceByPriority(0).getId()
                             + CACHE_SEPARATOR + "\n");
                 }
-                spw.close();
+                randomAccessFile.close();
             }
             catch(IOException e) {e.printStackTrace();}
 
@@ -404,16 +458,17 @@ public class LibraryService
             //cache theses
             try
             {
-                betterSourceFile.createNewFile();
-                BufferedWriter spw = new BufferedWriter(new FileWriter(betterSourceFile));
+                //TODO : for now we keep betterSources forever, find a way to get rid of unused ones
+                if(betterSourceFile.exists()) betterSourceFile.createNewFile();
+                RandomAccessFile randomAccessFile = new RandomAccessFile(betterSourceFile.getAbsolutePath(), "rw");
+                randomAccessFile.seek(randomAccessFile.length());
                 for(Song song : deezerSongs)
                 {
-                    spw.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                    randomAccessFile.writeUTF(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
                             + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSourceByPriority(0).getId()
-                            + CACHE_SEPARATOR);
-                    spw.newLine();
+                            + CACHE_SEPARATOR + "\n");
                 }
-                spw.close();
+                randomAccessFile.close();
             }
             catch(IOException e) {e.printStackTrace();}
         }
@@ -613,7 +668,9 @@ public class LibraryService
         }
         else
         {
-            File toSave = new File(artCacheDir.getAbsolutePath() + "/" + alb.getName() + ".png");
+            String fileName = alb.getName();
+            if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
+            File toSave = new File(artCacheDir.getAbsolutePath() + "/" + fileName + ".png");
             if(!toSave.exists())
             {
                 try
@@ -637,6 +694,7 @@ public class LibraryService
                 catch(Exception e)
                 {
                     Log.println(Log.WARN, "[BLADE]", "Exception on decoding album image for album " + alb.getName() + " : " + path);
+                    e.printStackTrace();
                     return;
                 }
             }

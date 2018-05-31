@@ -31,7 +31,6 @@ import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
 import v.blade.R;
-import v.blade.library.LibraryObject;
 import v.blade.library.LibraryService;
 import v.blade.library.Song;
 import v.blade.player.PlayerService;
@@ -109,8 +108,6 @@ public class PlayActivity extends AppCompatActivity
         @Override
         public void onClick(View v)
         {
-            final LibraryObject object = (LibraryObject) v.getTag();
-
             PopupMenu popupMenu = new PopupMenu(PlayActivity.this, v);
 
             popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
@@ -123,6 +120,9 @@ public class PlayActivity extends AppCompatActivity
                         case R.id.action_add_to_list:
                             MainActivity.showAddToPlaylist(PlayActivity.this, PlayerConnection.getService().getCurrentSong());
                             break;
+
+                        case R.id.action_manage_libraries:
+                            MainActivity.showManageLibraries(PlayActivity.this, PlayerConnection.getService().getCurrentSong());
                     }
                     return false;
                 }

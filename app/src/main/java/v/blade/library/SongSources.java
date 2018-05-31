@@ -6,6 +6,7 @@ public class SongSources
     {
         private Object id;
         private Source source;
+        private boolean library;
 
         public SongSource(Object id, Source s)
         {
@@ -15,6 +16,8 @@ public class SongSources
 
         public Object getId() {return this.id;}
         public Source getSource() {return this.source;}
+        public void setLibrary(boolean lib) {this.library = lib;}
+        public boolean getLibrary() {return this.library;}
     }
 
     public SongSource sources[] = new SongSource[Source.SOURCES.length];
@@ -41,10 +44,29 @@ public class SongSources
         else if(sources[2] == null) sources[2] = toAdd;
         else System.err.println("Warning : incorrect call to addSource().");
     }
+    public void removeSource(SongSource s)
+    {
+        for(int i = 0; i<Source.SOURCES.length; i++)
+        {
+            if(sources[i] == s)
+            {
+                sources[i] = null;
+                for(int j=i;j<Source.SOURCES.length-1;j++)
+                    sources[j] = sources[j+1];
+                break;
+            }
+        }
+    }
 
     public SongSource getSourceByPriority(int priority)
     {
         return sources[priority];
+    }
+    public SongSource getSourceByAbsolutePriority(int priority)
+    {
+        Source toMatch = Source.SOURCES[priority];
+        for(SongSource s : sources) if(s != null) if(s.getSource() == toMatch) return s;
+        return null;
     }
     public SongSource getSpotify()
     {
