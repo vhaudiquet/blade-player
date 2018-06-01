@@ -1017,6 +1017,69 @@ public class MainActivity extends AppCompatActivity
                                 }
                             });
                         else
+                            if(source == Source.SOURCE_LOCAL_LIB)
+                            {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                                        .setTitle(context.getString(R.string.delete))
+                                        .setMessage(R.string.are_you_sure_delete)
+                                        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
+                                        {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which)
+                                            {
+                                                viewHolder.checkBox.setChecked(true);
+                                                dialog.cancel();
+                                            }
+                                        })
+                                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener()
+                                        {
+                                            @Override
+                                            public void onClick(DialogInterface dialog, int which)
+                                            {
+                                                source.removeSongFromLibrary((Song) object, new Source.OperationCallback()
+                                                {
+                                                    @Override
+                                                    public void onSucess(LibraryObject result)
+                                                    {
+                                                        context.runOnUiThread(new Runnable()
+                                                        {
+                                                            @Override
+                                                            public void run()
+                                                            {
+                                                                Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_removed), Toast.LENGTH_SHORT).show();
+                                                                if(source == Source.SOURCE_LOCAL_LIB) viewHolder.checkBox.setEnabled(false);
+                                                            }
+                                                        });
+                                                    }
+                                                    @Override
+                                                    public void onFailure()
+                                                    {
+                                                        context.runOnUiThread(new Runnable()
+                                                        {
+                                                            @Override
+                                                            public void run()
+                                                            {
+                                                                Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_remove_fail), Toast.LENGTH_SHORT).show();
+                                                                viewHolder.checkBox.setChecked(true);
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                AlertDialog dialog = builder.create();
+                                dialog.setOnShowListener(new DialogInterface.OnShowListener()
+                                {
+                                    @Override
+                                    public void onShow(DialogInterface arg0)
+                                    {
+                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                                    }
+                                });
+                                dialog.show();
+                            }
+                            else
                             source.removeSongFromLibrary((Song) object, new Source.OperationCallback()
                             {
                                 @Override
@@ -1028,6 +1091,7 @@ public class MainActivity extends AppCompatActivity
                                         public void run()
                                         {
                                             Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_removed), Toast.LENGTH_SHORT).show();
+                                            if(source == Source.SOURCE_LOCAL_LIB) viewHolder.checkBox.setEnabled(false);
                                         }
                                     });
                                 }
