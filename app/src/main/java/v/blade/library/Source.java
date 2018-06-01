@@ -1444,9 +1444,6 @@ public abstract class Source
 
                         spotifyApi.getService().removeFromMySavedTracks((String) spot.getId());
 
-                        //remove from library
-                        LibraryService.unregisterSong(song, spot);
-
                         //remove from cache
                         try
                         {
@@ -1470,6 +1467,9 @@ public abstract class Source
                             writer.close();
                         }
                         catch(IOException e) {}
+
+                        //remove from library
+                        LibraryService.unregisterSong(song, spot);
 
                         callback.onSucess(null);
                     }
@@ -2205,9 +2205,6 @@ public abstract class Source
 
                         deezerApi.requestSync(DeezerRequestFactory.requestCurrentUserRemoveTrack((long) deezer.getId()));
 
-                        //remove from library
-                        LibraryService.unregisterSong(song, deezer);
-
                         //remove from cache
                         try
                         {
@@ -2231,6 +2228,9 @@ public abstract class Source
                             writer.close();
                         }
                         catch(IOException e) {}
+
+                        //remove from library
+                        LibraryService.unregisterSong(song, deezer);
 
                         callback.onSucess(null);
                     }

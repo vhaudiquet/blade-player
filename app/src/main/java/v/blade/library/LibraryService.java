@@ -21,6 +21,7 @@ import java.util.*;
 public class LibraryService
 {
     private static final boolean LOG_REGISTER_SONG = false;
+    private static final int BETTER_SOURCES_MAX = 20; //stop better sources after 20 registered songs (avoid query limit)
     static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
@@ -354,6 +355,8 @@ public class LibraryService
         Source bestSource = Source.SOURCE_DEEZER.getPriority() > Source.SOURCE_SPOTIFY.getPriority() ? Source.SOURCE_DEEZER : Source.SOURCE_SPOTIFY;
         if(!bestSource.isAvailable()) return;
 
+        int addedSongs = 0;
+
         if(bestSource == Source.SOURCE_SPOTIFY)
         {
             //search all songs on spotify
@@ -369,6 +372,8 @@ public class LibraryService
                         {
                             spotifySongs.add(s);
                         }
+                        addedSongs++;
+                        if(addedSongs >= BETTER_SOURCES_MAX) break;
                     }
                     catch (RetrofitError error)
                     {
@@ -390,6 +395,8 @@ public class LibraryService
                             {
                                 spotifySongs.add(s);
                             }
+                            addedSongs++;
+                            if(addedSongs >= BETTER_SOURCES_MAX) break;
                         }
                     }
                 }
@@ -428,6 +435,8 @@ public class LibraryService
                         {
                             deezerSongs.add(s);
                         }
+                        addedSongs++;
+                        if(addedSongs >= BETTER_SOURCES_MAX) break;
                     }
                 }
             }
@@ -448,6 +457,8 @@ public class LibraryService
                                     {
                                        deezerSongs.add(s);
                                     }
+                                    addedSongs++;
+                                    if(addedSongs >= BETTER_SOURCES_MAX) break;
                                 }
                             }
                         }
