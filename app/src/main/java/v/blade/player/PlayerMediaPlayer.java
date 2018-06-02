@@ -205,12 +205,12 @@ public class PlayerMediaPlayer
         if(currentActivePlayer != null) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
-        song.getSources().getSourceByPriority(0).getSource().getPlayer().playSong(song, new SourcePlayer.PlayerCallback()
+        currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
+        currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback()
         {
             @Override
             public void onSucess()
             {
-                currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
                 currentState = PLAYER_STATE_PLAYING;
                 listener.onStateChange();
             }
@@ -219,6 +219,10 @@ public class PlayerMediaPlayer
             public void onFailure()
             {
                 Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+
+                //oreo+ : we need to show a notification or app will crash
+                currentState = PLAYER_STATE_PAUSED;
+                listener.onStateChange();
             }
         });
     }

@@ -516,6 +516,8 @@ public class MainActivity extends AppCompatActivity
             }
 
             syncButton.setIcon(R.drawable.ic_cancel);
+            //devices with little screens : change name
+            syncButton.setTitle(R.string.cancel);
 
             LibraryService.synchronizeLibrary(new LibraryService.SynchronizeCallback()
             {
@@ -528,6 +530,7 @@ public class MainActivity extends AppCompatActivity
                         public void run()
                         {
                             syncButton.setIcon(R.drawable.ic_sync);
+                            syncButton.setTitle("Synchronisation");
                         }
                     });
                 }
@@ -540,6 +543,7 @@ public class MainActivity extends AppCompatActivity
                         public void run()
                         {
                             syncButton.setIcon(R.drawable.ic_sync);
+                            syncButton.setTitle("Synchronisation");
                             switch (error)
                             {
                                 case LibraryService.ERROR_LOADING_NOT_DONE:

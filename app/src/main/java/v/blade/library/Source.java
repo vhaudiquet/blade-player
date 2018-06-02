@@ -625,13 +625,13 @@ public abstract class Source
             @Override
             public void seekTo(int msec)
             {
-                spotifyPlayer.seekToPosition(null, msec);
+                if(spotifyPlayer != null) spotifyPlayer.seekToPosition(null, msec);
             }
 
             @Override
             public int getCurrentPosition()
             {
-                return (int) spotifyPlayer.getPlaybackState().positionMs;
+                return spotifyPlayer == null ? 0 : (int) spotifyPlayer.getPlaybackState().positionMs;
             }
         };
 
@@ -1546,6 +1546,7 @@ public abstract class Source
             public void play(PlayerCallback callback)
             {
                 if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
 
                 deezerPlayer.play();
                 if(callback != null) callback.onSucess();
@@ -1555,6 +1556,7 @@ public abstract class Source
             public void pause(PlayerCallback callback)
             {
                 if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
 
                 deezerPlayer.pause();
                 if(callback != null) callback.onSucess();
@@ -1566,6 +1568,7 @@ public abstract class Source
                 SongSources.SongSource deezer = song.getSources().getDeezer();
                 if(deezer == null) {if(callback != null) callback.onFailure(); return;}
                 if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
 
                 deezerPlayer.playTrack((long) deezer.getId());
                 if(callback != null) callback.onSucess();
@@ -1574,13 +1577,13 @@ public abstract class Source
             @Override
             public void seekTo(int msec)
             {
-                deezerPlayer.seek(msec);
+                if(deezerPlayer != null) deezerPlayer.seek(msec);
             }
 
             @Override
             public int getCurrentPosition()
             {
-                return (int) deezerPlayer.getPosition();
+                return deezerPlayer == null ? 0 : (int) deezerPlayer.getPosition();
             }
         };
 
