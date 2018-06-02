@@ -53,12 +53,20 @@ public class PlayerMediaPlayer
             currentState = PLAYER_STATE_SONGEND;
             listener.onStateChange();
         }
+
+        @Override
+        public void onPlaybackError(String errMsg)
+        {
+            Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+            currentState = PLAYER_STATE_PAUSED;
+            listener.onStateChange();
+        }
     };
 
     private SourcePlayer currentActivePlayer = null;
 
     private Song currentSong;
-    private final Context context;
+    private static Context context;
 
     private static final IntentFilter AUDIO_NOISY_INTENT_FILTER = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
     private final BroadcastReceiver mAudioNoisyReceiver = new BroadcastReceiver()

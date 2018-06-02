@@ -3,7 +3,7 @@ package v.blade.library;
 public abstract class SourcePlayer
 {
     public interface PlayerCallback {void onSucess(); void onFailure();}
-    public interface PlayerListener {void onSongCompletion();}
+    public interface PlayerListener {void onSongCompletion(); void onPlaybackError(String errMsg);}
 
     public abstract void init();
     public abstract void setListener(PlayerListener listener);

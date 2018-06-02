@@ -81,6 +81,6 @@
     <string name="new_playlist">Nouvelle liste...</string>
     <string name="playlist_add_fail">Impossible de créer la playlist</string>
 
-    <string name="playback_error">Erreur lors du démarrage de la lecture</string>
+    <string name="playback_error">Erreur lors de la lecture</string>
     <string name="playback_pause_error">Erreur lors de la pause de la lecture</string>
 </resources>

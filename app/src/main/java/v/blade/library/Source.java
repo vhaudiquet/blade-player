@@ -568,7 +568,10 @@ public abstract class Source
                     }
 
                     @Override
-                    public void onPlaybackError(Error error) {}
+                    public void onPlaybackError(Error error)
+                    {
+                        listener.onPlaybackError(error.name());
+                    }
                 });
             }
 
