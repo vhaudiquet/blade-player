@@ -406,25 +406,15 @@ public abstract class Source
 
             if(uri != null)
             {
-                long mPlaylistId = -1;
-                Cursor c = contentResolver.query(uri,  new String[] {
-                        MediaStore.Audio.Playlists._ID,
-                        MediaStore.Audio.Playlists.NAME,
-                        MediaStore.Audio.Playlists.DATA}, null, null, null);
-                if (c != null)
-                {
-                    mPlaylistId = c.getLong(c.getColumnIndex(MediaStore.Audio.Playlists._ID));
-                    c.close();
+                long mPlaylistId = Long.parseLong(uri.getLastPathSegment());
 
-                    //add playlist in RAM
-                    Playlist list = new Playlist(name, new ArrayList<>());
-                    list.getSources().addSource(new SongSources.SongSource(mPlaylistId, SOURCE_LOCAL_LIB));
-                    LibraryService.getPlaylists().add(list);
-                    if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+                //add playlist in RAM
+                Playlist list = new Playlist(name, new ArrayList<>());
+                list.getSources().addSource(new SongSources.SongSource(mPlaylistId, SOURCE_LOCAL_LIB));
+                LibraryService.getPlaylists().add(list);
+                if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
 
-                    callback.onSucess(list);
-                }
-                else callback.onFailure();
+                callback.onSucess(list);
             }
             else callback.onFailure();
         }

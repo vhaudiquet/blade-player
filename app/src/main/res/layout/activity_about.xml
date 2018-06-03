@@ -52,7 +52,7 @@
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textSize="15sp"
-              android:text="DragSortListView, license Apache v2.0, Copyright 2012 Carl Bauer, github.com/loeschg/drag-sort-listview"/>
+              android:text="DragSortListView, license Apache v2.0, Copyright 2012 Carl Bauer, github.com/Valou3433/drag-sort-listview"/>
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textSize="15sp"

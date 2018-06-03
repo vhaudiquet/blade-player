@@ -185,7 +185,8 @@ public class PlayerMediaPlayer
     }
     public int getCurrentPosition()
     {
-        return currentActivePlayer == null ? 0 : currentActivePlayer.getCurrentPosition();
+        return currentState == PLAYER_STATE_SONGEND ? getDuration() :
+                currentActivePlayer == null ? 0 : currentActivePlayer.getCurrentPosition();
     }
     public boolean isPlaying()
     {
@@ -244,6 +245,7 @@ public class PlayerMediaPlayer
 
     /* state change listener */
     public int getCurrentState() {return currentState;}
+    public void setCurrentState(int state) {currentState = state;}
     public PlaybackStateCompat getPlaybackState()
     {
         long actions = PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID

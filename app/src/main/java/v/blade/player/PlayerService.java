@@ -149,6 +149,11 @@ public class PlayerService extends Service
             //if we are in song begin, we skip to previous
             if(mPlayer.getCurrentPosition() < 5000)
             {
+                //reset state
+                if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_SONGEND ||
+                        mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_DO_NOTHING)
+                    mPlayer.setCurrentState(PlayerMediaPlayer.PLAYER_STATE_PAUSED);
+
                 currentPosition = currentPosition > 0 ? currentPosition-1 : currentPlaylist.size()-1;
                 mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
             }
