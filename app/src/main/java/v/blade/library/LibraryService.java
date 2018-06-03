@@ -194,6 +194,7 @@ public class LibraryService
                     s.getAlbum().addSong(s);
                     s.setHandled(false);
                     handles.remove(s);
+                    songs.add(s);
 
                     //register song by name
                     if(snames != null) snames.add(s);
