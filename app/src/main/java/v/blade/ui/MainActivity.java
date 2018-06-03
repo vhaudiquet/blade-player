@@ -87,8 +87,8 @@ public class MainActivity extends AppCompatActivity
                 musicCallbacksRegistered = true;
             }
 
-            if(musicPlayer.isPlaying())
-                showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
+            //if(musicPlayer.isPlaying())
+            //    showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
 
         @Override
@@ -122,6 +122,7 @@ public class MainActivity extends AppCompatActivity
     private ImageView currentPlayImage;
     private ImageView currentPlayAction;
     private boolean currentPlayShown = false;
+    private boolean needShowCurrentPlay = false;
     private SearchView searchView;
     private MenuItem syncButton;
 
@@ -400,8 +401,22 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        System.out.println("currentObject = " + currentObject);
         restoreInstanceState(savedInstanceState, currentObject);
+
+        //delay currentPlay showing
+        mainListView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
+        {
+            @Override
+            public void onGlobalLayout()
+            {
+                if(needShowCurrentPlay)
+                {
+                    showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
+                    needShowCurrentPlay = false;
+                    mainListView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                }
+            }
+        });
     }
 
     @Override
@@ -716,7 +731,9 @@ public class MainActivity extends AppCompatActivity
         if(!currentPlayShown)
         {
             //resize list ; DOESN'T WORK FOR SOME REASON WHEN AUTO-ROTATE (//TODO)
-            mainListView.getLayoutParams().height = 1510;
+            //mainListView.getLayoutParams().height = 1510;
+            System.out.println("layoutParams : listView.height = " + mainListView.getHeight() + " ; currentPlay height = " + currentPlay.getHeight());
+            mainListView.getLayoutParams().height = mainListView.getHeight() - currentPlay.getHeight();
             mainListView.requestLayout();
 
             //show
@@ -820,7 +837,7 @@ public class MainActivity extends AppCompatActivity
 
         if(bundle.getBoolean("currentPlayShown") && PlayerConnection.getService() != null)
         {
-            showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
+            needShowCurrentPlay = true;
         }
     }
 
