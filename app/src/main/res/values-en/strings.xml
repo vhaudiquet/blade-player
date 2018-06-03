@@ -65,4 +65,6 @@
     <string name="playlist_add_fail">Could not create playlist</string>
     <string name="playback_error">Error during playback</string>
     <string name="playback_pause_error">Could not pause playback</string>
+    <string name="please_grant_permission_msg">Read/Write external storage permission is required to read song list and edit library</string>
+    <string name="please_grant_permission_title">Permission needed</string>
 </resources>

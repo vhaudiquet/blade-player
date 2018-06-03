@@ -245,7 +245,7 @@ public class PlayerMediaPlayer
 
     /* state change listener */
     public int getCurrentState() {return currentState;}
-    public void setCurrentState(int state) {currentState = state;}
+    public void setCurrentState(int state) {currentState = state; listener.onStateChange();}
     public PlaybackStateCompat getPlaybackState()
     {
         long actions = PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID

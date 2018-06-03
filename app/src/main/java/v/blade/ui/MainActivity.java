@@ -624,8 +624,8 @@ public class MainActivity extends AppCompatActivity
                 {
                     // Show an alert dialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage("Read external storage permission is required to read song list.");
-                    builder.setTitle("Please grant permission");
+                    builder.setMessage(getString(R.string.please_grant_permission_msg));
+                    builder.setTitle(getString(R.string.please_grant_permission_title));
                     builder.setPositiveButton("OK", new DialogInterface.OnClickListener()
                     {
                         @Override
