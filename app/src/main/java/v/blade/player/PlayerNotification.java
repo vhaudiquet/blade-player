@@ -120,13 +120,12 @@ public class PlayerNotification
     {
         NotificationManager mNotificationManager = (NotificationManager) mService.getSystemService(Context.NOTIFICATION_SERVICE);
         // The id of the channel.
-        String id = CHANNEL_ID;
         // The user-visible name of the channel.
         CharSequence name = "Media playback";
         // The user-visible description of the channel.
         String description = "Media playback controls";
         int importance = NotificationManager.IMPORTANCE_HIGH;
-        NotificationChannel mChannel = new NotificationChannel(id, name, importance);
+        NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
         // Configure the notification channel.
         mChannel.setDescription(description);
         mChannel.setShowBadge(false);

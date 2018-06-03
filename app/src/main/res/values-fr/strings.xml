@@ -67,4 +67,5 @@
     <string name="playback_pause_error">Erreur lors de la pause de la lecture</string>
     <string name="please_grant_permission_msg">L\'autorisation de lire et écrire le stockage externe est nécessaire pour obtenir les musiques de votre appareil ainsi que pour éditer la bibliothèque</string>
     <string name="please_grant_permission_title">Autorisation nécessaire</string>
+    <string name="libraries_used">Bibliothèques utilisées : </string>
 </resources>

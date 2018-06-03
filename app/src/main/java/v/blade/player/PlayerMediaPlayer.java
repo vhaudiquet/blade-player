@@ -96,7 +96,9 @@ public class PlayerMediaPlayer
                     break;
 
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    setVolume(MEDIA_VOLUME_DUCK, MEDIA_VOLUME_DUCK);
+                    //setVolume(MEDIA_VOLUME_DUCK, MEDIA_VOLUME_DUCK);
+                    /* we don't want to 'duck' for now, so take the same action as AUDIOFOCUS_LOSS_TRANSIENT */
+                    if(isPlaying()) {playOnAudioFocus = true; pause();}
                     break;
 
                 /* We only lost audiofocus for a small ammount of time, relaunch player just after */

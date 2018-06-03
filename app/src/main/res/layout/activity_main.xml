@@ -9,8 +9,7 @@
         android:fitsSystemWindows="true"
         tools:openDrawer="start">
 
-    <include
-            layout="@layout/app_bar_main"
+    <include layout="@layout/app_bar_main"
             android:layout_width="match_parent"
             android:layout_height="55dp"/>
 
@@ -50,7 +49,9 @@
                     android:textSize="18sp"
                     android:layout_alignParentTop="true"
                     android:layout_toRightOf="@id/element_image"
+                    android:layout_toEndOf="@id/element_image"
                     android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:singleLine="true"
                     android:text="Titre"
             />
@@ -62,13 +63,16 @@
                     android:textSize="12sp"
                     android:layout_below="@+id/element_title"
                     android:layout_toRightOf="@id/element_image"
+                    android:layout_toEndOf="@id/element_image"
                     android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:singleLine="true"
                     android:text="Artiste - Album"/>
             <ImageView android:id="@+id/element_action"
                        android:layout_width="wrap_content"
                        android:layout_height="match_parent"
                        android:layout_alignParentRight="true"
+                       android:layout_alignParentEnd="true"
                        android:layout_centerVertical="true"
                        app:srcCompat="@drawable/ic_play_action"/>
         </RelativeLayout>

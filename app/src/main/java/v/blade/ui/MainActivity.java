@@ -86,9 +86,6 @@ public class MainActivity extends AppCompatActivity
                 PlayerConnection.musicController.registerCallback(musicCallbacks);
                 musicCallbacksRegistered = true;
             }
-
-            //if(musicPlayer.isPlaying())
-            //    showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
 
         @Override
@@ -133,11 +130,6 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id)
         {
-            if(view instanceof ImageView)
-            {
-                Toast.makeText(MainActivity.this, "imageView", Toast.LENGTH_SHORT).show();
-            }
-
             switch(currentContext)
             {
                 case CONTEXT_SONGS:
@@ -349,7 +341,7 @@ public class MainActivity extends AppCompatActivity
                 popupMenu.getMenu().findItem(R.id.action_add_to_list).setTitle(getString(R.string.remove_from_playlist));
             }
 
-            if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS)
+            if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS && currentContext != CONTEXT_SEARCH)
                 popupMenu.getMenu().findItem(R.id.action_manage_libraries).setVisible(false);
 
             popupMenu.show();
@@ -730,9 +722,6 @@ public class MainActivity extends AppCompatActivity
     {
         if(!currentPlayShown)
         {
-            //resize list ; DOESN'T WORK FOR SOME REASON WHEN AUTO-ROTATE (//TODO)
-            //mainListView.getLayoutParams().height = 1510;
-            System.out.println("layoutParams : listView.height = " + mainListView.getHeight() + " ; currentPlay height = " + currentPlay.getHeight());
             mainListView.getLayoutParams().height = mainListView.getHeight() - currentPlay.getHeight();
             mainListView.requestLayout();
 

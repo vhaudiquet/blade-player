@@ -21,7 +21,9 @@
             android:textSize="18sp"
             android:layout_alignParentTop="true"
             android:layout_toRightOf="@id/element_image"
+            android:layout_toEndOf="@id/element_image"
             android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
             android:singleLine="true"
             />
     <TextView
@@ -32,12 +34,15 @@
             android:textSize="12sp"
             android:layout_below="@id/element_title"
             android:layout_toRightOf="@id/element_image"
+            android:layout_toEndOf="@id/element_image"
             android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
             android:singleLine="true"/>
     <ImageView android:layout_width="40dp"
                android:layout_height="50dp"
                android:id="@+id/element_more"
                android:layout_alignParentRight="true"
+               android:layout_alignParentEnd="true"
                android:layout_centerVertical="true"
                app:srcCompat="@drawable/ic_more_black"/>
     <ImageView android:layout_width="15dp"
@@ -45,16 +50,20 @@
                android:id="@+id/element_source0"
                android:layout_below="@id/element_subtitle"
                android:layout_toRightOf="@id/element_image"
-               android:layout_marginLeft="10dp"/>
+               android:layout_toEndOf="@id/element_image"
+               android:layout_marginLeft="10dp"
+               android:layout_marginStart="10dp"/>
     <ImageView android:layout_width="15dp"
                android:layout_height="15dp"
                android:id="@+id/element_source1"
                android:layout_below="@id/element_subtitle"
-               android:layout_toRightOf="@id/element_source0"/>
+               android:layout_toRightOf="@id/element_source0"
+               android:layout_toEndOf="@id/element_source0"/>
     <ImageView android:layout_width="15dp"
                android:layout_height="15dp"
                android:id="@+id/element_source2"
                android:layout_below="@id/element_subtitle"
-               android:layout_toRightOf="@id/element_source1"/>
+               android:layout_toRightOf="@id/element_source1"
+               android:layout_toEndOf="@id/element_source1"/>
 
 </RelativeLayout>
