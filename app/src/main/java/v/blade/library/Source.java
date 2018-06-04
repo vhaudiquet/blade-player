@@ -95,6 +95,7 @@ public abstract class Source
         private SourcePlayer player = new SourcePlayer()
         {
             MediaPlayer mediaPlayer;
+            int duration = 1000; //getDuration may throw if unprepared...
 
             @Override
             public void init()
@@ -146,6 +147,7 @@ public abstract class Source
                 if(song.getFormat().equals("audio/x-ms-wma"))
                 {
                     Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
+                    callback.onFailure();
                     return;
                 }
                 Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getSources().getLocal().getId());
@@ -158,7 +160,7 @@ public abstract class Source
                     mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
                     {
                         @Override
-                        public void onPrepared(MediaPlayer mp) {play(callback);}
+                        public void onPrepared(MediaPlayer mp) {duration = mediaPlayer.getDuration(); play(callback);}
                     });
                 }
                 catch(Exception e) {if(callback != null) callback.onFailure();}
@@ -179,7 +181,7 @@ public abstract class Source
             @Override
             public int getDuration()
             {
-                return mediaPlayer.getDuration();
+                return duration;
             }
         };
 

@@ -187,7 +187,7 @@ public class PlayerMediaPlayer
     }
     public int getCurrentPosition()
     {
-        return currentState == PLAYER_STATE_SONGEND ? getDuration() :
+        return (currentState == PLAYER_STATE_SONGEND || currentState == PLAYER_STATE_DO_NOTHING) ? getDuration() :
                 currentActivePlayer == null ? 0 : currentActivePlayer.getCurrentPosition();
     }
     public boolean isPlaying()
@@ -196,7 +196,8 @@ public class PlayerMediaPlayer
     }
     public int getDuration()
     {
-        if(currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer()) return currentActivePlayer.getDuration();
+        if(currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer())
+            return currentActivePlayer.getDuration();
         return ((int) currentSong.getDuration());
     }
     public void setVolume(float left, float right)
@@ -213,7 +214,7 @@ public class PlayerMediaPlayer
     {
         currentSong = song;
 
-        if(currentActivePlayer != null) currentActivePlayer.pause(null);
+        if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
         currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();

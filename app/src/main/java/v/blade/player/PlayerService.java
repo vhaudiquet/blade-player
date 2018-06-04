@@ -138,7 +138,6 @@ public class PlayerService extends Service
         @Override
         public void onSkipToNext()
         {
-            //if(shuffleMode) currentPosition = new Random().nextInt(currentPlaylist.size()-1);
             currentPosition = (++currentPosition % currentPlaylist.size());
             mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));
         }
