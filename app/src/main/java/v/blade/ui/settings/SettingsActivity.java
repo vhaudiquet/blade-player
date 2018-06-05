@@ -24,7 +24,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
 import v.blade.R;
 import v.blade.library.LibraryService;
@@ -40,9 +39,6 @@ public class SettingsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
         getSupportFragmentManager().beginTransaction().replace(android.R.id.content, new SettingsFragment()).commit();
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat

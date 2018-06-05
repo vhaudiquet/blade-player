@@ -9,17 +9,19 @@
         android:fitsSystemWindows="true"
         tools:openDrawer="start">
 
-    <include layout="@layout/app_bar_main"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"/>
-
     <RelativeLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/mainLinearLayout">
+
+    <include layout="@layout/app_bar_main"
+             android:layout_width="match_parent"
+             android:layout_height="55dp"
+             android:id="@+id/include"/>
+
         <ListView
-                android:layout_marginTop="55dp"
+                android:layout_below="@id/include"
                 android:id="@+id/libraryList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
