@@ -224,43 +224,46 @@ public class MainActivity extends AppCompatActivity
                             break;
 
                         case R.id.action_add_to_list:
-                            if(currentContext == CONTEXT_SONGS && fromPlaylists)
-                            {
-                                Playlist p = ((Playlist) currentObject);
-                                p.getSources().getSourceByPriority(0).getSource()
-                                        .removeSongFromPlaylist((Song) object, p, new Source.OperationCallback()
-                                        {
-                                            @Override
-                                            public void onSucess(LibraryObject result)
-                                            {
-                                                runOnUiThread(new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_ok) + " " + p.getName(), Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                            }
-
-                                            @Override
-                                            public void onFailure()
-                                            {
-                                                runOnUiThread(new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_fail) + " " + p.getName(), Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                            }
-                                        });
-                            }
-                            else showAddToPlaylist(MainActivity.this, object);
+                            showAddToPlaylist(MainActivity.this, object);
                             break;
 
+                        case R.id.action_remove_from_playlist:
+                        {
+                            Playlist p = ((Playlist) currentObject);
+                            p.getSources().getSourceByPriority(0).getSource()
+                                    .removeSongFromPlaylist((Song) object, p, new Source.OperationCallback()
+                                    {
+                                        @Override
+                                        public void onSucess(LibraryObject result)
+                                        {
+                                            runOnUiThread(new Runnable()
+                                            {
+                                                @Override
+                                                public void run()
+                                                {
+                                                    Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_ok) + " " + p.getName(), Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                        }
+
+                                        @Override
+                                        public void onFailure()
+                                        {
+                                            runOnUiThread(new Runnable()
+                                            {
+                                                @Override
+                                                public void run()
+                                                {
+                                                    Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_fail) + " " + p.getName(), Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                        }
+                                    });
+                            break;
+                        }
+
                         case R.id.action_manage_libraries:
+                        {
                             if(currentContext == CONTEXT_PLAYLISTS)
                             {
                                 Playlist p = ((Playlist) object);
@@ -282,33 +285,33 @@ public class MainActivity extends AppCompatActivity
                                             {
                                                 p.getSources().getSourceByPriority(0).getSource().
                                                         removePlaylist(p, new Source.OperationCallback()
-                                                {
-                                                    @Override
-                                                    public void onSucess(LibraryObject result)
-                                                    {
-                                                        runOnUiThread(new Runnable()
                                                         {
                                                             @Override
-                                                            public void run()
+                                                            public void onSucess(LibraryObject result)
                                                             {
-                                                                Toast.makeText(MainActivity.this, ((Playlist) object).getName() + " " + getString(R.string.delete_ok), Toast.LENGTH_SHORT).show();
+                                                                runOnUiThread(new Runnable()
+                                                                {
+                                                                    @Override
+                                                                    public void run()
+                                                                    {
+                                                                        Toast.makeText(MainActivity.this, ((Playlist) object).getName() + " " + getString(R.string.delete_ok), Toast.LENGTH_SHORT).show();
+                                                                    }
+                                                                });
                                                             }
-                                                        });
-                                                    }
 
-                                                    @Override
-                                                    public void onFailure()
-                                                    {
-                                                        runOnUiThread(new Runnable()
-                                                        {
                                                             @Override
-                                                            public void run()
+                                                            public void onFailure()
                                                             {
-                                                                Toast.makeText(MainActivity.this, ((Playlist) object).getName() + " " + getString(R.string.delete_fail), Toast.LENGTH_SHORT).show();
+                                                                runOnUiThread(new Runnable()
+                                                                {
+                                                                    @Override
+                                                                    public void run()
+                                                                    {
+                                                                        Toast.makeText(MainActivity.this, ((Playlist) object).getName() + " " + getString(R.string.delete_fail), Toast.LENGTH_SHORT).show();
+                                                                    }
+                                                                });
                                                             }
                                                         });
-                                                    }
-                                                });
                                             }
                                         });
                                 AlertDialog dialog = builder.create();
@@ -325,6 +328,7 @@ public class MainActivity extends AppCompatActivity
                             }
                             else showManageLibraries(MainActivity.this, object);
                             break;
+                        }
                     }
                     return false;
                 }
@@ -338,7 +342,7 @@ public class MainActivity extends AppCompatActivity
             }
             else if(currentContext == CONTEXT_SONGS && fromPlaylists)
             {
-                popupMenu.getMenu().findItem(R.id.action_add_to_list).setTitle(getString(R.string.remove_from_playlist));
+                popupMenu.getMenu().findItem(R.id.action_remove_from_playlist).setVisible(true);
             }
 
             if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS && currentContext != CONTEXT_SEARCH)

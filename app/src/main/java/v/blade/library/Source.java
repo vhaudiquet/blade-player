@@ -447,7 +447,7 @@ public abstract class Source
         public void removeSongFromLibrary(Song song, OperationCallback callback)
         {
             SongSources.SongSource local = song.getSources().getLocal();
-            if(local == null) {callback.onFailure(); return;}
+            if(local == null) {if(callback != null) callback.onFailure(); return;}
 
             new File(song.getPath()).delete();
 
@@ -461,9 +461,9 @@ public abstract class Source
                 //unregister song from library
                 LibraryService.unregisterSong(song, local);
 
-                callback.onSucess(null);
+                if(callback != null) callback.onSucess(null);
             }
-            else callback.onFailure();
+            else if(callback != null) callback.onFailure();
         }
         public void addAlbumToLibrary(Album album, OperationCallback callback)
         {callback.onFailure();}
@@ -472,13 +472,7 @@ public abstract class Source
             //TODO : handle errors
             for(Song s : album.getSongs())
             {
-                removeSongFromLibrary(s, new OperationCallback() {
-                    @Override
-                    public void onSucess(LibraryObject result) {}
-
-                    @Override
-                    public void onFailure() {}
-                });
+                removeSongFromLibrary(s, null);
             }
 
             callback.onSucess(null);
