@@ -15,7 +15,7 @@ import java.net.URLConnection;
 import java.util.*;
 
 /*
-* LibraryService is the class that handles library caching/restore and synchronyzation
+* LibraryService is the class that handles library caching/restore and synchronization
 * It was a background service, but it works actually better as a static class that just calls a Thread to do async work
  */
 public class LibraryService
@@ -36,9 +36,9 @@ public class LibraryService
     private static final List<Playlist> playlists = Collections.synchronizedList(new ArrayList<Playlist>());
 
     //song handles, that are not part of library but playable (from web sources)
-    private static List<Song> handles = Collections.synchronizedList(new ArrayList<Song>());
-    private static List<Album> albumHandles = Collections.synchronizedList(new ArrayList<Album>());
-    private static List<Artist> artistHandles = Collections.synchronizedList(new ArrayList<Artist>());
+    private static final List<Song> handles = Collections.synchronizedList(new ArrayList<Song>());
+    private static final List<Album> albumHandles = Collections.synchronizedList(new ArrayList<Album>());
+    private static final List<Artist> artistHandles = Collections.synchronizedList(new ArrayList<Artist>());
     static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
     /* list callbacks */

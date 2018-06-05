@@ -11,7 +11,7 @@
           android:menuCategory="secondary"
           app:showAsAction="ifRoom"
           android:icon="@drawable/ic_sync"
-          android:title="Synchronisation"/>
+          android:title="@string/sync"/>
     <item android:id="@+id/action_settings"
           android:title="@string/action_settings"
           android:orderInCategory="100"

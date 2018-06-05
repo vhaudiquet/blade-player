@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Blade</string>
     <string name="action_search">Recherche</string>
     <string name="action_settings">Paramètres</string>
     <string name="add_to_current_playlist">Ajouter à la liste en cours de lecture</string>
@@ -68,4 +67,5 @@
     <string name="please_grant_permission_msg">L\'autorisation de lire et écrire le stockage externe est nécessaire pour obtenir les musiques de votre appareil ainsi que pour éditer la bibliothèque</string>
     <string name="please_grant_permission_title">Autorisation nécessaire</string>
     <string name="libraries_used">Bibliothèques utilisées : </string>
+    <string name="sync">Synchronisation</string>
 </resources>

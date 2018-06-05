@@ -136,7 +136,8 @@
                       android:text="0:00"
                       android:id="@+id/song_position"/>
             <SeekBar android:layout_width="270dp"
-                     android:layout_height="15dp"
+                     android:layout_height="wrap_content"
+                     android:gravity="center"
                      android:layout_centerHorizontal="true"
                      android:layout_below="@id/play_button"
                      android:layout_marginTop="12dp"
