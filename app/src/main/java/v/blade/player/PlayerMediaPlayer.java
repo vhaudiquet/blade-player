@@ -57,13 +57,14 @@ public class PlayerMediaPlayer
         @Override
         public void onPlaybackError(String errMsg)
         {
+            //TODO : find a way if error happens on already 'skipped' player
             Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
             currentState = PLAYER_STATE_PAUSED;
             listener.onStateChange();
         }
     };
 
-    private SourcePlayer currentActivePlayer = null;
+    private static SourcePlayer currentActivePlayer = null;
 
     private Song currentSong;
     private static Context context;

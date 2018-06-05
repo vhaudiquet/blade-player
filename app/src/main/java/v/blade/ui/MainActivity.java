@@ -645,8 +645,15 @@ public class MainActivity extends AppCompatActivity
                             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                         }
                     });
-                    builder.setNeutralButton("Cancel",null);
                     AlertDialog dialog = builder.create();
+                    dialog.setOnShowListener(new DialogInterface.OnShowListener()
+                    {
+                        @Override
+                        public void onShow(DialogInterface arg0)
+                        {
+                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                        }
+                    });
                     dialog.show();
                 }
                 else
@@ -663,7 +670,16 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
     {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == EXT_PERM_REQUEST_CODE) startLibService();
+        if(requestCode == EXT_PERM_REQUEST_CODE)
+        {
+            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                startLibService();
+            else
+            {
+                Toast.makeText(this, getString(R.string.please_grant_permission_msg), Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
     }
     public void startLibService()
     {
