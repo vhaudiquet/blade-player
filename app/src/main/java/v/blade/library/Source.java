@@ -55,6 +55,7 @@ public abstract class Source
     public void setPriority(int priority) {this.priority = priority;}
     public void setAvailable(boolean available) {this.available = available;}
     public boolean isAvailable() {return this.available;}
+    public String getName() {return name;}
     @Override public String toString() {return name;}
 
     //source settings/init/player...
@@ -62,7 +63,6 @@ public abstract class Source
     public abstract void disconnect();
     public abstract String getUserName();
     public abstract SourcePlayer getPlayer();
-    public String getName() {return name;}
 
     //source songs registering
     public abstract void registerCachedSongs();
@@ -696,6 +696,14 @@ public abstract class Source
             editor.remove("spotify_refresh_token");
             editor.remove("spotify_prior");
             editor.apply();
+
+            //remove cache
+            spotifyCacheFile.delete();
+            if(spotifyPlaylistsCache.exists())
+            {
+                for(File f : spotifyPlaylistsCache.listFiles()) f.delete();
+                spotifyPlaylistsCache.delete();
+            }
 
             //wait for resync
         }
@@ -1619,6 +1627,14 @@ public abstract class Source
             SharedPreferences.Editor editor = accountsPrefs.edit();
             editor.remove("deezer_prior");
             editor.apply();
+
+            //remove cache
+            deezerCacheFile.delete();
+            if(deezerPlaylistsCache.exists())
+            {
+                for(File f : deezerPlaylistsCache.listFiles()) f.delete();
+                deezerPlaylistsCache.delete();
+            }
 
             //wait for resync
         }
