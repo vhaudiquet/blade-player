@@ -494,21 +494,21 @@ public class LibraryService
 
         synchronized (songs)
         {Collections.sort(songs, new Comparator<Song>(){
-            public int compare(Song a, Song b){ return a.getTitle().toLowerCase().compareTo(b.getTitle().toLowerCase()); }
+            public int compare(Song a, Song b){ if(a.getTitle() != null && b.getTitle() != null) return a.getTitle().toLowerCase().compareTo(b.getTitle().toLowerCase()); else return 0;}
         });}
         synchronized (albums)
         {Collections.sort(albums, new Comparator<Album>(){
-            public int compare(Album a, Album b){ return a.getName().toLowerCase().compareTo(b.getName().toLowerCase());
+            public int compare(Album a, Album b){ if(a.getName() != null && b.getName() != null) return a.getName().toLowerCase().compareTo(b.getName().toLowerCase()); else return 0;
             }
         });}
         synchronized (artists)
         {Collections.sort(artists, new Comparator<Artist>(){
-            public int compare(Artist a, Artist b){ return a.getName().toLowerCase().compareTo(b.getName().toLowerCase());
+            public int compare(Artist a, Artist b){ if(a.getName() != null && b.getName() != null) return a.getName().toLowerCase().compareTo(b.getName().toLowerCase()); else return 0;
             }
         });}
         synchronized (playlists)
         {Collections.sort(playlists, new Comparator<Playlist>(){
-            public int compare(Playlist a, Playlist b){ return a.getName().toLowerCase().compareTo(b.getName().toLowerCase());
+            public int compare(Playlist a, Playlist b){ if(a.getName() != null && b.getName() != null) return a.getName().toLowerCase().compareTo(b.getName().toLowerCase()); else return 0;
             }
         });}
         if(currentCallback != null) currentCallback.onLibraryChange();
