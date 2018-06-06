@@ -753,7 +753,7 @@ public class MainActivity extends AppCompatActivity
         // update informations
         currentPlayTitle.setText(song.getTitle());
         currentPlaySubtitle.setText(song.getArtist().getName() + " - " + song.getAlbum().getName());
-        if(song.getAlbum().hasAlbumArt()) currentPlayImage.setImageBitmap(song.getAlbum().getAlbumArtMiniature());
+        if(song.getAlbum().hasArt()) currentPlayImage.setImageBitmap(song.getAlbum().getArtMiniature());
         else currentPlayImage.setImageResource(R.drawable.ic_albums);
 
         if(play) currentPlayAction.setImageResource(R.drawable.ic_action_pause);

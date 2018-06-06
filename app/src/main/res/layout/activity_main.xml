@@ -25,7 +25,7 @@
                 android:id="@+id/libraryList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:theme="@style/Theme.ListViewTheme"/>
+                android:theme="@style/Theme.ControlTheme"/>
 
         <RelativeLayout
                 android:layout_alignParentBottom="true"

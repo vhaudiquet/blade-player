@@ -658,7 +658,7 @@ public class LibraryService
         return s;
     }
 
-    static void loadAlbumArt(Album alb, String path, boolean local)
+    static void loadArt(LibraryObject obj, String path, boolean local)
     {
         if(local)
         {
@@ -676,12 +676,13 @@ public class LibraryService
             options.inSampleSize = inSampleSize;
             Bitmap toSet = BitmapFactory.decodeFile(path, options);
 
-            if(toSet != null) alb.setAlbumArt(path, toSet);
+            if(toSet != null) obj.setArt(path, toSet);
         }
         else
         {
-            String fileName = alb.getName();
+            String fileName = obj.getName();
             if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
+            if(!(obj instanceof Album)) fileName += "." + obj.getType();
             File toSave = new File(artCacheDir.getAbsolutePath() + "/" + fileName + ".png");
             if(!toSave.exists())
             {
@@ -705,12 +706,12 @@ public class LibraryService
                 }
                 catch(Exception e)
                 {
-                    Log.println(Log.WARN, "[BLADE]", "Exception on decoding album image for album " + alb.getName() + " : " + path);
+                    Log.println(Log.WARN, "[BLADE]", "Exception on decoding art for object " + obj.getName() + " : " + path);
                     e.printStackTrace();
                     return;
                 }
             }
-            loadAlbumArt(alb, toSave.getPath(), true);
+            loadArt(obj, toSave.getPath(), true);
         }
     }
     private static int calculateSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight)

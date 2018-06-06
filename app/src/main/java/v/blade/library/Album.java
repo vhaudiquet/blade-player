@@ -17,9 +17,6 @@
 */
 package v.blade.library;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
 import java.util.ArrayList;
 
 public class Album extends LibraryObject
@@ -28,10 +25,6 @@ public class Album extends LibraryObject
 
     private ArrayList<Song> songs;
     private Artist artist;
-    private Bitmap miniatureArt;
-    private boolean hasArt = false;
-    private String albumArtPath;
-    private boolean albumArtLoad;
 
     public Album(String name, Artist artist)
     {
@@ -42,18 +35,6 @@ public class Album extends LibraryObject
 
     public ArrayList<Song> getSongs() {return songs;}
     public Artist getArtist() {return artist;}
-    public Bitmap getAlbumArtMiniature() {return miniatureArt;}
-    public Bitmap getAlbumArt() {return BitmapFactory.decodeFile(albumArtPath);}
-    public boolean hasAlbumArt() {return hasArt;}
 
     public void addSong(Song song) {this.songs.add(song);}
-    public void setAlbumArt(String path, Bitmap miniatureArt)
-    {
-        this.hasArt = true;
-        this.miniatureArt = miniatureArt;
-        this.albumArtPath = path;
-        this.albumArtLoad = false;
-    }
-    public void setAlbumArtLoading() {this.albumArtLoad = true;}
-    public boolean getAlbumArtLoading() {return this.albumArtLoad;}
 }

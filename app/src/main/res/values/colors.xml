@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#616161</color>
-    <color name="colorPrimaryDark">#212121</color>
-    <color name="colorSelected">#bdbdbd</color>
+    <color name="colorPrimary">#546e7a</color>
+    <color name="colorPrimaryDark">#29434e</color>
+    <color name="colorPrimaryLight">#819ca9</color>
     <color name="colorAccent">#ffffff</color>
-    <color name="colorSpotify">#1DB954</color>
-    <color name="colorDeezer">#2962ff</color>
 </resources>

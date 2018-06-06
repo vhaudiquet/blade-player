@@ -72,7 +72,7 @@ public class PlayerService extends Service
             /* send current playbackstate to mediasession */
             mSession.setPlaybackState(mPlayer.getPlaybackState());
 
-            currentArt = getCurrentPlaylist().get(currentPosition).getAlbum().getAlbumArt();
+            currentArt = getCurrentPlaylist().get(currentPosition).getAlbum().getArt();
             MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
             builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArt);
             builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentPlaylist.get(currentPosition).getArtist().getName());
@@ -80,13 +80,6 @@ public class PlayerService extends Service
             builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentPlaylist.get(currentPosition).getTitle());
             MediaMetadataCompat metadata = builder.build();
             mSession.setMetadata(metadata);
-
-            //kill notification on MediaPlayer STOP
-            if(mPlayer.getCurrentState() == PlayerMediaPlayer.PLAYER_STATE_STOPPED)
-            {
-                stopForeground(true);
-                return;
-            }
 
             /* update notification */
             if(mNotification == null)

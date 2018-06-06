@@ -271,7 +271,7 @@ public class PlayActivity extends AppCompatActivity
         Song currentSong = musicPlayer.getCurrentSong();
 
         //set album view / playlistView
-        if(currentSong.getAlbum().hasAlbumArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
+        if(currentSong.getAlbum().hasArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
         else albumView.setImageResource(R.drawable.ic_albums);
 
         if(playlistAdapter == null)

@@ -213,31 +213,37 @@ public class PlayerMediaPlayer
 
     public void playSong(final Song song)
     {
+        //oreo+ : we need to show notification as soon as first 'playSong()' is called (service start)
+        listener.onStateChange();
+
         currentSong = song;
 
         if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
         currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
-        currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback()
+
+        if(requestAudioFocus())
         {
-            @Override
-            public void onSucess()
+            currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback()
             {
-                currentState = PLAYER_STATE_PLAYING;
-                listener.onStateChange();
-            }
+                @Override
+                public void onSucess()
+                {
+                    currentState = PLAYER_STATE_PLAYING;
+                    listener.onStateChange();
+                }
 
-            @Override
-            public void onFailure()
-            {
-                Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+                @Override
+                public void onFailure()
+                {
+                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
 
-                //oreo+ : we need to show a notification or app will crash
-                currentState = PLAYER_STATE_PAUSED;
-                listener.onStateChange();
-            }
-        });
+                    currentState = PLAYER_STATE_PAUSED;
+                    listener.onStateChange();
+                }
+            });
+        }
     }
 
     private boolean requestAudioFocus()
@@ -275,6 +281,12 @@ public class PlayerMediaPlayer
                 break;
 
             case PLAYER_STATE_STOPPED:
+                actions |= PlaybackStateCompat.ACTION_PLAY
+                        | PlaybackStateCompat.ACTION_PAUSE;
+                playbackState = PlaybackStateCompat.STATE_STOPPED;
+                break;
+
+            case PLAYER_STATE_NONE:
                 actions |= PlaybackStateCompat.ACTION_PLAY
                         | PlaybackStateCompat.ACTION_PAUSE;
                 playbackState = PlaybackStateCompat.STATE_STOPPED;

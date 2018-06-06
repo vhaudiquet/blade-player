@@ -159,15 +159,15 @@ public class LibraryObjectAdapter extends BaseAdapter
             mViewHolder.subtitle.setText(song.getArtist().getName());
 
             //set image to song album art
-            if(song.getAlbum().hasAlbumArt())
-                mViewHolder.image.setImageBitmap(song.getAlbum().getAlbumArtMiniature());
+            if(song.getAlbum().hasArt())
+                mViewHolder.image.setImageBitmap(song.getAlbum().getArtMiniature());
             else
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
 
             if(repaintSongBackground)
                 if(position != selectedPosition)
                     convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
-                else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorSelected));
+                else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorPrimaryLight));
         }
         else if(obj instanceof Album)
         {
@@ -175,7 +175,7 @@ public class LibraryObjectAdapter extends BaseAdapter
             mViewHolder.subtitle.setText(((Album)obj).getArtist().getName());
 
             //set image to art
-            if(((Album) obj).hasAlbumArt()) mViewHolder.image.setImageBitmap(((Album) obj).getAlbumArtMiniature());
+            if(((Album) obj).hasArt()) mViewHolder.image.setImageBitmap(((Album) obj).getArtMiniature());
             else mViewHolder.image.setImageResource(R.drawable.ic_albums);
         }
         else if(obj instanceof Artist)
@@ -195,8 +195,9 @@ public class LibraryObjectAdapter extends BaseAdapter
                     (((Playlist) obj).isMine() ? "" : (" - " + ((Playlist) obj).getOwner())));
             else mViewHolder.subtitle.setText("");
 
-            //set image to default playlist image
-            mViewHolder.image.setImageResource(R.drawable.ic_playlists);
+            //set image to playlist image
+            if(obj.hasArt()) mViewHolder.image.setImageBitmap(obj.getArtMiniature());
+            else mViewHolder.image.setImageResource(R.drawable.ic_playlists);
         }
 
         //set sources images

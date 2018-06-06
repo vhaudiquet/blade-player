@@ -266,7 +266,16 @@ public class SourcesActivity extends AppCompatActivity
                                     return o2.getPriority() - o1.getPriority();
                                 }
                             });
-                            adapter.notifyDataSetChanged();
+
+                            runOnUiThread(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    adapter.notifyDataSetChanged();
+                                }
+                            });
+
                             Source.SOURCE_SPOTIFY.spotifyApi.setAccessToken(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
 
                             try
