@@ -166,6 +166,10 @@ public class PlayerService extends Service
         {
             mPlayer.stop();
             mSession.setActive(false);
+
+            //oreo+ : we need to kill all (can't let the service alive without notification)
+            stopForeground(true);
+            stopSelf();
         }
 
         @Override
@@ -222,10 +226,11 @@ public class PlayerService extends Service
     @Override
     public void onDestroy()
     {
-        mPlayer.destroy();
+        super.onDestroy();
 
-        stopForeground(true);
-        stopSelf();
+        mPlayer.destroy();
+        PlayerMediaPlayer.context = null;
+        mSession.release();
     }
 
     /* service binding */

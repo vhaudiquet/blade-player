@@ -15,7 +15,7 @@
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
 
     <!-- Controls (buttons, listviews, ...) theme -->
-    <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light">
+    <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorAccent">@color/colorPrimary</item>
         <item name="colorControlNormal">@color/colorPrimary</item>
         <item name="colorControlActivated">@color/colorPrimary</item>

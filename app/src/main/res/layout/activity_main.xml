@@ -22,6 +22,7 @@
 
         <ListView
                 android:layout_below="@id/include"
+                android:layout_above="@id/currentPlay"
                 android:id="@+id/libraryList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -35,7 +36,7 @@
                 android:orientation="vertical"
                 android:padding="5dp"
                 android:background="@color/colorPrimary"
-                android:visibility="invisible">
+                android:visibility="gone">
 
             <ImageView
                     android:id="@+id/element_image"

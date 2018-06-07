@@ -13,4 +13,6 @@
           android:visible="false"/>
     <item android:id="@+id/action_manage_libraries"
           android:title="@string/manage_libraries"/>
+    <item android:id="@+id/action_link_to"
+          android:title="@string/link_to"/>
 </menu>

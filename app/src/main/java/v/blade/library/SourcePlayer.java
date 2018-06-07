@@ -2,8 +2,8 @@ package v.blade.library;
 
 public abstract class SourcePlayer
 {
-    public interface PlayerCallback {void onSucess(); void onFailure();}
-    public interface PlayerListener {void onSongCompletion(); void onPlaybackError(String errMsg);}
+    public interface PlayerCallback {void onSucess(SourcePlayer currentPlayer); void onFailure(SourcePlayer currentPlayer);}
+    public interface PlayerListener {void onSongCompletion(); void onPlaybackError(SourcePlayer player, String errMsg);}
 
     public abstract void init();
     public abstract void setListener(PlayerListener listener);

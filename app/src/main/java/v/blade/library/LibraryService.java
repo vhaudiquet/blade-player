@@ -138,7 +138,7 @@ public class LibraryService
         LibraryService.appContext = appContext;
 
         //init cache dirs
-        artCacheDir = new File(appContext.getCacheDir().getAbsolutePath() + "/albumArts");
+        artCacheDir = new File(appContext.getCacheDir().getAbsolutePath() + "/arts");
         if(!artCacheDir.exists()) artCacheDir.mkdir();
         betterSourceFile = new File(appContext.getCacheDir().getAbsolutePath() + "/betterSources.cached");
 
@@ -158,8 +158,8 @@ public class LibraryService
     /*
      * Registers a song in user library
      */
-    static Song registerSong(String artist, long artistId, String album, long albumId,
-                                     int albumTrack, long duration, String name, SongSources.SongSource source)
+    static Song registerSong(String artist, String album, int albumTrack, long duration, String name,
+                             SongSources.SongSource source)
     {
         //REGISTER : this song is in the library of this source
         source.setLibrary(true);
@@ -293,6 +293,42 @@ public class LibraryService
                 }
             }
         }
+    }
+
+    /*
+    * Link a song to another (to say they are the same)
+    * source gets removed and songsources are merged
+     */
+    public static void linkSong(Song source, Song destination)
+    {
+        if(source == destination) return;
+
+        for(SongSources.SongSource src : source.getSources().sources)
+        {
+            if(src != null)
+            {
+                destination.getSources().addSource(src);
+                unregisterSong(source, src);
+            }
+        }
+
+        if(source.isHandled()) handles.remove(source);
+
+        //replace song in playlists
+        synchronized (playlists)
+        {
+            for(Playlist p : playlists)
+            {
+                int index = p.getContent().indexOf(source);
+                if(index != -1)
+                {
+                    p.getContent().remove(index);
+                    p.getContent().add(index, destination);
+                }
+            }
+        }
+
+        if(currentCallback != null) currentCallback.onLibraryChange();
     }
 
     /*
@@ -488,6 +524,14 @@ public class LibraryService
         if(currentCallback != null) currentCallback.onLibraryChange();
     }
 
+    /*
+    * Register user-defined song links
+     */
+    private static void registerSongLinks()
+    {
+
+    }
+
     public static void sortLibrary()
     {
         /* sort collection by alphabetical order */
@@ -527,6 +571,24 @@ public class LibraryService
         }
 
         if(currentCallback != null) currentCallback.onLibraryChange();
+    }
+
+    /*
+    * Query the library for songs
+     */
+    public static ArrayList<Song> querySongs(String s)
+    {
+        ArrayList<Song> tr = new ArrayList<>();
+        String q = s.toLowerCase();
+
+        synchronized(songs)
+        {
+            for(Song song : songs)
+                if(song.getTitle().toLowerCase().contains(q))
+                    tr.add(song);
+        }
+
+        return tr;
     }
 
     /*
@@ -682,7 +744,8 @@ public class LibraryService
         {
             String fileName = obj.getName();
             if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
-            if(!(obj instanceof Album)) fileName += "." + obj.getType();
+            if(obj instanceof Album) fileName += "." + ((Album) obj).getArtist().getName();
+            fileName += "." + obj.getType();
             File toSave = new File(artCacheDir.getAbsolutePath() + "/" + fileName + ".png");
             if(!toSave.exists())
             {

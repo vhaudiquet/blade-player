@@ -56,14 +56,17 @@ public class LibraryObjectAdapter extends BaseAdapter
         ImageView source2;
     }
 
-    public LibraryObjectAdapter(final Activity context, List objects)
+    public LibraryObjectAdapter(final Activity context, List libraryObjects)
+    {this(context, libraryObjects, true);}
+
+    public LibraryObjectAdapter(final Activity context, List objects, boolean libraryCallback)
     {
         this.original = objects;
         this.libraryObjects = new ArrayList<>(original);
         this.context = context;
         this.inflater = LayoutInflater.from(context);
 
-        LibraryService.currentCallback = new LibraryService.UserLibraryCallback()
+        if(libraryCallback) LibraryService.currentCallback = new LibraryService.UserLibraryCallback()
         {
             @Override
             public void onLibraryChange()

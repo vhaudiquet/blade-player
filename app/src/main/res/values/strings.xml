@@ -69,4 +69,5 @@
     <string name="please_grant_permission_title">Permission needed</string>
     <string name="libraries_used">Libraries used : </string>
     <string name="sync">Synchronization</string>
+    <string name="link_to">Link to...</string>
 </resources>

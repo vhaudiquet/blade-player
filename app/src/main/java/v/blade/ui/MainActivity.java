@@ -42,6 +42,8 @@ import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.*;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import v.blade.R;
 import v.blade.library.*;
@@ -65,6 +67,8 @@ public class MainActivity extends AppCompatActivity
         @Override
         public void onPlaybackStateChanged(PlaybackStateCompat state)
         {
+            if(state.getState() == PlaybackStateCompat.STATE_STOPPED) {hideCurrentPlay(); return;}
+
             showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
         }
 
@@ -92,6 +96,7 @@ public class MainActivity extends AppCompatActivity
         public void onDisconnected()
         {
             musicPlayer = null;
+            musicCallbacksRegistered = false;
             hideCurrentPlay();
         }
     };
@@ -155,9 +160,8 @@ public class MainActivity extends AppCompatActivity
                     fromPlaylists = true;
                     backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
                     Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
-                    ArrayList<Song> psongs = currentPlaylist.getContent();
                     currentObject = currentPlaylist;
-                    setContentToSongs(psongs, currentPlaylist.getName());
+                    setContentToSongs(currentPlaylist.getContent(), currentPlaylist.getName());
                     break;
                 case CONTEXT_SEARCH:
                     currentObject = null;
@@ -329,6 +333,12 @@ public class MainActivity extends AppCompatActivity
                             else showManageLibraries(MainActivity.this, object);
                             break;
                         }
+
+                        case R.id.action_link_to:
+                        {
+                            showLinkToSearchFor(MainActivity.this, object);
+                            break;
+                        }
                     }
                     return false;
                 }
@@ -347,6 +357,9 @@ public class MainActivity extends AppCompatActivity
 
             if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS && currentContext != CONTEXT_SEARCH)
                 popupMenu.getMenu().findItem(R.id.action_manage_libraries).setVisible(false);
+
+            if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_SEARCH)
+                popupMenu.getMenu().findItem(R.id.action_link_to).setVisible(false);
 
             popupMenu.show();
         }
@@ -742,9 +755,6 @@ public class MainActivity extends AppCompatActivity
     {
         if(!currentPlayShown)
         {
-            mainListView.getLayoutParams().height = mainListView.getHeight() - currentPlay.getHeight();
-            mainListView.requestLayout();
-
             //show
             currentPlay.setVisibility(View.VISIBLE);
             currentPlayShown = true;
@@ -1269,6 +1279,68 @@ public class MainActivity extends AppCompatActivity
                 }, false, false);
             }
         });
+        dialog.show();
+    }
+
+    static void showLinkToSearchFor(Activity context, LibraryObject source)
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.link_to);
+        builder.setView(R.layout.search_dialog);
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {dialog.cancel();}
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(new DialogInterface.OnShowListener()
+        {
+            @Override
+            public void onShow(DialogInterface arg0)
+            {
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                ListView listView = dialog.findViewById(R.id.search_dialog_results);
+                List<Song> results = LibraryService.getSongs(); results.remove(source);
+                LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, results, false);
+                adapter.setHideMore(true);
+                listView.setAdapter(adapter);
+                EditText editText = dialog.findViewById(R.id.search_dialog_input);
+                editText.setOnEditorActionListener(new TextView.OnEditorActionListener()
+                {
+                    @Override
+                    public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
+                    {
+                        if(actionId == EditorInfo.IME_ACTION_DONE)
+                        {
+                            //close keyboard
+                            InputMethodManager imm = (InputMethodManager)v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+
+                            //set content to search
+                            LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, LibraryService.querySongs(editText.getText().toString()), false);
+                            adapter.setHideMore(true);
+                            listView.setAdapter(adapter);
+
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+                listView.setOnItemClickListener(new ListView.OnItemClickListener()
+                {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+                    {
+                        Song clicked = (Song) ((LibraryObjectAdapter) listView.getAdapter()).getItem(position);
+
+                        LibraryService.linkSong((Song) source, clicked);
+                        dialog.hide();
+                    }
+                });
+            }
+        });
+
         dialog.show();
     }
 }

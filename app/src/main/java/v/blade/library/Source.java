@@ -122,32 +122,32 @@ public abstract class Source
             @Override
             public void play(PlayerCallback callback)
             {
-                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 mediaPlayer.start();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void pause(PlayerCallback callback)
             {
-                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 mediaPlayer.pause();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void playSong(Song song, PlayerCallback callback)
             {
                 SongSources.SongSource local = song.getSources().getLocal();
-                if(local == null) {if(callback != null) callback.onFailure(); return;}
-                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(local == null) {if(callback != null) callback.onFailure(player); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 if(song.getFormat().equals("audio/x-ms-wma"))
                 {
                     Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
-                    callback.onFailure();
+                    callback.onFailure(player);
                     return;
                 }
                 Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getSources().getLocal().getId());
@@ -163,7 +163,7 @@ public abstract class Source
                         public void onPrepared(MediaPlayer mp) {duration = mediaPlayer.getDuration(); play(callback);}
                     });
                 }
-                catch(Exception e) {if(callback != null) callback.onFailure();}
+                catch(Exception e) {if(callback != null) callback.onFailure(player);}
             }
 
             @Override
@@ -264,7 +264,7 @@ public abstract class Source
                     //set to empty string to avoid crashes (NullPointer), should definitely not happen but who knows
                     if(thisTitle == null) thisTitle = "";
 
-                    Song s = LibraryService.registerSong(thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
+                    Song s = LibraryService.registerSong(thisArtist, thisAlbum, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
                     s.setFormat(musicCursor.getString(formatColumn));
                     s.setPath(thisPath);
                     idsorted_songs.put(thisId, s);
@@ -556,7 +556,7 @@ public abstract class Source
                     @Override
                     public void onPlaybackError(Error error)
                     {
-                        listener.onPlaybackError(error.name());
+                        listener.onPlaybackError(player, error.name());
                     }
                 });
             }
@@ -564,28 +564,28 @@ public abstract class Source
             @Override
             public void play(PlayerCallback callback)
             {
-                if(spotifyPlayer == null) {callback.onFailure(); return;}
+                if(spotifyPlayer == null) {callback.onFailure(this); return;}
 
                 spotifyPlayer.resume(new Player.OperationCallback()
                 {
                     @Override
-                    public void onSuccess() {callback.onSucess();}
+                    public void onSuccess() {callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {callback.onFailure();}
+                    public void onError(Error error) {callback.onFailure(player);}
                 });
             }
 
             @Override
             public void pause(PlayerCallback callback)
             {
-                if(spotifyPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(spotifyPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 spotifyPlayer.pause(new Player.OperationCallback()
                 {
                     @Override
-                    public void onSuccess() {if(callback != null) callback.onSucess();}
+                    public void onSuccess() {if(callback != null) callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure();}
+                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
                 });
             }
 
@@ -593,21 +593,21 @@ public abstract class Source
             public void playSong(Song song, PlayerCallback callback)
             {
                 SongSources.SongSource spot = song.getSources().getSpotify();
-                if(spot == null) {if(callback != null) callback.onFailure(); return;}
+                if(spot == null) {if(callback != null) callback.onFailure(player); return;}
 
                 if(spotifyPlayer == null)
                 {
-                    if(callback != null) callback.onFailure();
+                    if(callback != null) callback.onFailure(player);
                     return;
                 }
 
                 spotifyPlayer.playUri(new Player.OperationCallback()
                 {
                     @Override
-                    public void onSuccess() {if(callback != null) callback.onSucess();}
+                    public void onSuccess() {if(callback != null) callback.onSucess(player);}
 
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure();}
+                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
                 }, "spotify:track:" + spot.getId(), 0, 0);
             }
 
@@ -724,7 +724,7 @@ public abstract class Source
                     while(spr.ready())
                     {
                         String[] tp = spr.readLine().split(CACHE_SEPARATOR);
-                        Song song = LibraryService.registerSong(tp[2], 0, tp[1], 0,
+                        Song song = LibraryService.registerSong(tp[2],  tp[1],
                                 Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
                         song.setFormat(tp[3]);
 
@@ -751,7 +751,7 @@ public abstract class Source
                         {
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
-                                    LibraryService.registerSong(tp[2], 0, tp[1], 0, Integer.parseInt(tp[4]),
+                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]),
                                             Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY))
                                     : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
                                     new SongSources.SongSource(tp[6], SOURCE_SPOTIFY), Integer.parseInt(tp[4]));
@@ -826,7 +826,7 @@ public abstract class Source
                     for (SavedTrack track : userTracks.items)
                     {
                         Track t = track.track;
-                        Song s = LibraryService.registerSong(t.artists.get(0).name, 0, t.album.name, 0,
+                        Song s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,
                                 t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                         spotifySongs.add(s);
                         if(!s.getAlbum().hasArt())
@@ -863,7 +863,7 @@ public abstract class Source
                         Pager<Track> tracks = service.getAlbumTracks(alb.id);
                         for(Track t : tracks.items)
                         {
-                            Song s = LibraryService.registerSong(t.artists.get(0).name, 0, alb.name, 0,
+                            Song s = LibraryService.registerSong(t.artists.get(0).name,  alb.name,
                                     t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                             spotifySongs.add(s);
                             if (savedAlbum == null) savedAlbum = s.getAlbum();
@@ -913,7 +913,7 @@ public abstract class Source
                                 Track t = pt.track;
                                 Song s;
                                 if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
-                                    s = LibraryService.registerSong(t.artists.get(0).name, 0, t.album.name, 0,
+                                    s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,
                                             t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                                 else
                                     s = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY),
@@ -1400,8 +1400,8 @@ public abstract class Source
                         if(song.isHandled())
                         {
                             //todo : find a better way (registersong is heavy) ; that is just lazyness
-                            LibraryService.registerSong(song.getArtist().getName(), 0, song.getAlbum().getName(),
-                                    0, song.getTrackNumber(), song.getDuration(), song.getName(), spot);
+                            LibraryService.registerSong(song.getArtist().getName(),  song.getAlbum().getName(),
+                                     song.getTrackNumber(), song.getDuration(), song.getName(), spot);
                         }
 
                         //add to cache
@@ -1546,33 +1546,33 @@ public abstract class Source
             @Override
             public void play(PlayerCallback callback)
             {
-                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(player); return;}
 
                 deezerPlayer.play();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void pause(PlayerCallback callback)
             {
-                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(player); return;}
 
                 deezerPlayer.pause();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void playSong(Song song, PlayerCallback callback)
             {
                 SongSources.SongSource deezer = song.getSources().getDeezer();
-                if(deezer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
+                if(deezer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(player); return;}
 
                 deezerPlayer.playTrack((long) deezer.getId());
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
@@ -1661,7 +1661,7 @@ public abstract class Source
                     while(spr.ready())
                     {
                         String[] tp = spr.readLine().split(CACHE_SEPARATOR);
-                        Song song = LibraryService.registerSong(tp[2], 0, tp[1], 0,
+                        Song song = LibraryService.registerSong(tp[2],  tp[1],
                                 Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER));
                         song.setFormat(tp[3]);
 
@@ -1689,7 +1689,7 @@ public abstract class Source
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
 
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
-                                    LibraryService.registerSong(tp[2], 0, tp[1], 0, Integer.parseInt(tp[4]),
+                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]),
                                             Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER))
                                     : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
                                     new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER), Integer.parseInt(tp[4]));
@@ -1755,7 +1755,7 @@ public abstract class Source
                 List<com.deezer.sdk.model.Track> tracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(requestTracks));
                 for(com.deezer.sdk.model.Track t : tracks)
                 {
-                    Song s = LibraryService.registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
+                    Song s = LibraryService.registerSong(t.getArtist().getName(),  t.getAlbum().getTitle(),
                             t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                     deezerSongs.add(s);
                     if(!s.getAlbum().hasArt())
@@ -1771,7 +1771,7 @@ public abstract class Source
                     List<com.deezer.sdk.model.Track> albTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestAlbumTracks(album.getId())));
                     for(com.deezer.sdk.model.Track t : albTracks)
                     {
-                        Song s = LibraryService.registerSong(t.getArtist().getName(), 0, album.getTitle(), 0,
+                        Song s = LibraryService.registerSong(t.getArtist().getName(),  album.getTitle(),
                                 t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                         deezerSongs.add(s);
                         if(alb == null) alb = s.getAlbum();
@@ -1793,7 +1793,7 @@ public abstract class Source
                         List<com.deezer.sdk.model.Track> albTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestAlbumTracks(album.getId())));
                         for(com.deezer.sdk.model.Track t : albTracks)
                         {
-                            Song s = LibraryService.registerSong(t.getArtist().getName(), 0, album.getTitle(), 0,
+                            Song s = LibraryService.registerSong(t.getArtist().getName(),  album.getTitle(),
                                     t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                             deezerSongs.add(s);
                             if(alb == null) alb = s.getAlbum();
@@ -1835,7 +1835,7 @@ public abstract class Source
                         {
                             Song s;
                             if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
-                                s = LibraryService.registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
+                                s = LibraryService.registerSong(t.getArtist().getName(), t.getAlbum().getTitle(),
                                         t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                             else
                                 s = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(),
@@ -2180,8 +2180,8 @@ public abstract class Source
                         if(song.isHandled())
                         {
                             //todo : find a better way (registersong is heavy) ; that is just lazyness
-                            LibraryService.registerSong(song.getArtist().getName(), 0, song.getAlbum().getName(),
-                                    0, song.getTrackNumber(), song.getDuration(), song.getName(), deezer);
+                            LibraryService.registerSong(song.getArtist().getName(), song.getAlbum().getName(),
+                                    song.getTrackNumber(), song.getDuration(), song.getName(), deezer);
                         }
 
                         //add to cache
