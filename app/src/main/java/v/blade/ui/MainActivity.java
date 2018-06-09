@@ -69,13 +69,15 @@ public class MainActivity extends AppCompatActivity
         {
             if(state.getState() == PlaybackStateCompat.STATE_STOPPED) {hideCurrentPlay(); return;}
 
-            showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
+            if(musicPlayer != null)
+                showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
 
         @Override
         public void onMetadataChanged(MediaMetadataCompat metadata)
         {
-            showCurrentPlay(PlayerConnection.getService().getCurrentSong(), PlayerConnection.getService().isPlaying());
+            if(musicPlayer != null)
+                showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
     };
     private PlayerConnection.Callback connectionCallbacks = new PlayerConnection.Callback()
@@ -554,7 +556,7 @@ public class MainActivity extends AppCompatActivity
                         public void run()
                         {
                             syncButton.setIcon(R.drawable.ic_sync);
-                            syncButton.setTitle("Synchronisation");
+                            syncButton.setTitle(R.string.sync);
                         }
                     });
                 }
@@ -567,7 +569,7 @@ public class MainActivity extends AppCompatActivity
                         public void run()
                         {
                             syncButton.setIcon(R.drawable.ic_sync);
-                            syncButton.setTitle("Synchronisation");
+                            syncButton.setTitle(R.string.sync);
                             switch (error)
                             {
                                 case LibraryService.ERROR_LOADING_NOT_DONE:
@@ -642,9 +644,9 @@ public class MainActivity extends AppCompatActivity
     {
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M)
         {
-            if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED)
+            if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED)
             {
-                if(shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE))
+                if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
                 {
                     // Show an alert dialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -655,7 +657,7 @@ public class MainActivity extends AppCompatActivity
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i)
                         {
-                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                         }
                     });
                     AlertDialog dialog = builder.create();
@@ -672,7 +674,7 @@ public class MainActivity extends AppCompatActivity
                 else
                 {
                     // Request permission
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                 }
             }
             else startLibService();
@@ -1334,7 +1336,7 @@ public class MainActivity extends AppCompatActivity
                     {
                         Song clicked = (Song) ((LibraryObjectAdapter) listView.getAdapter()).getItem(position);
 
-                        LibraryService.linkSong((Song) source, clicked);
+                        LibraryService.linkSong((Song) source, clicked, true);
                         dialog.hide();
                     }
                 });

@@ -41,12 +41,16 @@ public class LibraryService
     private static final List<Artist> artistHandles = Collections.synchronizedList(new ArrayList<Artist>());
     static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
+    //song linkss
+    private static final HashMap<Song, List<Song>> songLinks = new HashMap<>();
+
     /* list callbacks */
     public interface UserLibraryCallback{void onLibraryChange();}
     public static UserLibraryCallback currentCallback;
 
     private static File artCacheDir;
     private static File betterSourceFile;
+    private static File songLinksFile;
 
     public static List<Artist> getArtists() {return artists;}
     public static List<Album> getAlbums() {return albums;}
@@ -114,6 +118,8 @@ public class LibraryService
             }
         }
 
+        registerSongLinks();
+
         loadingDone = true;
 
         new Thread()
@@ -141,6 +147,7 @@ public class LibraryService
         artCacheDir = new File(appContext.getCacheDir().getAbsolutePath() + "/arts");
         if(!artCacheDir.exists()) artCacheDir.mkdir();
         betterSourceFile = new File(appContext.getCacheDir().getAbsolutePath() + "/betterSources.cached");
+        songLinksFile = new File(appContext.getCacheDir().getAbsolutePath() + "/songLinks.cached");
 
         //get preferences
         SharedPreferences accountsPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
@@ -299,7 +306,7 @@ public class LibraryService
     * Link a song to another (to say they are the same)
     * source gets removed and songsources are merged
      */
-    public static void linkSong(Song source, Song destination)
+    public static void linkSong(Song source, Song destination, boolean save)
     {
         if(source == destination) return;
 
@@ -329,6 +336,34 @@ public class LibraryService
         }
 
         if(currentCallback != null) currentCallback.onLibraryChange();
+
+        List<Song> list = songLinks.get(destination);
+        if(list == null) {list = new ArrayList<>(); songLinks.put(destination, list);}
+        list.add(source);
+
+        //save songlinks to cache (by rewriting hashmap)
+        if(save)
+        {
+            try
+            {
+                songLinksFile.createNewFile();
+                BufferedWriter writer = new BufferedWriter(new FileWriter(songLinksFile));
+                for(Song s : songLinks.keySet())
+                {
+                    List<Song> links = songLinks.get(s);
+                    writer.write(s.getArtist() + CACHE_SEPARATOR + s.getAlbum() + CACHE_SEPARATOR + s.getTitle() + CACHE_SEPARATOR +
+                    links.size() + CACHE_SEPARATOR);
+                    for(Song linked : links)
+                        writer.write(linked.getArtist() + CACHE_SEPARATOR + linked.getAlbum() + CACHE_SEPARATOR + linked.getTitle() + CACHE_SEPARATOR);
+                    writer.newLine();
+                }
+                writer.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
     }
 
     /*
@@ -525,11 +560,36 @@ public class LibraryService
     }
 
     /*
-    * Register user-defined song links
+    * Register cached user-defined song links
      */
     private static void registerSongLinks()
     {
+        if(!configured) return;
+        if(!songLinksFile.exists()) return;
 
+        try
+        {
+            BufferedReader reader = new BufferedReader(new FileReader(songLinksFile));
+            while (reader.ready())
+            {
+                String[] line = reader.readLine().split(CACHE_SEPARATOR);
+                System.out.println(Arrays.toString(line));
+                Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0);
+                if(song == null) continue;
+                int size = Integer.parseInt(line[3]);
+                for(int i = 0;i<size;i++)
+                {
+                    Song toLink = getSongHandle(line[6+i], line[5+i], line[4+i], 0, null, 0);
+                    if(toLink == null) continue;
+                    linkSong(toLink, song, false);
+                }
+            }
+            reader.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public static void sortLibrary()
@@ -679,9 +739,12 @@ public class LibraryService
             {
                 if(s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
                 {
-                    s.getSources().addSource(source);
-                    s.getAlbum().getSources().addSource(source);
-                    s.getArtist().getSources().addSource(source);
+                    if(source != null)
+                    {
+                        s.getSources().addSource(source);
+                        s.getAlbum().getSources().addSource(source);
+                        s.getArtist().getSources().addSource(source);
+                    }
                     if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found registered song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
                     return s;
                 }
@@ -690,12 +753,17 @@ public class LibraryService
         for(Song s : handles)
             if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
             {
-                s.getSources().addSource(source);
-                s.getAlbum().getSources().addSource(source);
-                s.getArtist().getSources().addSource(source);
+                if(source != null)
+                {
+                    s.getSources().addSource(source);
+                    s.getAlbum().getSources().addSource(source);
+                    s.getArtist().getSources().addSource(source);
+                }
                 if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
                 return s;
             }
+
+        if(source == null) return null;
 
         //else create song object
         Artist songArtist = null;
