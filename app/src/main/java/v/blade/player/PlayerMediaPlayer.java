@@ -55,18 +55,21 @@ public class PlayerMediaPlayer
         }
 
         @Override
-        public void onPlaybackError(String errMsg)
+        public void onPlaybackError(SourcePlayer player, String errMsg)
         {
-            Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
-            currentState = PLAYER_STATE_PAUSED;
-            listener.onStateChange();
+            if(currentActivePlayer == player)
+            {
+                Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+                currentState = PLAYER_STATE_PAUSED;
+                listener.onStateChange();
+            }
         }
     };
 
-    private SourcePlayer currentActivePlayer = null;
+    private static SourcePlayer currentActivePlayer = null;
 
     private Song currentSong;
-    private static Context context;
+    static Context context;
 
     private static final IntentFilter AUDIO_NOISY_INTENT_FILTER = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
     private final BroadcastReceiver mAudioNoisyReceiver = new BroadcastReceiver()
@@ -115,6 +118,8 @@ public class PlayerMediaPlayer
     };
     private boolean playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
 
+    private boolean notificationShown = false;
+
     public PlayerMediaPlayer(@NonNull final Context context, final MediaPlayerListener listener)
     {
         this.context = context;
@@ -136,16 +141,31 @@ public class PlayerMediaPlayer
         {
             currentActivePlayer.play(new SourcePlayer.PlayerCallback() {
                 @Override
-                public void onSucess()
+                public void onSucess(SourcePlayer player)
                 {
-                    currentState = PLAYER_STATE_PLAYING;
-                    listener.onStateChange();
+                    if(currentActivePlayer != player)
+                    {
+                        //during callback time, user switched to another song of another player
+                        //just stop playback
+                        player.pause(null);
+                    }
+                    else
+                    {
+                        currentState = PLAYER_STATE_PLAYING;
+                        listener.onStateChange();
+                    }
                 }
 
                 @Override
-                public void onFailure()
+                public void onFailure(SourcePlayer player)
                 {
                     Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+
+                    if(player == currentActivePlayer)
+                    {
+                        currentState = PLAYER_STATE_PAUSED;
+                        listener.onStateChange();
+                    }
                 }
             });
         }
@@ -159,14 +179,17 @@ public class PlayerMediaPlayer
         currentActivePlayer.pause(new SourcePlayer.PlayerCallback()
         {
             @Override
-            public void onSucess()
+            public void onSucess(SourcePlayer player)
             {
-                currentState = PLAYER_STATE_PAUSED;
-                listener.onStateChange();
+                if(currentActivePlayer == player)
+                {
+                    currentState = PLAYER_STATE_PAUSED;
+                    listener.onStateChange();
+                }
             }
 
             @Override
-            public void onFailure()
+            public void onFailure(SourcePlayer player)
             {
                 Toast.makeText(context, context.getString(R.string.playback_pause_error), Toast.LENGTH_SHORT).show();
             }
@@ -175,11 +198,7 @@ public class PlayerMediaPlayer
     public void stop()
     {
         audioManager.abandonAudioFocus(audioFocusChangeListener);
-
         pause();
-
-        //currentState = PLAYER_STATE_STOPPED;
-        //listener.onStateChange();
     }
     public void seekTo(int msec)
     {
@@ -187,7 +206,7 @@ public class PlayerMediaPlayer
     }
     public int getCurrentPosition()
     {
-        return (currentState == PLAYER_STATE_SONGEND || currentState == PLAYER_STATE_DO_NOTHING) ? getDuration() :
+        return (currentState == PLAYER_STATE_DO_NOTHING) ? getDuration() :
                 currentActivePlayer == null ? 0 : currentActivePlayer.getCurrentPosition();
     }
     public boolean isPlaying()
@@ -212,31 +231,49 @@ public class PlayerMediaPlayer
 
     public void playSong(final Song song)
     {
+        //oreo+ : we need to show notification as soon as first 'playSong()' is called (service start)
+        if(!notificationShown) {listener.onStateChange(); notificationShown = true;}
+
         currentSong = song;
 
         if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
         currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
-        currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback()
+
+        if(requestAudioFocus())
         {
-            @Override
-            public void onSucess()
+            currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback()
             {
-                currentState = PLAYER_STATE_PLAYING;
-                listener.onStateChange();
-            }
+                @Override
+                public void onSucess(SourcePlayer player)
+                {
+                    if(currentActivePlayer != player)
+                    {
+                        //during callback time, user switched to another song of another player
+                        //just stop playback
+                        player.pause(null);
+                    }
+                    else
+                    {
+                        currentState = PLAYER_STATE_PLAYING;
+                        listener.onStateChange();
+                    }
+                }
 
-            @Override
-            public void onFailure()
-            {
-                Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+                @Override
+                public void onFailure(SourcePlayer player)
+                {
+                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
 
-                //oreo+ : we need to show a notification or app will crash
-                currentState = PLAYER_STATE_PAUSED;
-                listener.onStateChange();
-            }
-        });
+                    if(currentActivePlayer == player)
+                    {
+                        currentState = PLAYER_STATE_PAUSED;
+                        listener.onStateChange();
+                    }
+                }
+            });
+        }
     }
 
     private boolean requestAudioFocus()
@@ -274,6 +311,12 @@ public class PlayerMediaPlayer
                 break;
 
             case PLAYER_STATE_STOPPED:
+                actions |= PlaybackStateCompat.ACTION_PLAY
+                        | PlaybackStateCompat.ACTION_PAUSE;
+                playbackState = PlaybackStateCompat.STATE_STOPPED;
+                break;
+
+            case PLAYER_STATE_NONE:
                 actions |= PlaybackStateCompat.ACTION_PLAY
                         | PlaybackStateCompat.ACTION_PAUSE;
                 playbackState = PlaybackStateCompat.STATE_STOPPED;

@@ -58,6 +58,7 @@ public class PlayerConnection
         public void onServiceDisconnected(ComponentName name)
         {
             musicPlayer = null;
+            applicationContext.unbindService(this);
             if(connectionCallback != null) connectionCallback.onDisconnected();
         }
     };

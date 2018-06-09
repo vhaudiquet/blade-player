@@ -55,6 +55,7 @@ public abstract class Source
     public void setPriority(int priority) {this.priority = priority;}
     public void setAvailable(boolean available) {this.available = available;}
     public boolean isAvailable() {return this.available;}
+    public String getName() {return name;}
     @Override public String toString() {return name;}
 
     //source settings/init/player...
@@ -62,7 +63,6 @@ public abstract class Source
     public abstract void disconnect();
     public abstract String getUserName();
     public abstract SourcePlayer getPlayer();
-    public String getName() {return name;}
 
     //source songs registering
     public abstract void registerCachedSongs();
@@ -122,32 +122,32 @@ public abstract class Source
             @Override
             public void play(PlayerCallback callback)
             {
-                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 mediaPlayer.start();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void pause(PlayerCallback callback)
             {
-                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 mediaPlayer.pause();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void playSong(Song song, PlayerCallback callback)
             {
                 SongSources.SongSource local = song.getSources().getLocal();
-                if(local == null) {if(callback != null) callback.onFailure(); return;}
-                if(mediaPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(local == null) {if(callback != null) callback.onFailure(player); return;}
+                if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 if(song.getFormat().equals("audio/x-ms-wma"))
                 {
                     Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
-                    callback.onFailure();
+                    callback.onFailure(player);
                     return;
                 }
                 Uri songUri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, (long) song.getSources().getLocal().getId());
@@ -163,7 +163,7 @@ public abstract class Source
                         public void onPrepared(MediaPlayer mp) {duration = mediaPlayer.getDuration(); play(callback);}
                     });
                 }
-                catch(Exception e) {if(callback != null) callback.onFailure();}
+                catch(Exception e) {if(callback != null) callback.onFailure(player);}
             }
 
             @Override
@@ -264,7 +264,7 @@ public abstract class Source
                     //set to empty string to avoid crashes (NullPointer), should definitely not happen but who knows
                     if(thisTitle == null) thisTitle = "";
 
-                    Song s = LibraryService.registerSong(thisArtist, artistId, thisAlbum, albumId, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
+                    Song s = LibraryService.registerSong(thisArtist, thisAlbum, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
                     s.setFormat(musicCursor.getString(formatColumn));
                     s.setPath(thisPath);
                     idsorted_songs.put(thisId, s);
@@ -331,7 +331,7 @@ public abstract class Source
                     Album a = idsorted_albums.get(thisId);
                     if(a != null)
                     {
-                        LibraryService.loadAlbumArt(a, path, true);
+                        LibraryService.loadArt(a, path, true);
                     }
                 } while (albumCursor.moveToNext());
                 albumCursor.close();
@@ -447,7 +447,7 @@ public abstract class Source
         public void removeSongFromLibrary(Song song, OperationCallback callback)
         {
             SongSources.SongSource local = song.getSources().getLocal();
-            if(local == null) {callback.onFailure(); return;}
+            if(local == null) {if(callback != null) callback.onFailure(); return;}
 
             new File(song.getPath()).delete();
 
@@ -461,9 +461,9 @@ public abstract class Source
                 //unregister song from library
                 LibraryService.unregisterSong(song, local);
 
-                callback.onSucess(null);
+                if(callback != null) callback.onSucess(null);
             }
-            else callback.onFailure();
+            else if(callback != null) callback.onFailure();
         }
         public void addAlbumToLibrary(Album album, OperationCallback callback)
         {callback.onFailure();}
@@ -472,13 +472,7 @@ public abstract class Source
             //TODO : handle errors
             for(Song s : album.getSongs())
             {
-                removeSongFromLibrary(s, new OperationCallback() {
-                    @Override
-                    public void onSucess(LibraryObject result) {}
-
-                    @Override
-                    public void onFailure() {}
-                });
+                removeSongFromLibrary(s, null);
             }
 
             callback.onSucess(null);
@@ -502,7 +496,7 @@ public abstract class Source
         private File spotifyCacheFile;
         private File spotifyPlaylistsCache;
 
-        private ArrayList<Album> spotifyCachedAlbums;
+        private ArrayList<LibraryObject> spotifyCachedToLoadArt;
 
         public SourcePlayer player = new SourcePlayer()
         {
@@ -562,7 +556,7 @@ public abstract class Source
                     @Override
                     public void onPlaybackError(Error error)
                     {
-                        listener.onPlaybackError(error.name());
+                        listener.onPlaybackError(player, error.name());
                     }
                 });
             }
@@ -570,28 +564,28 @@ public abstract class Source
             @Override
             public void play(PlayerCallback callback)
             {
-                if(spotifyPlayer == null) {callback.onFailure(); return;}
+                if(spotifyPlayer == null) {callback.onFailure(this); return;}
 
                 spotifyPlayer.resume(new Player.OperationCallback()
                 {
                     @Override
-                    public void onSuccess() {callback.onSucess();}
+                    public void onSuccess() {callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {callback.onFailure();}
+                    public void onError(Error error) {callback.onFailure(player);}
                 });
             }
 
             @Override
             public void pause(PlayerCallback callback)
             {
-                if(spotifyPlayer == null) {if(callback != null) callback.onFailure(); return;}
+                if(spotifyPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
                 spotifyPlayer.pause(new Player.OperationCallback()
                 {
                     @Override
-                    public void onSuccess() {if(callback != null) callback.onSucess();}
+                    public void onSuccess() {if(callback != null) callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure();}
+                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
                 });
             }
 
@@ -599,21 +593,21 @@ public abstract class Source
             public void playSong(Song song, PlayerCallback callback)
             {
                 SongSources.SongSource spot = song.getSources().getSpotify();
-                if(spot == null) {if(callback != null) callback.onFailure(); return;}
+                if(spot == null) {if(callback != null) callback.onFailure(player); return;}
 
                 if(spotifyPlayer == null)
                 {
-                    if(callback != null) callback.onFailure();
+                    if(callback != null) callback.onFailure(player);
                     return;
                 }
 
                 spotifyPlayer.playUri(new Player.OperationCallback()
                 {
                     @Override
-                    public void onSuccess() {if(callback != null) callback.onSucess();}
+                    public void onSuccess() {if(callback != null) callback.onSucess(player);}
 
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure();}
+                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
                 }, "spotify:track:" + spot.getId(), 0, 0);
             }
 
@@ -703,6 +697,14 @@ public abstract class Source
             editor.remove("spotify_prior");
             editor.apply();
 
+            //remove cache
+            spotifyCacheFile.delete();
+            if(spotifyPlaylistsCache.exists())
+            {
+                for(File f : spotifyPlaylistsCache.listFiles()) f.delete();
+                spotifyPlaylistsCache.delete();
+            }
+
             //wait for resync
         }
 
@@ -711,7 +713,7 @@ public abstract class Source
         {
             if(!LibraryService.configured) return;
 
-            spotifyCachedAlbums = new ArrayList<Album>();
+            spotifyCachedToLoadArt = new ArrayList<>();
             System.out.println("[BLADE-SPOTIFY] Registering cached songs...");
             try
             {
@@ -722,15 +724,15 @@ public abstract class Source
                     while(spr.ready())
                     {
                         String[] tp = spr.readLine().split(CACHE_SEPARATOR);
-                        Song song = LibraryService.registerSong(tp[2], 0, tp[1], 0,
+                        Song song = LibraryService.registerSong(tp[2],  tp[1],
                                 Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
                         song.setFormat(tp[3]);
 
-                        if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
+                        if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
                         {
                             //the image is supposed to be cached locally, so no need to provide URL
-                            spotifyCachedAlbums.add(song.getAlbum());
-                            song.getAlbum().setAlbumArtLoading();
+                            spotifyCachedToLoadArt.add(song.getAlbum());
+                            song.getAlbum().setArtLoading();
                         }
                     }
                     spr.close();
@@ -749,18 +751,18 @@ public abstract class Source
                         {
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
-                                    LibraryService.registerSong(tp[2], 0, tp[1], 0, Integer.parseInt(tp[4]),
+                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]),
                                             Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY))
                                     : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
                                     new SongSources.SongSource(tp[6], SOURCE_SPOTIFY), Integer.parseInt(tp[4]));
                             song.setFormat(tp[3]);
                             thisList.add(song);
 
-                            if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
+                            if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
                             {
                                 //the image is supposed to be cached locally, so no need to provide URL
-                                spotifyCachedAlbums.add(song.getAlbum());
-                                song.getAlbum().setAlbumArtLoading();
+                                spotifyCachedToLoadArt.add(song.getAlbum());
+                                song.getAlbum().setArtLoading();
                             }
                         }
                         sppr.close();
@@ -768,6 +770,8 @@ public abstract class Source
                         Playlist p = new Playlist(f.getName(), thisList);
                         if(!isMine) p.setOwner(owner, ownerID);
                         if(isCollab) p.setCollaborative();
+                        spotifyCachedToLoadArt.add(p);
+                        p.setArtLoading();
                         p.getSources().addSource(new SongSources.SongSource(id, SOURCE_SPOTIFY));
                         LibraryService.getPlaylists().add(p);
                     }
@@ -784,14 +788,14 @@ public abstract class Source
         @Override
         public void loadCachedArts()
         {
-            if(spotifyCachedAlbums == null) return;
+            if(spotifyCachedToLoadArt == null) return;
 
-            for(Album alb : spotifyCachedAlbums)
+            for(LibraryObject alb : spotifyCachedToLoadArt)
             {
-                LibraryService.loadAlbumArt(alb, "", false);
+                LibraryService.loadArt(alb, "", false);
             }
 
-            spotifyCachedAlbums = null;
+            spotifyCachedToLoadArt = null;
         }
 
         @Override
@@ -822,15 +826,15 @@ public abstract class Source
                     for (SavedTrack track : userTracks.items)
                     {
                         Track t = track.track;
-                        Song s = LibraryService.registerSong(t.artists.get(0).name, 0, t.album.name, 0,
+                        Song s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,
                                 t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                         spotifySongs.add(s);
-                        if(!s.getAlbum().hasAlbumArt())
+                        if(!s.getAlbum().hasArt())
                         {
                             if(t.album.images != null && t.album.images.size() >= 1)
                             {
                                 Image albumImage = t.album.images.get(0);
-                                LibraryService.loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                                LibraryService.loadArt(s.getAlbum(), albumImage.url, false);
                             }
                         }
                     }
@@ -859,18 +863,18 @@ public abstract class Source
                         Pager<Track> tracks = service.getAlbumTracks(alb.id);
                         for(Track t : tracks.items)
                         {
-                            Song s = LibraryService.registerSong(t.artists.get(0).name, 0, alb.name, 0,
+                            Song s = LibraryService.registerSong(t.artists.get(0).name,  alb.name,
                                     t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                             spotifySongs.add(s);
                             if (savedAlbum == null) savedAlbum = s.getAlbum();
                         }
 
-                        if(!savedAlbum.hasAlbumArt())
+                        if(!savedAlbum.hasArt())
                         {
                             if(alb.images != null && alb.images.size() >= 1)
                             {
                                 Image albumImage = alb.images.get(0);
-                                LibraryService.loadAlbumArt(savedAlbum, albumImage.url, false);
+                                LibraryService.loadArt(savedAlbum, albumImage.url, false);
                             }
                         }
                     }
@@ -909,19 +913,19 @@ public abstract class Source
                                 Track t = pt.track;
                                 Song s;
                                 if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
-                                    s = LibraryService.registerSong(t.artists.get(0).name, 0, t.album.name, 0,
+                                    s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,
                                             t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                                 else
                                     s = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY),
                                             t.track_number);
 
                                 //get albumart for this song
-                                if(!s.getAlbum().hasAlbumArt())
+                                if(!s.getAlbum().hasArt())
                                 {
                                     if(t.album.images != null && t.album.images.size() >= 1)
                                     {
                                         Image albumImage = t.album.images.get(0);
-                                        LibraryService.loadAlbumArt(s.getAlbum(), albumImage.url, false);
+                                        LibraryService.loadArt(s.getAlbum(), albumImage.url, false);
                                     }
                                 }
 
@@ -939,6 +943,8 @@ public abstract class Source
                         spotifyPlaylists.add(list);
                         LibraryService.getPlaylists().add(list);
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+                        if(playlistBase.images != null && playlistBase.images.size() >= 1)
+                            LibraryService.loadArt(list, playlistBase.images.get(0).url, false);
                     }
                     count -= 20;
                     if(count <= 0) break;
@@ -1017,7 +1023,7 @@ public abstract class Source
                         Song song = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number);
                         tr.add(song);
 
-                        if(!song.getAlbum().hasAlbumArt())
+                        if(!song.getAlbum().hasArt())
                         {
                             if(t.album.images.get(0) != null)
                                 urls.put(song.getAlbum(), t.album.images.get(0).url);
@@ -1033,7 +1039,7 @@ public abstract class Source
                             if(album == null) album = currentSong.getAlbum();
                         }
 
-                        if(!album.hasAlbumArt())
+                        if(!album.hasArt())
                         {
                             if(a.images != null && a.images.size() >= 1)
                             {
@@ -1066,7 +1072,7 @@ public abstract class Source
 
                     for(Album a : urls.keySet())
                     {
-                        LibraryService.loadAlbumArt(a, urls.get(a), false);
+                        LibraryService.loadArt(a, urls.get(a), false);
                     }
                 }
             }.start();
@@ -1394,8 +1400,8 @@ public abstract class Source
                         if(song.isHandled())
                         {
                             //todo : find a better way (registersong is heavy) ; that is just lazyness
-                            LibraryService.registerSong(song.getArtist().getName(), 0, song.getAlbum().getName(),
-                                    0, song.getTrackNumber(), song.getDuration(), song.getName(), spot);
+                            LibraryService.registerSong(song.getArtist().getName(),  song.getAlbum().getName(),
+                                     song.getTrackNumber(), song.getDuration(), song.getName(), spot);
                         }
 
                         //add to cache
@@ -1499,7 +1505,7 @@ public abstract class Source
         private File deezerPlaylistsCache;
         public User me;
 
-        private ArrayList<Album> deezerCachedAlbums;
+        private ArrayList<LibraryObject> deezerCachedToLoadArt;
 
         public SourcePlayer player = new SourcePlayer()
         {
@@ -1540,33 +1546,33 @@ public abstract class Source
             @Override
             public void play(PlayerCallback callback)
             {
-                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(player); return;}
 
                 deezerPlayer.play();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void pause(PlayerCallback callback)
             {
-                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(player); return;}
 
                 deezerPlayer.pause();
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
             public void playSong(Song song, PlayerCallback callback)
             {
                 SongSources.SongSource deezer = song.getSources().getDeezer();
-                if(deezer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer == null) {if(callback != null) callback.onFailure(); return;}
-                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(); return;}
+                if(deezer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}
+                if(deezerPlayer.getPlayerState() == PlayerState.RELEASED) {if(callback != null) callback.onFailure(player); return;}
 
                 deezerPlayer.playTrack((long) deezer.getId());
-                if(callback != null) callback.onSucess();
+                if(callback != null) callback.onSucess(player);
             }
 
             @Override
@@ -1626,6 +1632,14 @@ public abstract class Source
             editor.remove("deezer_prior");
             editor.apply();
 
+            //remove cache
+            deezerCacheFile.delete();
+            if(deezerPlaylistsCache.exists())
+            {
+                for(File f : deezerPlaylistsCache.listFiles()) f.delete();
+                deezerPlaylistsCache.delete();
+            }
+
             //wait for resync
         }
 
@@ -1635,7 +1649,7 @@ public abstract class Source
         {
             if(!LibraryService.configured) return;
 
-            deezerCachedAlbums = new ArrayList<>();
+            deezerCachedToLoadArt = new ArrayList<>();
             System.out.println("[BLADE-DEEZER] Registering cached songs...");
 
             try
@@ -1647,15 +1661,15 @@ public abstract class Source
                     while(spr.ready())
                     {
                         String[] tp = spr.readLine().split(CACHE_SEPARATOR);
-                        Song song = LibraryService.registerSong(tp[2], 0, tp[1], 0,
+                        Song song = LibraryService.registerSong(tp[2],  tp[1],
                                 Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER));
                         song.setFormat(tp[3]);
 
-                        if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
+                        if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
                         {
                             //the image is supposed to be cached locally, so no need to provide URL
-                            deezerCachedAlbums.add(song.getAlbum());
-                            song.getAlbum().setAlbumArtLoading();
+                            deezerCachedToLoadArt.add(song.getAlbum());
+                            song.getAlbum().setArtLoading();
                         }
                     }
                     spr.close();
@@ -1675,18 +1689,18 @@ public abstract class Source
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
 
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
-                                    LibraryService.registerSong(tp[2], 0, tp[1], 0, Integer.parseInt(tp[4]),
+                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]),
                                             Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER))
                                     : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
                                     new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER), Integer.parseInt(tp[4]));
                             song.setFormat(tp[3]);
                             thisList.add(song);
 
-                            if(!song.getAlbum().hasAlbumArt() && !song.getAlbum().getAlbumArtLoading())
+                            if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
                             {
                                 //the image is supposed to be cached locally, so no need to provide URL
-                                deezerCachedAlbums.add(song.getAlbum());
-                                song.getAlbum().setAlbumArtLoading();
+                                deezerCachedToLoadArt.add(song.getAlbum());
+                                song.getAlbum().setArtLoading();
                             }
                         }
                         sppr.close();
@@ -1695,6 +1709,8 @@ public abstract class Source
                         if(!isMine) p.setOwner(owner, ownerID);
                         if(isCollab) p.setCollaborative();
                         p.getSources().addSource(new SongSources.SongSource(id, SOURCE_DEEZER));
+                        deezerCachedToLoadArt.add(p);
+                        p.setArtLoading();
                         LibraryService.getPlaylists().add(p);
                     }
                 }
@@ -1710,14 +1726,14 @@ public abstract class Source
         @Override
         public void loadCachedArts()
         {
-            if(deezerCachedAlbums == null) return;
+            if(deezerCachedToLoadArt == null) return;
 
-            for(Album alb : deezerCachedAlbums)
+            for(LibraryObject alb : deezerCachedToLoadArt)
             {
-                LibraryService.loadAlbumArt(alb, "", false);
+                LibraryService.loadArt(alb, "", false);
             }
 
-            deezerCachedAlbums = null;
+            deezerCachedToLoadArt = null;
         }
 
         @Override
@@ -1739,12 +1755,12 @@ public abstract class Source
                 List<com.deezer.sdk.model.Track> tracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(requestTracks));
                 for(com.deezer.sdk.model.Track t : tracks)
                 {
-                    Song s = LibraryService.registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
+                    Song s = LibraryService.registerSong(t.getArtist().getName(),  t.getAlbum().getTitle(),
                             t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                     deezerSongs.add(s);
-                    if(!s.getAlbum().hasAlbumArt())
+                    if(!s.getAlbum().hasArt())
                     {
-                        LibraryService.loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
+                        LibraryService.loadArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
                     }
                 }
 
@@ -1755,15 +1771,15 @@ public abstract class Source
                     List<com.deezer.sdk.model.Track> albTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestAlbumTracks(album.getId())));
                     for(com.deezer.sdk.model.Track t : albTracks)
                     {
-                        Song s = LibraryService.registerSong(t.getArtist().getName(), 0, album.getTitle(), 0,
+                        Song s = LibraryService.registerSong(t.getArtist().getName(),  album.getTitle(),
                                 t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                         deezerSongs.add(s);
                         if(alb == null) alb = s.getAlbum();
                     }
 
-                    if(!alb.hasAlbumArt())
+                    if(!alb.hasArt())
                     {
-                        LibraryService.loadAlbumArt(alb, album.getBigImageUrl(), false);
+                        LibraryService.loadArt(alb, album.getBigImageUrl(), false);
                     }
                 }
 
@@ -1777,15 +1793,15 @@ public abstract class Source
                         List<com.deezer.sdk.model.Track> albTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestAlbumTracks(album.getId())));
                         for(com.deezer.sdk.model.Track t : albTracks)
                         {
-                            Song s = LibraryService.registerSong(t.getArtist().getName(), 0, album.getTitle(), 0,
+                            Song s = LibraryService.registerSong(t.getArtist().getName(),  album.getTitle(),
                                     t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                             deezerSongs.add(s);
                             if(alb == null) alb = s.getAlbum();
                         }
 
-                        if(!alb.hasAlbumArt())
+                        if(!alb.hasArt())
                         {
-                            LibraryService.loadAlbumArt(alb, album.getBigImageUrl(), false);
+                            LibraryService.loadArt(alb, album.getBigImageUrl(), false);
                         }
                     }
                 }
@@ -1819,16 +1835,16 @@ public abstract class Source
                         {
                             Song s;
                             if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
-                                s = LibraryService.registerSong(t.getArtist().getName(), 0, t.getAlbum().getTitle(), 0,
+                                s = LibraryService.registerSong(t.getArtist().getName(), t.getAlbum().getTitle(),
                                         t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                             else
                                 s = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(),
                                         t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition());
 
                             //get albumart for this song
-                            if(!s.getAlbum().hasAlbumArt())
+                            if(!s.getAlbum().hasArt())
                             {
-                                LibraryService.loadAlbumArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
+                                LibraryService.loadArt(s.getAlbum(), t.getAlbum().getBigImageUrl(), false);
                             }
 
                             thisList.add(s);
@@ -1842,6 +1858,7 @@ public abstract class Source
                     LibraryService.getPlaylists().add(list);
                     deezerPlaylists.add(list);
                     if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+                    LibraryService.loadArt(list, playlist.getSmallImageUrl(), false);
                 }
 
                 //Cache deezer songs and playlists
@@ -1898,7 +1915,7 @@ public abstract class Source
                         Song currentSong = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition());
                         tr.add(currentSong);
 
-                        if(!currentSong.getAlbum().hasAlbumArt())
+                        if(!currentSong.getAlbum().hasArt())
                         {
                             urls.put(currentSong.getAlbum(), t.getAlbum().getBigImageUrl());
                         }
@@ -1913,7 +1930,7 @@ public abstract class Source
                             if(album == null) album = currentSong.getAlbum();
                         }
 
-                        if(!album.hasAlbumArt())
+                        if(!album.hasArt())
                         {
                             urls.put(album, alb.getBigImageUrl());
                         }
@@ -1930,7 +1947,7 @@ public abstract class Source
 
                     for(Album a : urls.keySet())
                     {
-                        LibraryService.loadAlbumArt(a, urls.get(a), false);
+                        LibraryService.loadArt(a, urls.get(a), false);
                     }
                 }
             }.start();
@@ -2163,8 +2180,8 @@ public abstract class Source
                         if(song.isHandled())
                         {
                             //todo : find a better way (registersong is heavy) ; that is just lazyness
-                            LibraryService.registerSong(song.getArtist().getName(), 0, song.getAlbum().getName(),
-                                    0, song.getTrackNumber(), song.getDuration(), song.getName(), deezer);
+                            LibraryService.registerSong(song.getArtist().getName(), song.getAlbum().getName(),
+                                    song.getTrackNumber(), song.getDuration(), song.getName(), deezer);
                         }
 
                         //add to cache

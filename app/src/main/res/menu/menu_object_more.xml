@@ -8,6 +8,11 @@
           android:title="@string/add_to_current_playlist"/>
     <item android:id="@+id/action_add_to_list"
           android:title="@string/add_to_playlist"/>
+    <item android:id="@+id/action_remove_from_playlist"
+          android:title="@string/remove_from_playlist"
+          android:visible="false"/>
     <item android:id="@+id/action_manage_libraries"
           android:title="@string/manage_libraries"/>
+    <item android:id="@+id/action_link_to"
+          android:title="@string/link_to"/>
 </menu>

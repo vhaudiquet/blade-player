@@ -2,7 +2,6 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -15,18 +14,12 @@
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
 
-    <style name="Theme.SwitchTheme" parent="Theme.AppCompat.Light">
+    <!-- Controls (buttons, listviews, ...) theme -->
+    <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorAccent">@color/colorPrimary</item>
-    </style>
-    <style name="Theme.EditTextTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorControlNormal">@color/colorPrimary</item>
         <item name="colorControlActivated">@color/colorPrimary</item>
-        <item name="colorControlHighlight">@color/colorPrimary</item>
-    </style>
-    <style name="Theme.ListViewTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorControlNormal">@color/colorPrimary</item>
-        <item name="colorControlActivated">@color/colorPrimary</item>
-        <item name="colorControlHighlight">#bdbdbd</item>
+        <item name="colorControlHighlight">@color/colorPrimaryLight</item>
     </style>
     <!-- Preference theme -->
     <style name="Theme.Preferences" parent="PreferenceThemeOverlay.v14.Material">

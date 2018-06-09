@@ -104,7 +104,7 @@ public class PlayerNotification
                 .setLargeIcon(mService.getCurrentArt())
                 .setContentTitle(playing.getTitle())
                 .setContentText(playing.getArtist().getName() + " - " + playing.getAlbum().getName())
-                .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(mService, PlaybackStateCompat.ACTION_STOP)) //intent on notification slide ?
+                .setDeleteIntent(null) //intent on notification slide
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOngoing(isPlaying); //disable swipe delete if playing
 
@@ -124,7 +124,7 @@ public class PlayerNotification
         CharSequence name = "Media playback";
         // The user-visible description of the channel.
         String description = "Media playback controls";
-        int importance = NotificationManager.IMPORTANCE_HIGH;
+        int importance = NotificationManager.IMPORTANCE_LOW;
         NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
         // Configure the notification channel.
         mChannel.setDescription(description);

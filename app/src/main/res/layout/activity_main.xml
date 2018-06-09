@@ -9,21 +9,24 @@
         android:fitsSystemWindows="true"
         tools:openDrawer="start">
 
-    <include layout="@layout/app_bar_main"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"/>
-
     <RelativeLayout
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/mainLinearLayout">
+
+    <include layout="@layout/app_bar_main"
+             android:layout_width="match_parent"
+             android:layout_height="55dp"
+             android:id="@+id/include"/>
+
         <ListView
-                android:layout_marginTop="55dp"
+                android:layout_below="@id/include"
+                android:layout_above="@id/currentPlay"
                 android:id="@+id/libraryList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:theme="@style/Theme.ListViewTheme"/>
+                android:theme="@style/Theme.ControlTheme"/>
 
         <RelativeLayout
                 android:layout_alignParentBottom="true"
@@ -33,7 +36,7 @@
                 android:orientation="vertical"
                 android:padding="5dp"
                 android:background="@color/colorPrimary"
-                android:visibility="invisible">
+                android:visibility="gone">
 
             <ImageView
                     android:id="@+id/element_image"

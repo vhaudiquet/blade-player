@@ -11,7 +11,8 @@
               android:layout_below="@id/playlist_source"
               android:layout_margin="10dp"
               android:hint="@string/name"
-              android:theme="@style/Theme.EditTextTheme"
+              android:theme="@style/Theme.ControlTheme"
+              android:imeOptions="actionDone"
               android:id="@+id/playlist_name"/>
 
 </RelativeLayout>

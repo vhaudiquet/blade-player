@@ -215,7 +215,8 @@ public class PlayActivity extends AppCompatActivity
             @Override
             public void run()
             {
-                int pos = musicPlayer.resolveCurrentSongPosition();
+                int pos = 0;
+                if(musicPlayer != null) pos = musicPlayer.resolveCurrentSongPosition();
                 int posMns = (pos / 60000) % 60000;
                 int posScs = pos % 60000 / 1000;
                 String songPos = String.format("%02d:%02d",  posMns, posScs);
@@ -271,7 +272,7 @@ public class PlayActivity extends AppCompatActivity
         Song currentSong = musicPlayer.getCurrentSong();
 
         //set album view / playlistView
-        if(currentSong.getAlbum().hasAlbumArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
+        if(currentSong.getAlbum().hasArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
         else albumView.setImageResource(R.drawable.ic_albums);
 
         if(playlistAdapter == null)
