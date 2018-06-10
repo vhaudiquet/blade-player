@@ -1499,7 +1499,7 @@ public abstract class Source
     }
     public static class Deezer extends Source
     {
-        public final String DEEZER_CLIENT_ID = "279742";
+        public final String DEEZER_CLIENT_ID = "283144"; //nightly ID //release ID = "279742";
         public final SessionStore DEEZER_USER_SESSION = new SessionStore();
         public DeezerConnect deezerApi;
         private File deezerCacheFile;
