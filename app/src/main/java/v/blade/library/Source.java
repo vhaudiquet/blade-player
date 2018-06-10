@@ -971,7 +971,8 @@ public abstract class Source
                     bw.close();
 
                     //playlists
-                    for(File f : spotifyPlaylistsCache.listFiles()) f.delete();
+                    if(spotifyPlaylistsCache.exists() && spotifyPlaylistsCache.listFiles() != null)
+                        for(File f : spotifyPlaylistsCache.listFiles()) f.delete();
                     for(Playlist p : spotifyPlaylists)
                     {
                         cachePlaylist(p);

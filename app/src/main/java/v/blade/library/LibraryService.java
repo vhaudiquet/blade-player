@@ -680,8 +680,9 @@ public class LibraryService
         synchronized(playlists)
         {
             for(Playlist playlist : playlists)
-                if(playlist.getName().toLowerCase().contains(q))
-                    tr.add(playlist);
+                if(playlist.getName() != null)
+                    if(playlist.getName().toLowerCase().contains(q))
+                        tr.add(playlist);
         }
 
         return tr;
