@@ -90,7 +90,7 @@ public abstract class Source
 
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "Local")
     {
-        private LongSparseArray<Album> idsorted_albums;
+        private LongSparseArray<Album> idsorted_albums = null;
 
         private SourcePlayer player = new SourcePlayer()
         {
@@ -221,7 +221,11 @@ public abstract class Source
 
             /* get content resolver and init temp sorted arrays */
             final ContentResolver musicResolver = LibraryService.appContext.getContentResolver();
-            idsorted_albums = new LongSparseArray<>();
+            boolean loadAlbumArts = true;
+            if(idsorted_albums != null) //load of album art is not finished but resync was called
+                loadAlbumArts = false;
+
+            if(loadAlbumArts) idsorted_albums = new LongSparseArray<>();
             LongSparseArray<Song> idsorted_songs = new LongSparseArray<>();
 
             /* let's get all music files of the user, and register them and their attributes */
@@ -268,7 +272,8 @@ public abstract class Source
                     s.setFormat(musicCursor.getString(formatColumn));
                     s.setPath(thisPath);
                     idsorted_songs.put(thisId, s);
-                    if(idsorted_albums.get(albumId) == null) idsorted_albums.put(albumId, s.getAlbum());
+                    if(loadAlbumArts)
+                        if(idsorted_albums.get(albumId) == null) idsorted_albums.put(albumId, s.getAlbum());
                 }
                 while (musicCursor.moveToNext());
                 musicCursor.close();
@@ -939,7 +944,7 @@ public abstract class Source
                         Playlist list = new Playlist(playlistBase.name, thisList);
                         list.getSources().addSource(new SongSources.SongSource(playlistBase.id, SOURCE_SPOTIFY));
                         if(playlistBase.collaborative) list.setCollaborative();
-                        if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name == null ? playlistBase.owner.id : playlistBase.owner.display_name, playlistBase.owner.id);
+                        if(playlistBase.owner != null) if(!playlistBase.owner.id.equals(mePrivate.id)) list.setOwner(playlistBase.owner.display_name == null ? playlistBase.owner.id : playlistBase.owner.display_name, playlistBase.owner.id);
                         spotifyPlaylists.add(list);
                         LibraryService.getPlaylists().add(list);
                         if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();

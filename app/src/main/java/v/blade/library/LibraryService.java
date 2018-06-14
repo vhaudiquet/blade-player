@@ -404,6 +404,7 @@ public class LibraryService
 
                 for(Source s : Source.SOURCES) s.registerSongs();
 
+                registerSongLinks();
                 registerSongBetterSources();
                 sortLibrary();
                 synchronization = false;
@@ -829,9 +830,16 @@ public class LibraryService
                     byte[] buffer = new byte[4096];
                     while(true)
                     {
-                        int count = nis.read(buffer, 0, 4096);
-                        if(count == -1) break;
-                        fos.write(buffer, 0, count);
+                        try
+                        {
+                            int count = nis.read(buffer, 0, 4096);
+                            if(count == -1) break;
+                            fos.write(buffer, 0, count);
+                        }
+                        catch(InterruptedIOException ex)
+                        {
+                            ex.printStackTrace();
+                        }
                     }
 
                     connection.getInputStream().close();

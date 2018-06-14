@@ -217,7 +217,7 @@ public class PlayerMediaPlayer
     {
         if(currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer())
             return currentActivePlayer.getDuration();
-        return ((int) currentSong.getDuration());
+        return currentSong == null ? 0 : ((int) currentSong.getDuration());
     }
     public void setVolume(float left, float right)
     {

@@ -275,7 +275,7 @@ public class PlayerService extends Service
     {currentPosition = position; mPlayer.playSong(shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition));}
     public ArrayList<Song> getCurrentPlaylist() {return shuffleMode ? shufflePlaylist : currentPlaylist;}
     public int getCurrentPosition() {return currentPosition;}
-    public Song getCurrentSong() {return shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition);}
+    public Song getCurrentSong() {return currentPlaylist == null ? null : shuffleMode ? shufflePlaylist.get(currentPosition) : currentPlaylist.get(currentPosition);}
     public boolean isPlaying() {return mPlayer.isPlaying();}
     public boolean isShuffleEnabled() {return shuffleMode;}
     public int getRepeatMode() {return repeatMode;}
