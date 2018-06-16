@@ -876,7 +876,7 @@ public class MainActivity extends AppCompatActivity
         {Playlist p = list.get(i); if(!p.isMine() && !p.isCollaborative()) list.remove(i);}
         list.add(0, new Playlist(context.getString(R.string.new_playlist), null));
 
-        LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, list);
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, list, false);
         adapter.setHideMore(true);
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle(context.getString(R.string.add_to_playlist))

@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Looper;
 import android.util.Log;
-import retrofit.RetrofitError;
 import v.blade.ui.settings.SettingsActivity;
 
 import java.io.*;
@@ -430,132 +429,65 @@ public class LibraryService
 
         int addedSongs = 0;
 
-        if(bestSource == Source.SOURCE_SPOTIFY)
+        //search all songs on best source
+        ArrayList<Song> bestSourceSongs = new ArrayList<>();
+        for(Song s : songs)
         {
-            //search all songs on spotify
-            ArrayList<Song> spotifySongs = new ArrayList<>();
-            for(Song s : songs)
+            if(s.getSources().getSourceByPriority(0).getSource() != bestSource && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
             {
-                if(s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_SPOTIFY && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
+                //query bestSource for this song
+                try
                 {
-                    //query spotify for this song
-                    try
+                    if(bestSource.searchForSong(s))
                     {
-                        if(Source.SOURCE_SPOTIFY.searchForSong(s))
-                        {
-                            spotifySongs.add(s);
-                        }
-                        addedSongs++;
-                        if(addedSongs >= BETTER_SOURCES_MAX) break;
+                        bestSourceSongs.add(s);
                     }
-                    catch (RetrofitError error)
-                    {
-                        //TODO : handle error
-                        continue;
-                    }
+                    addedSongs++;
+                    if(addedSongs >= BETTER_SOURCES_MAX) break;
+                }
+                catch (Exception error)
+                {
+                    //TODO : handle error
+                    continue;
                 }
             }
-            //also search for songs in playlist
-            if(!SAVE_PLAYLISTS_TO_LIBRARY)
-            {
-                for(Playlist p : playlists)
-                {
-                    for(Song s : p.getContent())
-                    {
-                        if(s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_SPOTIFY && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
-                        {
-                            if(Source.SOURCE_SPOTIFY.searchForSong(s))
-                            {
-                                spotifySongs.add(s);
-                            }
-                            addedSongs++;
-                            if(addedSongs >= BETTER_SOURCES_MAX) break;
-                        }
-                    }
-                }
-            }
-
-            //cache theses
-            try
-            {
-                //TODO : for now we keep betterSources forever, find a way to get rid of unused ones
-                if(betterSourceFile.exists()) betterSourceFile.createNewFile();
-                RandomAccessFile randomAccessFile = new RandomAccessFile(betterSourceFile.getAbsolutePath(), "rw");
-                randomAccessFile.seek(randomAccessFile.length());
-                for(Song song : spotifySongs)
-                {
-                    randomAccessFile.writeUTF(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSourceByPriority(0).getId()
-                            + CACHE_SEPARATOR + "\n");
-                }
-                randomAccessFile.close();
-            }
-            catch(IOException e) {e.printStackTrace();}
-
         }
-        else if(bestSource == Source.SOURCE_DEEZER)
+        //also search for songs in playlist
+        if(!SAVE_PLAYLISTS_TO_LIBRARY)
         {
-            ArrayList<Song> deezerSongs = new ArrayList<>();
-
-            //search all songs on deezer
-            synchronized (songs)
+            for(Playlist p : playlists)
             {
-                for (Song s : songs)
+                for(Song s : p.getContent())
                 {
-                    if (s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_DEEZER && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
+                    if(s.getSources().getSourceByPriority(0).getSource() != bestSource && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                     {
-                        if(Source.SOURCE_DEEZER.searchForSong(s))
+                        if(bestSource.searchForSong(s))
                         {
-                            deezerSongs.add(s);
+                            bestSourceSongs.add(s);
                         }
                         addedSongs++;
                         if(addedSongs >= BETTER_SOURCES_MAX) break;
                     }
                 }
             }
-            //also search for songs in playlist
-            if(!SAVE_PLAYLISTS_TO_LIBRARY)
-            {
-                synchronized (playlists)
-                {
-                    for(Playlist p : playlists)
-                    {
-                        synchronized (p.getContent())
-                        {
-                            for(Song s : p.getContent())
-                            {
-                                if(s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_DEEZER && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
-                                {
-                                    if(Source.SOURCE_DEEZER.searchForSong(s))
-                                    {
-                                       deezerSongs.add(s);
-                                    }
-                                    addedSongs++;
-                                    if(addedSongs >= BETTER_SOURCES_MAX) break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            //cache theses
-            try
-            {
-                //TODO : for now we keep betterSources forever, find a way to get rid of unused ones
-                if(betterSourceFile.exists()) betterSourceFile.createNewFile();
-                RandomAccessFile randomAccessFile = new RandomAccessFile(betterSourceFile.getAbsolutePath(), "rw");
-                randomAccessFile.seek(randomAccessFile.length());
-                for(Song song : deezerSongs)
-                {
-                    randomAccessFile.writeUTF(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
-                            + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSourceByPriority(0).getId()
-                            + CACHE_SEPARATOR + "\n");
-                }
-                randomAccessFile.close();
-            }
-            catch(IOException e) {e.printStackTrace();}
         }
+
+        //cache theses
+        try
+        {
+            //TODO : for now we keep betterSources forever, find a way to get rid of unused ones
+            if(betterSourceFile.exists()) betterSourceFile.createNewFile();
+            RandomAccessFile randomAccessFile = new RandomAccessFile(betterSourceFile.getAbsolutePath(), "rw");
+            randomAccessFile.seek(randomAccessFile.length());
+            for(Song song : bestSourceSongs)
+            {
+                randomAccessFile.writeUTF(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
+                        + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSourceByPriority(0).getId()
+                        + CACHE_SEPARATOR + "\n");
+            }
+            randomAccessFile.close();
+        }
+        catch(IOException e) {e.printStackTrace();}
 
         if(currentCallback != null) currentCallback.onLibraryChange();
     }
