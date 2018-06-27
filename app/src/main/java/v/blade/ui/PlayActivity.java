@@ -322,8 +322,11 @@ public class PlayActivity extends AppCompatActivity
     /* button actions */
     public void onPlayClicked(View v)
     {
-        if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
-        else PlayerConnection.musicController.getTransportControls().play();
+        if(musicPlayer != null && PlayerConnection.musicController != null)
+        {
+            if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
+            else PlayerConnection.musicController.getTransportControls().play();
+        }
     }
     public void onPrevClicked(View v)
     {

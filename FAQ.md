@@ -6,12 +6,7 @@ This frequently asked questions will be continually updated to accommodate new i
 
 **What is Blade Music Player?**
 
-Blade is a music player compatible to play music from local library, Spotify, Deezer and SoundCloud.
-
-
-**Where can I find the current playlist?**
-
-The current playlist can be found as a bar at the bottom of the app.
+Blade is a music player for Android that can play music from local library, Spotify, and Deezer. (SoundCloud, and others planned)
 
 
 **How can I navigate between songs, artists and album?**
@@ -24,9 +19,13 @@ Swipe the left border of your screen or tap on the three horizontal lines at the
 To add a song to favourite playlist, tap on the vertical dots on a song then tap on add to playlist, and tap on favorite.
 
 
-**Do I need Dezzer premium account to use the app?**
+**Do I need a Deezer premium account to use the app?**
 
-Yes, if you want to play music from Denver.(without premium account, you get access to just 30 secs preview).
+Yes, if you want to play music from Deezer (without premium account, you get access to 30 secs preview only).
+
+**Do I need a Spotify premium account to use the app?**
+
+Yes, if you want to play music from Spotify (without premium account, the playback won't launch).
 
 
 **Can I exclude folders from my library?**
@@ -34,19 +33,15 @@ Yes, if you want to play music from Denver.(without premium account, you get acc
 No, the music library is scanned by the operating system. To exclude folders create a file called ".nomedia".
 
 
-**What sources does Blade plays from?**
-
-Blade plays from Spotify, Deedee and SoundCloud. 
-
-
 **How do I search for a song or playlist?**
 
-To search for a playlist, the search icon can be found at the top bar of the app. Type the song and search.
+If you want to search your local library for a song, just use the 'search' icon on the top bar while in library.
+If you want to search the internet (spotify/deezer) for a song, use the search option on the navigation drawer.
 
+**Do I have to login to my Deezer and Spotify accounts before playing music from them?**
 
-**Do I have to login to my Deezer and Spirit accounts before playing music from them?**
-
-Yes, you must login to your account before you can play musics from them. 
+Yes, you must login to your account before you can play musics from them. However, know that nobody except the
+Spotify/Deezer servers will access your private data (password...), as we use the OAuth2 protocol.
 
 
 **Where can Blade Music Player be downloaded?**
