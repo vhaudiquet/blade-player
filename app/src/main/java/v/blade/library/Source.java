@@ -285,11 +285,15 @@ public abstract class Source
             {
                 int idColumn = playlistCursor.getColumnIndex(MediaStore.Audio.Playlists._ID);
                 int nameColumn = playlistCursor.getColumnIndex(MediaStore.Audio.Playlists.NAME);
+                int fileColumn = playlistCursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME);
 
                 do
                 {
                     long thisId = playlistCursor.getLong(idColumn);
                     String thisName = playlistCursor.getString(nameColumn);
+                    String thisPath = "";
+                    if(fileColumn != -1)
+                        thisPath = MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI + "/" + playlistCursor.getString(fileColumn);
 
                     //now we have to resolve the content of this playlist
                     ArrayList<Song> thisList = new ArrayList<>();
@@ -307,8 +311,13 @@ public abstract class Source
 
                     Playlist list = new Playlist(thisName, thisList);
                     list.getSources().addSource(new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
+                    list.setPath(thisPath);
                     LibraryService.getPlaylists().add(list);
                     if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
+                    //TODO : generate image for the playlist
+
+
                 } while(playlistCursor.moveToNext());
                 playlistCursor.close();
             }
@@ -320,6 +329,7 @@ public abstract class Source
         public void loadCachedArts()
         {
             if(idsorted_albums == null) return;
+            LongSparseArray<Album> thisArray = idsorted_albums.clone(); //avoid sync problems
 
             Cursor albumCursor = LibraryService.appContext.getContentResolver().
                     query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
@@ -333,7 +343,7 @@ public abstract class Source
                     long thisId = albumCursor.getLong(idCol);
                     String path = albumCursor.getString(artCol);
 
-                    Album a = idsorted_albums.get(thisId);
+                    Album a = thisArray.get(thisId);
                     if(a != null)
                     {
                         LibraryService.loadArt(a, path, true);
@@ -342,7 +352,7 @@ public abstract class Source
                 albumCursor.close();
             }
 
-            idsorted_albums = null;
+            thisArray = null;
         }
 
         @Override
@@ -430,7 +440,7 @@ public abstract class Source
         {
             if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_LOCAL_LIB) {callback.onFailure(); return;}
 
-            //TODO : delete playlist file
+            if(!list.getPath().equals("")) new File(list.getPath()).delete();
 
             ContentResolver contentResolver = LibraryService.appContext.getContentResolver();
             String where = MediaStore.Audio.Playlists._ID + "=?";
@@ -916,6 +926,8 @@ public abstract class Source
                             for(PlaylistTrack pt : tracks.items)
                             {
                                 Track t = pt.track;
+                                if(t == null) continue;
+
                                 Song s;
                                 if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
                                     s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,

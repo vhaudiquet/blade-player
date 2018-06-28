@@ -226,7 +226,8 @@ public class LibraryService
         synchronized (songArtist.getAlbums())
         {
             for(int i = 0;i<songArtist.getAlbums().size();i++)
-                if(songArtist.getAlbums().get(i).getName().equalsIgnoreCase(album)) songAlbum = songArtist.getAlbums().get(i);
+                if(songArtist.getAlbums().get(i).getName().equalsIgnoreCase(album))
+                    songAlbum = songArtist.getAlbums().get(i);
         }
 
         if(songAlbum == null)
@@ -665,7 +666,7 @@ public class LibraryService
     static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track)
     {
         //if song is already registered, return song from library
-        ArrayList<Song> snames = songsByName.get(name.toLowerCase());
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems
         if(snames != null)
         {
             //check if the song is already registered
@@ -709,7 +710,11 @@ public class LibraryService
 
         Album songAlbum = null;
         synchronized (albums)
-        {for(Album alb : albums) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;}
+        {
+            for(Album alb : albums)
+                if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
+                    songAlbum = alb;
+        }
         if(songAlbum == null) for(Album alb : albumHandles) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;
         if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true); albumHandles.add(songAlbum);}
         songAlbum.getSources().addSource(source);
@@ -745,8 +750,8 @@ public class LibraryService
         else
         {
             String fileName = obj.getName();
-            if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
             if(obj instanceof Album) fileName += "." + ((Album) obj).getArtist().getName();
+            if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
             fileName += "." + obj.getType();
             File toSave = new File(artCacheDir.getAbsolutePath() + "/" + fileName + ".png");
             if(!toSave.exists())

@@ -27,6 +27,7 @@ public class Playlist extends LibraryObject
     private String owner;
     private Object ownerID;
     private boolean collaborative = false;
+    String path;
 
     public Playlist(String name, ArrayList<Song> content)
     {
@@ -47,4 +48,7 @@ public class Playlist extends LibraryObject
     public boolean isCollaborative() {return this.collaborative;}
     public String getOwner() {return this.owner;}
     public Object getOwnerID() {return this.ownerID;}
+
+    public String getPath() {return path;}
+    public void setPath(String s) {path = s;}
 }
