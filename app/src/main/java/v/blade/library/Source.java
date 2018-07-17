@@ -20,6 +20,7 @@ import com.deezer.sdk.player.TrackPlayer;
 import com.deezer.sdk.player.event.OnPlayerStateChangeListener;
 import com.deezer.sdk.player.event.PlayerState;
 import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
+import com.spotify.sdk.android.player.*;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -31,6 +32,7 @@ import v.blade.ui.settings.SettingsActivity;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.lang.Error;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -533,7 +535,7 @@ public abstract class Source
                             @Override
                             public void onLoggedOut() {}
                             @Override
-                            public void onLoginFailed(Error error)
+                            public void onLoginFailed(com.spotify.sdk.android.player.Error error)
                             {
                                 Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.player_login_error) + " Spotify", Toast.LENGTH_SHORT).show();
                             }
@@ -567,7 +569,7 @@ public abstract class Source
                     }
 
                     @Override
-                    public void onPlaybackError(Error error)
+                    public void onPlaybackError(com.spotify.sdk.android.player.Error error)
                     {
                         listener.onPlaybackError(player, error.name());
                     }
@@ -584,7 +586,7 @@ public abstract class Source
                     @Override
                     public void onSuccess() {callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {callback.onFailure(player);}
+                    public void onError(com.spotify.sdk.android.player.Error error) {callback.onFailure(player);}
                 });
             }
 
@@ -598,7 +600,7 @@ public abstract class Source
                     @Override
                     public void onSuccess() {if(callback != null) callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
+                    public void onError(com.spotify.sdk.android.player.Error error) {if(callback != null) callback.onFailure(player);}
                 });
             }
 
@@ -620,7 +622,7 @@ public abstract class Source
                     public void onSuccess() {if(callback != null) callback.onSucess(player);}
 
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
+                    public void onError(com.spotify.sdk.android.player.Error error) {if(callback != null) callback.onFailure(player);}
                 }, "spotify:track:" + spot.getId(), 0, 0);
             }
 

@@ -106,7 +106,6 @@ public class PlayActivity extends AppCompatActivity
 
     private ImageView.OnTouchListener albumDragListener = new ImageView.OnTouchListener()
     {
-        boolean touchActionStarted = false;
         float touchStartX = 0;
         float touchStartY = 0;
 
@@ -118,16 +117,12 @@ public class PlayActivity extends AppCompatActivity
                 case MotionEvent.ACTION_DOWN:
                 {
                     //image was touched, start touch action
-                    touchActionStarted = true;
                     touchStartX = event.getX();
                     touchStartY = event.getY();
                 }
                 case MotionEvent.ACTION_UP:
                 {
-                    if(!touchActionStarted) return true;
-
                     //image was released, look at diff and change song if enough
-                    touchActionStarted = false;
                     float touchDeltaX = event.getX() - touchStartX;
                     if(touchDeltaX >= DELTA_X_MIN)
                     {
@@ -214,7 +209,7 @@ public class PlayActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         //get all components
