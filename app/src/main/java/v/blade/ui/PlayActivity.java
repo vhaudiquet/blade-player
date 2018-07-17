@@ -23,9 +23,9 @@ import android.os.Handler;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
@@ -41,6 +41,8 @@ import java.util.ArrayList;
 
 public class PlayActivity extends AppCompatActivity
 {
+    private static final float DELTA_X_MIN = 350;
+
     private PlayerService musicPlayer;
     boolean isDisplayingAlbumArt = true;
     /* activity components */
@@ -99,6 +101,51 @@ public class PlayActivity extends AppCompatActivity
             }
 
             LibraryService.currentCallback.onLibraryChange();
+        }
+    };
+
+    private ImageView.OnTouchListener albumDragListener = new ImageView.OnTouchListener()
+    {
+        boolean touchActionStarted = false;
+        float touchStartX = 0;
+        float touchStartY = 0;
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event)
+        {
+            switch(event.getAction())
+            {
+                case MotionEvent.ACTION_DOWN:
+                {
+                    //image was touched, start touch action
+                    touchActionStarted = true;
+                    touchStartX = event.getX();
+                    touchStartY = event.getY();
+                }
+                case MotionEvent.ACTION_UP:
+                {
+                    if(!touchActionStarted) return true;
+
+                    //image was released, look at diff and change song if enough
+                    touchActionStarted = false;
+                    float touchDeltaX = event.getX() - touchStartX;
+                    if(touchDeltaX >= DELTA_X_MIN)
+                    {
+                        //swipe back
+                        onPrevClicked(v);
+                    }
+                    else if(touchDeltaX <= -DELTA_X_MIN)
+                    {
+                        //swipe next
+                        onNextClicked(v);
+                    }
+                }
+                case MotionEvent.ACTION_MOVE:
+                {
+                    //TODO : animate during touch event
+                }
+            }
+            return true;
         }
     };
 
@@ -192,6 +239,7 @@ public class PlayActivity extends AppCompatActivity
         playlistView.setOnTouchListener(playlistDragController);
         playlistDragController.setDragHandleId(R.id.element_more);
         playlistView.setDropListener(playlistDropListener);
+        albumView.setOnTouchListener(albumDragListener);
 
         LibraryService.configureLibrary(getApplicationContext());
         if(!PlayerConnection.init(new PlayerConnection.Callback()

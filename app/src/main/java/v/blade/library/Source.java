@@ -20,8 +20,6 @@ import com.deezer.sdk.player.TrackPlayer;
 import com.deezer.sdk.player.event.OnPlayerStateChangeListener;
 import com.deezer.sdk.player.event.PlayerState;
 import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
-import com.spotify.sdk.android.player.*;
-import com.spotify.sdk.android.player.Error;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;

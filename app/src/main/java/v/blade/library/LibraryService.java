@@ -715,7 +715,9 @@ public class LibraryService
                 if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
                     songAlbum = alb;
         }
-        if(songAlbum == null) for(Album alb : albumHandles) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;
+        if(songAlbum == null) for(Album alb : albumHandles)
+            if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
+                songAlbum = alb;
         if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true); albumHandles.add(songAlbum);}
         songAlbum.getSources().addSource(source);
 
