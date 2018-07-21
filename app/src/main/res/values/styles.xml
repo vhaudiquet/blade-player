@@ -6,6 +6,7 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="preferenceTheme">@style/Theme.Preferences</item>
+        <item name="android:itemBackground">@color/colorBackground</item>
     </style>
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -25,6 +26,8 @@
     <style name="Theme.Preferences" parent="PreferenceThemeOverlay.v14.Material">
         <item name="colorControlNormal">@color/colorPrimary</item>
         <item name="colorControlActivated">@color/colorPrimary</item>
+        <item name="android:windowBackground">@color/colorBackground</item>
+        <item name="android:background">@color/colorBackground</item>
     </style>
 
 </resources>

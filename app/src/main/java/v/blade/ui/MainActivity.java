@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -383,6 +384,8 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        navigationView.setItemBackgroundResource(R.color.colorBackground);
+        navigationView.setBackgroundColor(ContextCompat.getColor(this, R.color.colorBackground));
 
         mainListView = (ListView) findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);

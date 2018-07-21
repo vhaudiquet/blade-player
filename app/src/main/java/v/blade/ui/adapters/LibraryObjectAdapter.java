@@ -169,7 +169,7 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             if(repaintSongBackground)
                 if(position != selectedPosition)
-                    convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
+                    convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorBackground));
                 else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorPrimaryLight));
         }
         else if(obj instanceof Album)

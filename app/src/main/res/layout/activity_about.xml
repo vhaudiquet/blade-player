@@ -5,14 +5,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        tools:context="v.blade.ui.settings.SettingsActivity">
+        tools:context="v.blade.ui.settings.SettingsActivity"
+        android:background="@color/colorBackground">
 
     <include layout="@layout/app_bar_main"
             android:layout_width="match_parent"
             android:layout_height="55dp"/>
 
     <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:background="@color/colorBackground">
 
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"

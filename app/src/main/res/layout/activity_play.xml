@@ -36,6 +36,8 @@
                 android:visibility="gone"
                 android:choiceMode="singleChoice"
                 android:id="@+id/playlist_view"
+                android:theme="@style/Theme.ControlTheme"
+                android:background="@color/colorBackground"
                 app:use_default_controller="false"/>
         <RelativeLayout android:layout_alignParentBottom="true"
                         android:layout_alignParentEnd="true"

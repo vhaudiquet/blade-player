@@ -127,6 +127,7 @@ public class PlayActivity extends AppCompatActivity
                     if(touchDeltaX >= DELTA_X_MIN)
                     {
                         //swipe back
+                        if(PlayerConnection.getService().getCurrentPosition() > 5000) onPrevClicked(v);
                         onPrevClicked(v);
                     }
                     else if(touchDeltaX <= -DELTA_X_MIN)
