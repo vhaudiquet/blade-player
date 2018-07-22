@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
 import v.blade.ui.settings.SettingsActivity;
@@ -27,6 +28,7 @@ public class LibraryService
     public static boolean configured = false;
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
+    public static Uri TREE_URI;
 
     /* library */
     private static final List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
@@ -151,6 +153,9 @@ public class LibraryService
         //get preferences
         SharedPreferences accountsPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
         SharedPreferences generalPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+
+        String treeUri = generalPrefs.getString("sdcard_uri", null);
+        if(treeUri != null) TREE_URI = Uri.parse(treeUri);
 
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
         REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);

@@ -9,5 +9,6 @@
                         android:key="register_better_sources"
                         android:defaultValue="true"/>
     <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
+    <PreferenceScreen android:title="@string/sd_perm" android:key="sd_perm"/>
     <PreferenceScreen android:title="@string/about" android:key="about_screen"/>
 </PreferenceScreen>
