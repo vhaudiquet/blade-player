@@ -164,7 +164,7 @@ public class LibraryService
     /*
      * Registers a song in user library
      */
-    static Song registerSong(String artist, String album, int albumTrack, long duration, String name,
+    public static Song registerSong(String artist, String album, int albumTrack, long duration, String name,
                              SongSources.SongSource source)
     {
         //REGISTER : this song is in the library of this source
@@ -253,7 +253,7 @@ public class LibraryService
         return song;
     }
 
-    static void unregisterSong(Song song, SongSources.SongSource toUnregister)
+    public static void unregisterSong(Song song, SongSources.SongSource toUnregister)
     {
         //remove songsource
         SongSources sources = song.getSources();

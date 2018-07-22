@@ -30,6 +30,9 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
+    //tags library
+    implementation 'net.jthink:jaudiotagger:2.2.3'
+
     //spotify
     implementation 'com.spotify.android:auth:1.0.0-alpha' //auth
     implementation 'com.github.kaaes:spotify-web-api-android:0.4.1' //web api access

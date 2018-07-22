@@ -242,7 +242,7 @@ public abstract class Source
                 int albumTrackColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.TRACK);
                 int songDurationColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
                 int formatColumn = musicCursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE);
-                int fileColumn = musicCursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME);
+                int fileColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DATA);
 
                 //add songs to list
                 do
@@ -255,7 +255,7 @@ public abstract class Source
                     String thisArtist = musicCursor.getString(artistColumn);
                     String thisAlbum = musicCursor.getString(albumColumn);
                     long thisDuration = musicCursor.getLong(songDurationColumn);
-                    String thisPath = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + musicCursor.getString(fileColumn);
+                    String thisPath = musicCursor.getString(fileColumn);
 
                     //resolve null artist name
                     if(thisArtist == null || thisArtist.equals("<unknown>"))

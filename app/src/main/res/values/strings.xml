@@ -13,8 +13,8 @@
     <string name="pause">Pause</string>
     <string name="play">Play</string>
     <string name="play_next">Play next</string>
-    <string name="added_ok"> songs were added to playlist</string>
-    <string name="added_next_ok"> songs were added at current position</string>
+    <string name="added_ok">songs were added to playlist</string>
+    <string name="added_next_ok">songs were added at current position</string>
     <string name="playlists">Playlists</string>
     <string name="prev">Previous</string>
     <string name="songs">Songs</string>
@@ -23,14 +23,19 @@
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
     <string name="sources">Music sources</string>
-    <string name="register_better_sources_expl">Blade will try for your songs that come from web services to find the best web service to play them, depending on priority</string>
-    <string name="save_playlists_to_library_expl">Save playlist\'s songs to the library (Artist/Album/Songs views)</string>
-    <string name="desc">Blade is an Android music player made by Valentin HAUDIQUET (@Valou3433). The goal of the project is to make an app capable to play songs from local library, Spotify, Deezer and SoundCloud.</string>
+    <string name="register_better_sources_expl">Blade will try for your songs that come from web services to find the
+        best web service to play them, depending on priority
+    </string>
+    <string name="save_playlists_to_library_expl">Save playlist\'s songs to the library (Artist/Album/Songs views)
+    </string>
+    <string name="desc">Blade is an Android music player made by Valentin HAUDIQUET (@Valou3433). The goal of the
+        project is to make an app capable to play songs from local library, Spotify, Deezer and SoundCloud.
+    </string>
     <string name="register_better_sources_titl">Look for better sources</string>
     <string name="save_playlists_to_library_titl">Save playlists songs</string>
     <string name="format_unsupported">Unsupported file format</string>
-    <string name="player_unknown_error">Unknown error of </string>
-    <string name="player_error">Error of </string>
+    <string name="player_unknown_error">Unknown error of</string>
+    <string name="player_error">Error of</string>
     <string name="player_login_error">Login error (bad login/pass, no premium) of</string>
     <string name="player_init">Initializing</string>
     <string name="pls_resync">You will need to re-synchronize library to apply setting</string>
@@ -38,7 +43,9 @@
     <string name="search_lib">Search local library</string>
     <string name="search_web">Web search</string>
     <string name="empty">This list is empty</string>
-    <string name="oncrash">Sorry, Blade just crashed. A report was sent to the developer. We hope next update will fix this bug ! :)</string>
+    <string name="oncrash">Sorry, Blade just crashed. A report was sent to the developer. We hope next update will fix
+        this bug ! :)
+    </string>
     <string name="collaborative">Collaborative</string>
     <string name="add_to_playlist">Add to playlist...</string>
     <string name="cancel">Cancel</string>
@@ -65,9 +72,16 @@
     <string name="playlist_add_fail">Could not create playlist</string>
     <string name="playback_error">Error during playback</string>
     <string name="playback_pause_error">Could not pause playback</string>
-    <string name="please_grant_permission_msg">Read/Write external storage permission is required to read song list and edit library</string>
+    <string name="please_grant_permission_msg">Read/Write external storage permission is required to read song list and
+        edit library
+    </string>
     <string name="please_grant_permission_title">Permission needed</string>
-    <string name="libraries_used">Libraries used : </string>
+    <string name="libraries_used">Libraries used :</string>
     <string name="sync">Synchronization</string>
     <string name="link_to">Link to...</string>
+    <string name="title_activity_tag_editor">Tag Editor</string>
+    <string name="tag_edit">Edit informations</string>
+    <string name="album">Album</string>
+    <string name="artist">Artist</string>
+    <string name="tag_save_failed">Could not save tags</string>
 </resources>

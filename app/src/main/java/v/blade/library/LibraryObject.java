@@ -55,4 +55,6 @@ public abstract class LibraryObject implements Serializable
     public boolean hasArt() {return hasArt;}
 
     public String getType() {return this.getClass().getSimpleName();}
+
+    public void setName(String name) {this.name = name;}
 }

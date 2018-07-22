@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="v.blade.ui.TagEditorActivity"
+        android:orientation="vertical"
+        android:background="@color/colorBackground">
+
+    <include layout="@layout/app_bar_main"
+             android:layout_width="match_parent"
+             android:layout_height="55dp"
+             android:id="@+id/include"/>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="60dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
+                                                           android:theme="@style/Theme.ControlTheme">
+                <EditText android:id="@+id/name_edit"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:layout_margin="5dp"
+                          android:theme="@style/Theme.ControlTheme"
+                          android:hint="@string/name"/>
+            </android.support.design.widget.TextInputLayout>
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
+                                                           android:theme="@style/Theme.ControlTheme">
+            <EditText android:id="@+id/album_edit"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:layout_margin="5dp"
+                      android:theme="@style/Theme.ControlTheme"
+                      android:hint="@string/album"/>
+            </android.support.design.widget.TextInputLayout>
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
+                                                           android:theme="@style/Theme.ControlTheme">
+            <EditText android:id="@+id/artist_edit"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:layout_margin="5dp"
+                      android:theme="@style/Theme.ControlTheme"
+                      android:hint="@string/artist"/>
+            </android.support.design.widget.TextInputLayout>
+        </LinearLayout>
+    </ScrollView>
+
+
+    <Button android:id="@+id/button_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:text="@string/cancel"
+            android:onClick="cancel"/>
+    <Button android:id="@+id/button_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/button_cancel"
+            android:layout_toRightOf="@id/button_cancel"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:text="OK"
+            android:onClick="save"/>
+
+</RelativeLayout>

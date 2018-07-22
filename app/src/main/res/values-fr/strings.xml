@@ -69,4 +69,9 @@
     <string name="libraries_used">Bibliothèques utilisées : </string>
     <string name="sync">Synchronisation</string>
     <string name="link_to">Lier à...</string>
+    <string name="title_activity_tag_editor">Éditeur de Tags</string>
+    <string name="tag_edit">Éditer les informations</string>
+    <string name="album">Album</string>
+    <string name="artist">Artiste</string>
+    <string name="tag_save_failed">Impossible de sauvegarder les tags</string>
 </resources>
