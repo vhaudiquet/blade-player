@@ -20,6 +20,7 @@ package v.blade.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -36,6 +37,7 @@ import v.blade.library.Song;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
+import v.blade.ui.settings.ThemesActivity;
 
 import java.util.ArrayList;
 
@@ -209,6 +211,10 @@ public class PlayActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_play);
         android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -287,6 +293,15 @@ public class PlayActivity extends AppCompatActivity
         });
 
         moreAction.setOnClickListener(moreListener);
+
+        //set theme
+        findViewById(R.id.play_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
+        playlistView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
+        playlistPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songArtistAlbum.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songCurrentPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songDuration.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
     }
 
     @Override

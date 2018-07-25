@@ -89,6 +89,13 @@
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="v.blade.ui.MainActivity"/>
         </activity>
+        <activity android:name=".ui.settings.ThemesActivity"
+                  android:label="@string/themes"
+                  android:parentActivityName=".ui.settings.SettingsActivity"
+                  android:theme="@style/AppTheme.NoActionBar">
+            <meta-data android:name="android.support.PARENT_ACTIVITY"
+                       android:value=".ui.settings.SettingsActivity"/>
+        </activity>
     </application>
 
 </manifest>

@@ -50,6 +50,7 @@ import v.blade.library.*;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
+import v.blade.ui.settings.ThemesActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -384,6 +385,9 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_main);
         android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -396,8 +400,6 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        navigationView.setItemBackgroundResource(R.color.colorBackground);
-        navigationView.setBackgroundColor(ContextCompat.getColor(this, R.color.colorBackground));
 
         mainListView = (ListView) findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);
@@ -442,6 +444,15 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
+        //set theme
+        mainListView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
+        currentPlay.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
+        currentPlayTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        currentPlaySubtitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        navigationView.setItemBackgroundResource(ThemesActivity.currentColorBackground);
+        navigationView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
+        navigationView.getHeaderView(0).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
     }
 
     @Override
@@ -839,7 +850,11 @@ public class MainActivity extends AppCompatActivity
     }
     private void restoreInstanceState(Bundle bundle, LibraryObject currentObject)
     {
-        if(bundle == null) return;
+        if(bundle == null)
+        {
+            if(PlayerConnection.getService() != null) needShowCurrentPlay = true;
+            return;
+        }
 
         int restoreContext = bundle.getInt("currentContext");
         fromPlaylists = bundle.getBoolean("fromPlaylists");
@@ -870,7 +885,7 @@ public class MainActivity extends AppCompatActivity
 
         mainListView.setSelection(bundle.getInt("listSelection"));
 
-        if(bundle.getBoolean("currentPlayShown") && PlayerConnection.getService() != null)
+        if((bundle.getBoolean("currentPlayShown")) && PlayerConnection.getService() != null)
         {
             needShowCurrentPlay = true;
         }
@@ -985,7 +1000,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
-                dialog.getWindow().setBackgroundDrawableResource(R.color.colorBackground);
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
             }
         });
@@ -1195,7 +1210,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
-                dialog.getWindow().setBackgroundDrawableResource(R.color.colorBackground);
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
             }
         });
@@ -1220,7 +1235,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
-                dialog.getWindow().setBackgroundDrawableResource(R.color.colorBackground);
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
                 Spinner listView = dialog.findViewById(R.id.playlist_source);
@@ -1318,7 +1333,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
-                dialog.getWindow().setBackgroundDrawableResource(R.color.colorBackground);
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
                 ListView listView = dialog.findViewById(R.id.search_dialog_results);
                 List<Song> results = LibraryService.getSongs(); results.remove(source);

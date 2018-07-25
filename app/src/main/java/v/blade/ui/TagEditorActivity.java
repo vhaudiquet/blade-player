@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -19,6 +20,7 @@ import v.blade.R;
 import v.blade.library.LibraryService;
 import v.blade.library.Song;
 import v.blade.library.SongSources;
+import v.blade.ui.settings.ThemesActivity;
 
 import java.io.File;
 import java.util.Arrays;
@@ -32,6 +34,10 @@ public class TagEditorActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_tag_editor);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -57,6 +63,9 @@ public class TagEditorActivity extends AppCompatActivity
         artistEdit.setText(currentSong.getArtist().getName());
         yearEdit.setText(currentSong.getYear() == 0 ? "" : "" + currentSong.getYear());
         trackEdit.setText(currentSong.getTrackNumber() == 0 ? "" : "" + currentSong.getTrackNumber());
+
+        //set theme
+        findViewById(R.id.tag_editor_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
     }
 
 

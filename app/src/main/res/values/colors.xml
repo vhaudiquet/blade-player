@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#546e7a</color>
-    <color name="colorPrimaryDark">#29434e</color>
-    <color name="colorPrimaryLight">#819ca9</color>
-    <color name="colorAccent">#ffffff</color>
-    <color name="colorPrimaryLighter">#e0e0e0</color>
-    <color name="colorBackground">#b0bec5</color>
+    <color name="nightlyColorPrimary">#546e7a</color>
+    <color name="nightlyColorPrimaryDark">#29434e</color>
+    <color name="nightlyColorPrimaryLight">#819ca9</color>
+    <color name="nightlyColorAccent">#ffffff</color>
+    <color name="nightlyColorPrimaryLighter">#e0e0e0</color>
+    <color name="nightlyColorBackground">#b0bec5</color>
+
+    <color name="bladeColorPrimary">#616161</color>
+    <color name="bladeColorPrimaryDark">#212121</color>
+    <color name="bladeColorPrimaryLight">#bdbdbd</color>
+    <color name="bladeColorAccent">#ffffff</color>
+    <color name="bladeColorPrimaryLighter">#e0e0e0</color>
+    <color name="bladeColorBackground">#ffffff</color>
 </resources>

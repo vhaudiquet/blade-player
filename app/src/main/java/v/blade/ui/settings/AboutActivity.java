@@ -2,6 +2,7 @@ package v.blade.ui.settings;
 
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
@@ -13,6 +14,9 @@ public class AboutActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
 
         setContentView(R.layout.activity_about);
 
@@ -28,5 +32,8 @@ public class AboutActivity extends AppCompatActivity
         catch(Exception e){}
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        //set theme
+        findViewById(R.id.about_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
     }
 }

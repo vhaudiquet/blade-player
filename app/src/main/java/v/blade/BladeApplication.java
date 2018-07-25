@@ -16,6 +16,8 @@ public class BladeApplication extends Application
     protected void attachBaseContext(Context base)
     {
         super.attachBaseContext(base);
+
+        //initialize ACRA
         CoreConfigurationBuilder builder = new CoreConfigurationBuilder(this);
         builder.setBuildConfigClass(BuildConfig.class)
                 .setReportFormat(StringFormat.JSON);

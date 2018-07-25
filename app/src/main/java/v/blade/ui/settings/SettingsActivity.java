@@ -42,6 +42,9 @@ public class SettingsActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
+        //set theme
+        setTheme(ThemesActivity.currentAppThemeWithActionBar);
+
         getSupportFragmentManager().beginTransaction().replace(android.R.id.content, new SettingsFragment()).commit();
     }
 

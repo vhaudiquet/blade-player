@@ -7,7 +7,7 @@
         android:layout_height="match_parent"
         tools:context="v.blade.ui.TagEditorActivity"
         android:orientation="vertical"
-        android:background="@color/colorBackground">
+        android:id="@+id/tag_editor_layout">
 
     <include layout="@layout/app_bar_main"
              android:layout_width="match_parent"
