@@ -96,6 +96,11 @@ public class SettingsActivity extends AppCompatActivity
                 Intent intent = new Intent(getActivity(), SourcesActivity.class);
                 startActivity(intent);
             }
+            else if(preference.getKey().equals("themes"))
+            {
+                Intent intent = new Intent(getActivity(), ThemesActivity.class);
+                startActivity(intent);
+            }
             else if(preference.getKey().equals("sd_perm"))
             {
                 if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)

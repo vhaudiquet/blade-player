@@ -79,4 +79,7 @@
     <string name="select_sd_card">Sélectionner le dossier auquel Blade pourra accéder (la racine de la carte SD ou votre dossier de musiques)</string>
     <string name="sd_perm_unneeded">La permission d\'accéder à la carte SD est uniquement nécessaire sur Android KitKat (19) ou plus.</string>
     <string name="perm_granted">Permission obtenue</string>
+    <string name="themes">Thèmes</string>
+    <string name="track">Numéro</string>
+    <string name="year">Année</string>
 </resources>

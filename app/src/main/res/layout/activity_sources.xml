@@ -14,6 +14,7 @@
                                               android:layout_height="match_parent"
                                               android:layout_marginTop="55dp"
                                               android:id="@+id/sources_listview"
-                                              android:theme="@style/Theme.ControlTheme"/>
+                                              android:theme="@style/Theme.ControlTheme"
+                                              android:background="@color/colorBackground"/>
 
 </android.support.design.widget.CoordinatorLayout>

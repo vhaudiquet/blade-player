@@ -104,9 +104,9 @@ public class LibraryService
                         String[] tp = raf.readUTF().split(CACHE_SEPARATOR);
                         Song song = bestSource == Source.SOURCE_DEEZER ?
                                 getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                        new SongSources.SongSource(Long.parseLong(tp[6]), bestSource), Integer.parseInt(tp[4])) :
+                                        new SongSources.SongSource(Long.parseLong(tp[6]), bestSource), Integer.parseInt(tp[4]), 0) :
                                 getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                        new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]));
+                                        new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]), 0);
                         song.setFormat(tp[3]);
                     }
                     raf.close();
@@ -169,7 +169,7 @@ public class LibraryService
     /*
      * Registers a song in user library
      */
-    public static Song registerSong(String artist, String album, int albumTrack, long duration, String name,
+    public static Song registerSong(String artist, String album, int albumTrack, int year, long duration, String name,
                              SongSources.SongSource source)
     {
         //REGISTER : this song is in the library of this source
@@ -243,7 +243,7 @@ public class LibraryService
         }
         songAlbum.getSources().addSource(source);
 
-        Song song = new Song(name, songArtist, songAlbum, albumTrack, duration);
+        Song song = new Song(name, songArtist, songAlbum, albumTrack, duration, year);
         song.getSources().addSource(source);
         songAlbum.addSong(song);
         songs.add(song);
@@ -513,12 +513,12 @@ public class LibraryService
             {
                 String[] line = reader.readLine().split(CACHE_SEPARATOR);
                 System.out.println(Arrays.toString(line));
-                Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0);
+                Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0, 0);
                 if(song == null) continue;
                 int size = Integer.parseInt(line[3]);
                 for(int i = 0;i<size;i++)
                 {
-                    Song toLink = getSongHandle(line[6+i], line[5+i], line[4+i], 0, null, 0);
+                    Song toLink = getSongHandle(line[6+i], line[5+i], line[4+i], 0, null, 0, 0);
                     if(toLink == null) continue;
                     linkSong(toLink, song, false);
                 }
@@ -668,7 +668,7 @@ public class LibraryService
         return trfinal;
     }
 
-    static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track)
+    static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track, int year)
     {
         //if song is already registered, return song from library
         ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems
@@ -726,7 +726,7 @@ public class LibraryService
         if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true); albumHandles.add(songAlbum);}
         songAlbum.getSources().addSource(source);
 
-        Song s = new Song(name, songArtist, songAlbum, track, duration);
+        Song s = new Song(name, songArtist, songAlbum, track, duration, year);
         s.getSources().addSource(source);
         s.setHandled(true);
         handles.add(s);

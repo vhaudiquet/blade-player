@@ -23,7 +23,7 @@ public class AboutActivity extends AppCompatActivity
         try
         {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(getPackageName(), 0);
-            version.setText("Version " + packageInfo.versionName);
+            version.setText("Version " + packageInfo.versionName + " Nightly " + packageInfo.versionCode);
         }
         catch(Exception e){}
 
