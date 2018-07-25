@@ -31,6 +31,17 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
+    <style name="Green.AppTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/greenColorPrimary</item>
+        <item name="colorPrimaryDark">@color/greenColorPrimaryDark</item>
+        <item name="colorAccent">@color/greenColorAccent</item>
+        <item name="preferenceTheme">@style/Green.Preferences</item>
+        <item name="android:itemBackground">@color/greenColorBackground</item>
+    </style>
+    <style name="Green.AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 
     <!-- Controls (buttons, listviews, ...) theme -->
     <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -54,6 +65,12 @@
         <item name="colorControlActivated">@color/bladeColorPrimary</item>
         <item name="android:windowBackground">@color/bladeColorBackground</item>
         <item name="android:background">@color/bladeColorBackground</item>
+    </style>
+    <style name="Green.Preferences" parent="Theme.Preferences">
+        <item name="colorControlNormal">@color/greenColorPrimary</item>
+        <item name="colorControlActivated">@color/greenColorPrimary</item>
+        <item name="android:windowBackground">@color/greenColorBackground</item>
+        <item name="android:background">@color/greenColorBackground</item>
     </style>
 
 </resources>

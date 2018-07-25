@@ -1,6 +1,8 @@
 package v.blade.ui.settings;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -49,7 +51,7 @@ public class ThemesActivity extends AppCompatActivity
                 ImageView more;
             }
             @Override
-            public int getCount() {return 2;}
+            public int getCount() {return 3;}
             @Override
             public Object getItem(int position) {return null;}
             @Override
@@ -85,7 +87,7 @@ public class ThemesActivity extends AppCompatActivity
                         mViewHolder.img.setImageResource(0);
                         mViewHolder.img.setBackgroundColor(ContextCompat.getColor(ThemesActivity.this, R.color.nightlyColorPrimary));
                         mViewHolder.title.setText("Nightly");
-                        mViewHolder.desc.setText("The default theme of Blade Nightly");
+                        mViewHolder.desc.setText(R.string.theme_nightly_desc);
                         break;
                     }
                     case 1:
@@ -94,7 +96,16 @@ public class ThemesActivity extends AppCompatActivity
                         mViewHolder.img.setImageResource(0);
                         mViewHolder.img.setBackgroundColor(ContextCompat.getColor(ThemesActivity.this, R.color.bladeColorPrimary));
                         mViewHolder.title.setText("Blade");
-                        mViewHolder.desc.setText("The default theme of Blade releases");
+                        mViewHolder.desc.setText(getText(R.string.theme_blade_desc));
+                        break;
+                    }
+                    case 2:
+                    {
+                        //green theme
+                        mViewHolder.img.setImageResource(0);
+                        mViewHolder.img.setBackgroundColor(ContextCompat.getColor(ThemesActivity.this, R.color.greenColorPrimary));
+                        mViewHolder.title.setText("Green");
+                        mViewHolder.desc.setText(getText(R.string.theme_green_desc));
                         break;
                     }
                 }
@@ -113,35 +124,41 @@ public class ThemesActivity extends AppCompatActivity
                 {
                     case 0:
                     {
-                        if(currentColorPrimary == R.color.nightlyColorPrimary) return;
-
                         //nightly theme
-                        currentColorPrimary = R.color.nightlyColorPrimary;
-                        currentColorPrimaryDark = R.color.nightlyColorPrimaryDark;
-                        currentColorPrimaryLight = R.color.nightlyColorPrimaryLight;
-                        currentColorAccent = R.color.nightlyColorAccent;
-                        currentColorPrimaryLighter = R.color.nightlyColorPrimaryLighter;
-                        currentColorBackground = R.color.nightlyColorBackground;
-                        currentAppTheme = R.style.Nightly_AppTheme_NoActionBar;
-                        currentAppThemeWithActionBar = R.style.Nightly_AppTheme;
-                        currentControlTheme = R.style.Theme_ControlTheme;
+                        if(currentColorPrimary == R.color.nightlyColorPrimary) return;
+                        setThemeToNightly();
+
+                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("theme", "nightly");
+                        editor.apply();
 
                         break;
                     }
                     case 1:
                     {
-                        if(currentColorPrimary == R.color.bladeColorPrimary) return;
-
                         //blade theme
-                        currentColorPrimary = R.color.bladeColorPrimary;
-                        currentColorPrimaryDark = R.color.bladeColorPrimaryDark;
-                        currentColorPrimaryLight = R.color.bladeColorPrimaryLight;
-                        currentColorAccent = R.color.bladeColorAccent;
-                        currentColorPrimaryLighter = R.color.bladeColorPrimaryLighter;
-                        currentColorBackground = R.color.bladeColorBackground;
-                        currentAppTheme = R.style.Blade_AppTheme_NoActionBar;
-                        currentAppThemeWithActionBar = R.style.Blade_AppTheme;
-                        currentControlTheme = R.style.Theme_ControlTheme;
+                        if(currentColorPrimary == R.color.bladeColorPrimary) return;
+                        setThemeToBlade();
+
+                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("theme", "blade");
+                        editor.apply();
+
+                        break;
+                    }
+                    case 2:
+                    {
+                        //blade green
+                        if(currentColorPrimary == R.color.greenColorPrimary) return;
+                        setThemeToGreen();
+
+                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("theme", "green");
+                        editor.apply();
+
                         break;
                     }
                 }
@@ -153,5 +170,42 @@ public class ThemesActivity extends AppCompatActivity
 
         //set theme
         findViewById(R.id.themes_layout).setBackgroundColor(ContextCompat.getColor(this, currentColorBackground));
+    }
+
+    public static void setThemeToNightly()
+    {
+        currentColorPrimary = R.color.nightlyColorPrimary;
+        currentColorPrimaryDark = R.color.nightlyColorPrimaryDark;
+        currentColorPrimaryLight = R.color.nightlyColorPrimaryLight;
+        currentColorAccent = R.color.nightlyColorAccent;
+        currentColorPrimaryLighter = R.color.nightlyColorPrimaryLighter;
+        currentColorBackground = R.color.nightlyColorBackground;
+        currentAppTheme = R.style.Nightly_AppTheme_NoActionBar;
+        currentAppThemeWithActionBar = R.style.Nightly_AppTheme;
+        currentControlTheme = R.style.Theme_ControlTheme;
+    }
+    public static void setThemeToBlade()
+    {
+        currentColorPrimary = R.color.bladeColorPrimary;
+        currentColorPrimaryDark = R.color.bladeColorPrimaryDark;
+        currentColorPrimaryLight = R.color.bladeColorPrimaryLight;
+        currentColorAccent = R.color.bladeColorAccent;
+        currentColorPrimaryLighter = R.color.bladeColorPrimaryLighter;
+        currentColorBackground = R.color.bladeColorBackground;
+        currentAppTheme = R.style.Blade_AppTheme_NoActionBar;
+        currentAppThemeWithActionBar = R.style.Blade_AppTheme;
+        currentControlTheme = R.style.Theme_ControlTheme;
+    }
+    public static void setThemeToGreen()
+    {
+        currentColorPrimary = R.color.greenColorPrimary;
+        currentColorPrimaryDark = R.color.greenColorPrimaryDark;
+        currentColorPrimaryLight = R.color.greenColorPrimaryLight;
+        currentColorAccent = R.color.greenColorAccent;
+        currentColorPrimaryLighter = R.color.greenColorPrimaryLighter;
+        currentColorBackground = R.color.greenColorBackground;
+        currentAppTheme = R.style.Green_AppTheme_NoActionBar;
+        currentAppThemeWithActionBar = R.style.Green_AppTheme;
+        currentControlTheme = R.style.Theme_ControlTheme;
     }
 }

@@ -780,6 +780,8 @@ public class MainActivity extends AppCompatActivity
     /* currently playing */
     private void showCurrentPlay(Song song, boolean play)
     {
+        if(song == null) return;
+
         if(!currentPlayShown)
         {
             //show

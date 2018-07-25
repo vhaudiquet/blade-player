@@ -82,4 +82,7 @@
     <string name="themes">Thèmes</string>
     <string name="track">Numéro</string>
     <string name="year">Année</string>
+    <string name="theme_nightly_desc">Le thème par défaut de Blade Nightly</string>
+    <string name="theme_blade_desc">Le thème par défaut de Blade Release</string>
+    <string name="theme_green_desc">Un thème simple et vert</string>
 </resources>

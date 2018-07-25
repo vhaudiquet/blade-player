@@ -3,6 +3,9 @@ package v.blade.library;
 import android.app.Application;
 import android.content.*;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Looper;
@@ -91,6 +94,7 @@ public abstract class Source
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "Local")
     {
         private LongSparseArray<Album> idsorted_albums = null;
+        private ArrayList<Playlist> local_playlists = null;
 
         private SourcePlayer player = new SourcePlayer()
         {
@@ -282,6 +286,7 @@ public abstract class Source
             }
 
             /* we also need to get playlists on device */
+            local_playlists = new ArrayList<>();
             android.database.Cursor playlistCursor = musicResolver.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null, null, null, null);
             if(playlistCursor!=null && playlistCursor.moveToFirst())
             {
@@ -315,10 +320,8 @@ public abstract class Source
                     list.getSources().addSource(new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
                     list.setPath(thisPath);
                     LibraryService.getPlaylists().add(list);
+                    local_playlists.add(list);
                     if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
-
-                    //TODO : generate image for the playlist
-
 
                 } while(playlistCursor.moveToNext());
                 playlistCursor.close();
@@ -355,6 +358,42 @@ public abstract class Source
             }
 
             thisArray = null;
+
+            //generate image for the playlist, after we are sure that all albumarts image are loaded
+            if(local_playlists == null) return;
+            for(Playlist list : local_playlists)
+            {
+                Bitmap[] bitmaps = new Bitmap[4];
+                int imagenumber = 0;
+                for(Song s : list.getContent())
+                    if(s.getAlbum().hasArt())
+                    {
+                        bitmaps[imagenumber] = s.getAlbum().getArtMiniature();
+                        imagenumber++;
+                        if(imagenumber == 4) break;
+                    }
+
+                if(imagenumber == 4)
+                {
+                    //generate 1 image from the 4
+                    Bitmap finalBitmap = Bitmap.createBitmap(80, 80, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(finalBitmap);
+                    canvas.drawBitmap(bitmaps[0], new Rect(0, 0, bitmaps[0].getWidth(), bitmaps[0].getHeight()),
+                            new Rect(0, 0, 40, 40), null);
+                    canvas.drawBitmap(bitmaps[1], new Rect(0, 0, bitmaps[1].getWidth(), bitmaps[1].getHeight()),
+                            new Rect(40, 0, 80, 40), null);
+                    canvas.drawBitmap(bitmaps[2], new Rect(0, 0, bitmaps[2].getWidth(), bitmaps[2].getHeight()),
+                            new Rect(0, 40, 40, 80), null);
+                    canvas.drawBitmap(bitmaps[3], new Rect(0, 0, bitmaps[3].getWidth(), bitmaps[3].getHeight()),
+                            new Rect(40, 40, 80, 80), null);
+
+                    list.setArt("", finalBitmap);
+                }
+                else if(imagenumber == 1)
+                {
+                    list.setArt("", bitmaps[0]);
+                }
+            }
         }
 
         @Override

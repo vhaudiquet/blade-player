@@ -93,4 +93,7 @@
     <string name="themes">Themes</string>
     <string name="track">Track number</string>
     <string name="year">Year</string>
+    <string name="theme_nightly_desc">The default theme of Blade Nightly</string>
+    <string name="theme_blade_desc">The default theme of Blade release</string>
+    <string name="theme_green_desc">A clean green theme</string>
 </resources>
