@@ -366,7 +366,7 @@ public abstract class Source
                 Bitmap[] bitmaps = new Bitmap[4];
                 int imagenumber = 0;
                 for(Song s : list.getContent())
-                    if(s.getAlbum().hasArt())
+                    if(s.getAlbum().hasArt() && s.getAlbum().getArtMiniature() != bitmaps[0] && s.getAlbum().getArtMiniature() != bitmaps[1] && s.getAlbum().getArtMiniature() != bitmaps[2])
                     {
                         bitmaps[imagenumber] = s.getAlbum().getArtMiniature();
                         imagenumber++;

@@ -17,17 +17,16 @@ import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagOptionSingleton;
 import v.blade.R;
-import v.blade.library.LibraryService;
-import v.blade.library.Song;
-import v.blade.library.SongSources;
+import v.blade.library.*;
 import v.blade.ui.settings.ThemesActivity;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class TagEditorActivity extends AppCompatActivity
 {
-    private Song currentSong;
+    private LibraryObject currentObject;
     EditText nameEdit, albumEdit, artistEdit, yearEdit, trackEdit;
 
     @Override
@@ -50,19 +49,35 @@ public class TagEditorActivity extends AppCompatActivity
         yearEdit = findViewById(R.id.year_edit);
         trackEdit = findViewById(R.id.track_edit);
 
-        //get current song and fill details
-        if(!(MainActivity.selectedObject instanceof Song)) onBackPressed();
+        //get current object and fill details
+        currentObject = MainActivity.selectedObject;
 
-        currentSong = (Song) MainActivity.selectedObject;
+        //check if object is local
+        if(currentObject.getSources().getLocal() == null) onBackPressed();
 
-        //check if song has a registered path
-        if(currentSong.getPath() == null) onBackPressed();
-
-        nameEdit.setText(currentSong.getTitle());
-        albumEdit.setText(currentSong.getAlbum().getName());
-        artistEdit.setText(currentSong.getArtist().getName());
-        yearEdit.setText(currentSong.getYear() == 0 ? "" : "" + currentSong.getYear());
-        trackEdit.setText(currentSong.getTrackNumber() == 0 ? "" : "" + currentSong.getTrackNumber());
+        if(currentObject instanceof Song)
+        {
+            nameEdit.setText(currentObject.getName());
+            albumEdit.setText(((Song) currentObject).getAlbum().getName());
+            artistEdit.setText(((Song) currentObject).getArtist().getName());
+            trackEdit.setText(((Song) currentObject).getTrackNumber() == 0 ? "" : "" + ((Song) currentObject).getTrackNumber());
+            yearEdit.setText(((Song) currentObject).getYear() == 0 ? "" : "" + ((Song) currentObject).getYear());
+        }
+        else if(currentObject instanceof Album)
+        {
+            nameEdit.setEnabled(false);
+            albumEdit.setText(currentObject.getName());
+            artistEdit.setText(((Album) currentObject).getArtist().getName());
+            trackEdit.setEnabled(false);
+        }
+        else if(currentObject instanceof Artist)
+        {
+            nameEdit.setEnabled(false);
+            albumEdit.setEnabled(false);
+            artistEdit.setText(currentObject.getName());
+            trackEdit.setEnabled(false);
+            yearEdit.setEnabled(false);
+        }
 
         //set theme
         findViewById(R.id.tag_editor_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
@@ -86,26 +101,52 @@ public class TagEditorActivity extends AppCompatActivity
         {
             //write tags
             //TODO : build tag edition in a manner that is compatible with android SD Card storage managment
+
+            ArrayList<Song> songs = new ArrayList<>();
+            if(currentObject instanceof Song)
+            {
+                songs.add((Song) currentObject);
+            }
+            else if(currentObject instanceof Album)
+            {
+                songs.addAll(((Album) currentObject).getSongs());
+            }
+            else if(currentObject instanceof Artist)
+            {
+                for(Album alb : ((Artist) currentObject).getAlbums())
+                    songs.addAll(alb.getSongs());
+            }
+
             TagOptionSingleton.getInstance().setAndroid(true);
-            File basicFile = new File(currentSong.getPath());
-            AudioFile currentFile = AudioFileIO.read(basicFile);
 
-            Tag currentTag = currentFile.getTag();
-            currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
-            currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
-            currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
-            currentFile.commit();
+            for(Song currentSong : songs)
+            {
+                File basicFile = new File(currentSong.getPath());
+                AudioFile currentFile = AudioFileIO.read(basicFile);
 
-            //actualize contentprovider
-            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(currentFile.getFile())));
+                Tag currentTag = currentFile.getTag();
+                if(nameEdit.isEnabled()) currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
+                if(albumEdit.isEnabled()) currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
+                if(artistEdit.isEnabled()) currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
+                if(yearEdit.isEnabled()) currentTag.setField(FieldKey.YEAR, yearEdit.getText().toString());
+                if(trackEdit.isEnabled()) currentTag.setField(FieldKey.TRACK, trackEdit.getText().toString());
+                currentFile.commit();
 
-            //actualize song in library
-            SongSources.SongSource localOld = currentSong.getSources().getLocal();
-            Object oldId = localOld.getId();
-            LibraryService.unregisterSong(currentSong, localOld);
-            LibraryService.registerSong(artistEdit.getText().toString(), albumEdit.getText().toString(),
-                    Integer.parseInt(trackEdit.getText().toString()), Integer.parseInt(yearEdit.getText().toString()), currentSong.getDuration(), nameEdit.getText().toString(),
-                    localOld);
+                //actualize contentprovider
+                sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(currentFile.getFile())));
+
+                //actualize song in library
+                SongSources.SongSource localOld = currentSong.getSources().getLocal();
+                LibraryService.unregisterSong(currentSong, localOld);
+                LibraryService.registerSong(artistEdit.isEnabled() ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
+                        albumEdit.isEnabled() ? albumEdit.getText().toString() : currentSong.getAlbum().getName(),
+                        trackEdit.isEnabled() ? Integer.parseInt(trackEdit.getText().toString()) : currentSong.getTrackNumber(),
+                        yearEdit.isEnabled() ? Integer.parseInt(yearEdit.getText().toString()) : currentSong.getYear(),
+                        currentSong.getDuration(),
+                        nameEdit.isEnabled() ? nameEdit.getText().toString() : currentSong.getName(),
+                        localOld);
+            }
+
             MainActivity.selectedObject = null;
 
             Intent intent = new Intent(TagEditorActivity.this, MainActivity.class);
