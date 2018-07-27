@@ -4,9 +4,7 @@
 
 Blade is a free and open source simple music player built for Android devices. Blade is developed to allow songs to be played from local user libraries and other third-party sources which includes Spotify and Deezer.
 
-<img src="Images/screen0.png" width="275"/>
-<img src="Images/screen1.png" width="275"/>
-<img src="Images/screen2.png" width="275"/>
+<img src="Images/screen0.png" width="275"/> <img src="Images/screen1.png" width="275"/> <img src="Images/screen2.png" width="275"/>
 
 ## Blade-Player features
 
@@ -34,7 +32,8 @@ Used to quickly search  for songs, artists or albums in the library. 2 search mo
 
 ## Releases
 
-[Latest realease V1.2](https://github.com/Valou3433/blade-player/releases/download/v1.2/blade-1.2.apk)
+[Latest Release (v 1.2)](https://github.com/Valou3433/blade-player/releases/download/v1.2/blade-1.2.apk)
+
 [Mirror](http://valou3433.fr/blade/blade-1.2.apk)
 
 - added ability to edit local songs metadata
