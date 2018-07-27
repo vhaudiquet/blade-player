@@ -69,4 +69,20 @@
     <string name="libraries_used">Libraries used : </string>
     <string name="sync">Synchronization</string>
     <string name="link_to">Link to...</string>
+    <string name="title_activity_tag_editor">Tag Editor</string>
+    <string name="tag_edit">Edit informations</string>
+    <string name="album">Album</string>
+    <string name="artist">Artist</string>
+    <string name="tag_save_failed">Could not save tags</string>
+    <string name="give_perm_ext">Please give permission to access SD Card (in settings)</string>
+    <string name="sd_perm">SD Card Permission</string>
+    <string name="select_sd_card">Select folder that Blade will be able to access (SD Card root or your music folder)</string>
+    <string name="sd_perm_unneeded">This permission is only needed on Android KitKat (19) or more.</string>
+    <string name="perm_granted">Permission granted</string>
+    <string name="themes">Themes</string>
+    <string name="track">Track number</string>
+    <string name="year">Year</string>
+    <string name="theme_nightly_desc">The default theme of Blade Nightly</string>
+    <string name="theme_blade_desc">The default theme of Blade release</string>
+    <string name="theme_green_desc">A clean green theme</string>
 </resources>

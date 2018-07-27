@@ -5,8 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Looper;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -167,8 +167,12 @@ public class SourcesActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_sources);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -182,6 +186,9 @@ public class SourcesActivity extends AppCompatActivity
         sourcesListView.setOnTouchListener(controller);
         sourcesListView.setDropListener(dropListener);
         sourcesListView.setOnItemClickListener(onItemClickListener);
+
+        //set theme
+        sourcesListView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
     }
 
     @Override

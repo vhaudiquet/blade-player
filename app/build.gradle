@@ -7,8 +7,8 @@ android {
         applicationId "v.blade"
         minSdkVersion 16
         targetSdkVersion 27
-        versionCode 10
-        versionName "1.1.1"
+        versionCode 11
+        versionName "1.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
@@ -29,6 +29,9 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+    //tags library
+    implementation 'net.jthink:jaudiotagger:2.2.3'
 
     //spotify
     implementation 'com.spotify.android:auth:1.0.0-alpha' //auth

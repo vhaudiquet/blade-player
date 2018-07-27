@@ -5,7 +5,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        tools:context="v.blade.ui.settings.SettingsActivity">
+        tools:context="v.blade.ui.settings.SettingsActivity"
+        android:id="@+id/about_layout">
 
     <include layout="@layout/app_bar_main"
             android:layout_width="match_parent"
@@ -77,6 +78,10 @@
               android:layout_height="wrap_content"
               android:textSize="15sp"
               android:text="ACRA, license Apache v2.0, Copyright 2017 the ACRA team, github.com/ACRA/acra"/>
+    <TextView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textSize="15sp"
+              android:text="JAudiotagger, license LGPL, Copyright (C) 2015 Paul Taylor,bitbucket.org/ijabz/jaudiotagger"/>
 
     </LinearLayout>
     </ScrollView>

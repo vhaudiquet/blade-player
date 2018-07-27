@@ -20,7 +20,10 @@ package v.blade.ui.settings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
@@ -32,13 +35,45 @@ public class SettingsActivity extends AppCompatActivity
 {
     public static final String PREFERENCES_ACCOUNT_FILE_NAME = "accounts";
     public static final String PREFERENCES_GENERAL_FILE_NAME = "general";
+    private static final int REQUEST_CODE_STORAGE_ACCESS = 1337;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
 
+        //set theme
+        setTheme(ThemesActivity.currentAppThemeWithActionBar);
+
         getSupportFragmentManager().beginTransaction().replace(android.R.id.content, new SettingsFragment()).commit();
+    }
+
+    @Override
+    public final void onActivityResult(final int requestCode, final int resultCode, final Intent resultData)
+    {
+        if (resultCode == AppCompatActivity.RESULT_OK && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
+        {
+            //if (requestCode == REQUEST_CODE_STORAGE_ACCESS)
+            //{
+                // Get Uri from Storage Access Framework.
+                Uri treeUri = resultData.getData();
+
+                // Persist URI in shared preference so that you can use it later.
+                SharedPreferences sharedPreferences = getSharedPreferences(PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putString("sdcard_uri", treeUri.toString());
+                editor.apply();
+
+                LibraryService.TREE_URI = treeUri;
+
+                // Persist access permissions, so you dont have to ask again
+                final int takeFlags = resultData.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                grantUriPermission(getPackageName(), treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                getContentResolver().takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+                Toast.makeText(this, getString(R.string.perm_granted) + " : " + treeUri, Toast.LENGTH_LONG).show();
+            //}
+        }
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat
@@ -63,6 +98,26 @@ public class SettingsActivity extends AppCompatActivity
             {
                 Intent intent = new Intent(getActivity(), SourcesActivity.class);
                 startActivity(intent);
+            }
+            else if(preference.getKey().equals("themes"))
+            {
+                Intent intent = new Intent(getActivity(), ThemesActivity.class);
+                startActivity(intent);
+            }
+            else if(preference.getKey().equals("sd_perm"))
+            {
+                if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
+                {
+                    Toast.makeText(getActivity(), R.string.sd_perm_unneeded, Toast.LENGTH_LONG).show();
+                    return super.onPreferenceTreeClick(preference);
+                }
+
+                //request user to select entire SD card
+                //TODO : display image
+                Toast.makeText(getActivity(), R.string.select_sd_card, Toast.LENGTH_LONG).show();
+
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                startActivityForResult(intent, REQUEST_CODE_STORAGE_ACCESS);
             }
             else if(preference.getKey().equals("save_playlists_to_library"))
             {

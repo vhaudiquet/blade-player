@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import v.blade.R;
 import v.blade.library.*;
+import v.blade.ui.settings.ThemesActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,8 +170,8 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             if(repaintSongBackground)
                 if(position != selectedPosition)
-                    convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorAccent));
-                else convertView.setBackground(ContextCompat.getDrawable(context, R.color.colorPrimaryLight));
+                    convertView.setBackground(ContextCompat.getDrawable(context, ThemesActivity.currentColorBackground));
+                else convertView.setBackground(ContextCompat.getDrawable(context, ThemesActivity.currentColorPrimaryLight));
         }
         else if(obj instanceof Album)
         {

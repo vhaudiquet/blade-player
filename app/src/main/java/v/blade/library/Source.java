@@ -3,6 +3,9 @@ package v.blade.library;
 import android.app.Application;
 import android.content.*;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Looper;
@@ -21,7 +24,6 @@ import com.deezer.sdk.player.event.OnPlayerStateChangeListener;
 import com.deezer.sdk.player.event.PlayerState;
 import com.deezer.sdk.player.networkcheck.WifiAndMobileNetworkStateChecker;
 import com.spotify.sdk.android.player.*;
-import com.spotify.sdk.android.player.Error;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
 import kaaes.spotify.webapi.android.SpotifyService;
@@ -33,6 +35,7 @@ import v.blade.ui.settings.SettingsActivity;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.lang.Error;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,6 +94,7 @@ public abstract class Source
     public static Source SOURCE_LOCAL_LIB = new Source(R.drawable.ic_local, 0, "Local")
     {
         private LongSparseArray<Album> idsorted_albums = null;
+        private ArrayList<Playlist> local_playlists = null;
 
         private SourcePlayer player = new SourcePlayer()
         {
@@ -240,9 +244,10 @@ public abstract class Source
                 int albumColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM);
                 int albumIdColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID);
                 int albumTrackColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.TRACK);
+                int yearColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.YEAR);
                 int songDurationColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
                 int formatColumn = musicCursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE);
-                int fileColumn = musicCursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME);
+                int fileColumn = musicCursor.getColumnIndex(MediaStore.Audio.Media.DATA);
 
                 //add songs to list
                 do
@@ -255,7 +260,8 @@ public abstract class Source
                     String thisArtist = musicCursor.getString(artistColumn);
                     String thisAlbum = musicCursor.getString(albumColumn);
                     long thisDuration = musicCursor.getLong(songDurationColumn);
-                    String thisPath = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI + "/" + musicCursor.getString(fileColumn);
+                    int year = musicCursor.getInt(yearColumn);
+                    String thisPath = musicCursor.getString(fileColumn);
 
                     //resolve null artist name
                     if(thisArtist == null || thisArtist.equals("<unknown>"))
@@ -268,7 +274,7 @@ public abstract class Source
                     //set to empty string to avoid crashes (NullPointer), should definitely not happen but who knows
                     if(thisTitle == null) thisTitle = "";
 
-                    Song s = LibraryService.registerSong(thisArtist, thisAlbum, albumTrack, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
+                    Song s = LibraryService.registerSong(thisArtist, thisAlbum, albumTrack, year, thisDuration, thisTitle, new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
                     s.setFormat(musicCursor.getString(formatColumn));
                     s.setPath(thisPath);
                     idsorted_songs.put(thisId, s);
@@ -280,16 +286,21 @@ public abstract class Source
             }
 
             /* we also need to get playlists on device */
+            local_playlists = new ArrayList<>();
             android.database.Cursor playlistCursor = musicResolver.query(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, null, null, null, null);
             if(playlistCursor!=null && playlistCursor.moveToFirst())
             {
                 int idColumn = playlistCursor.getColumnIndex(MediaStore.Audio.Playlists._ID);
                 int nameColumn = playlistCursor.getColumnIndex(MediaStore.Audio.Playlists.NAME);
+                int fileColumn = playlistCursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME);
 
                 do
                 {
                     long thisId = playlistCursor.getLong(idColumn);
                     String thisName = playlistCursor.getString(nameColumn);
+                    String thisPath = "";
+                    if(fileColumn != -1)
+                        thisPath = MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI + "/" + playlistCursor.getString(fileColumn);
 
                     //now we have to resolve the content of this playlist
                     ArrayList<Song> thisList = new ArrayList<>();
@@ -307,8 +318,11 @@ public abstract class Source
 
                     Playlist list = new Playlist(thisName, thisList);
                     list.getSources().addSource(new SongSources.SongSource(thisId, SOURCE_LOCAL_LIB));
+                    list.setPath(thisPath);
                     LibraryService.getPlaylists().add(list);
+                    local_playlists.add(list);
                     if(LibraryService.currentCallback != null) LibraryService.currentCallback.onLibraryChange();
+
                 } while(playlistCursor.moveToNext());
                 playlistCursor.close();
             }
@@ -320,6 +334,7 @@ public abstract class Source
         public void loadCachedArts()
         {
             if(idsorted_albums == null) return;
+            LongSparseArray<Album> thisArray = idsorted_albums.clone(); //avoid sync problems
 
             Cursor albumCursor = LibraryService.appContext.getContentResolver().
                     query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
@@ -333,7 +348,7 @@ public abstract class Source
                     long thisId = albumCursor.getLong(idCol);
                     String path = albumCursor.getString(artCol);
 
-                    Album a = idsorted_albums.get(thisId);
+                    Album a = thisArray.get(thisId);
                     if(a != null)
                     {
                         LibraryService.loadArt(a, path, true);
@@ -342,7 +357,43 @@ public abstract class Source
                 albumCursor.close();
             }
 
-            idsorted_albums = null;
+            thisArray = null;
+
+            //generate image for the playlist, after we are sure that all albumarts image are loaded
+            if(local_playlists == null) return;
+            for(Playlist list : local_playlists)
+            {
+                Bitmap[] bitmaps = new Bitmap[4];
+                int imagenumber = 0;
+                for(Song s : list.getContent())
+                    if(s.getAlbum().hasArt() && s.getAlbum().getArtMiniature() != bitmaps[0] && s.getAlbum().getArtMiniature() != bitmaps[1] && s.getAlbum().getArtMiniature() != bitmaps[2])
+                    {
+                        bitmaps[imagenumber] = s.getAlbum().getArtMiniature();
+                        imagenumber++;
+                        if(imagenumber == 4) break;
+                    }
+
+                if(imagenumber == 4)
+                {
+                    //generate 1 image from the 4
+                    Bitmap finalBitmap = Bitmap.createBitmap(80, 80, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(finalBitmap);
+                    canvas.drawBitmap(bitmaps[0], new Rect(0, 0, bitmaps[0].getWidth(), bitmaps[0].getHeight()),
+                            new Rect(0, 0, 40, 40), null);
+                    canvas.drawBitmap(bitmaps[1], new Rect(0, 0, bitmaps[1].getWidth(), bitmaps[1].getHeight()),
+                            new Rect(40, 0, 80, 40), null);
+                    canvas.drawBitmap(bitmaps[2], new Rect(0, 0, bitmaps[2].getWidth(), bitmaps[2].getHeight()),
+                            new Rect(0, 40, 40, 80), null);
+                    canvas.drawBitmap(bitmaps[3], new Rect(0, 0, bitmaps[3].getWidth(), bitmaps[3].getHeight()),
+                            new Rect(40, 40, 80, 80), null);
+
+                    list.setArt("", finalBitmap);
+                }
+                else if(imagenumber == 1)
+                {
+                    list.setArt("", bitmaps[0]);
+                }
+            }
         }
 
         @Override
@@ -430,7 +481,7 @@ public abstract class Source
         {
             if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_LOCAL_LIB) {callback.onFailure(); return;}
 
-            //TODO : delete playlist file
+            if(!list.getPath().equals("")) new File(list.getPath()).delete();
 
             ContentResolver contentResolver = LibraryService.appContext.getContentResolver();
             String where = MediaStore.Audio.Playlists._ID + "=?";
@@ -525,7 +576,7 @@ public abstract class Source
                             @Override
                             public void onLoggedOut() {}
                             @Override
-                            public void onLoginFailed(Error error)
+                            public void onLoginFailed(com.spotify.sdk.android.player.Error error)
                             {
                                 Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.player_login_error) + " Spotify", Toast.LENGTH_SHORT).show();
                             }
@@ -559,7 +610,7 @@ public abstract class Source
                     }
 
                     @Override
-                    public void onPlaybackError(Error error)
+                    public void onPlaybackError(com.spotify.sdk.android.player.Error error)
                     {
                         listener.onPlaybackError(player, error.name());
                     }
@@ -576,7 +627,7 @@ public abstract class Source
                     @Override
                     public void onSuccess() {callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {callback.onFailure(player);}
+                    public void onError(com.spotify.sdk.android.player.Error error) {callback.onFailure(player);}
                 });
             }
 
@@ -590,7 +641,7 @@ public abstract class Source
                     @Override
                     public void onSuccess() {if(callback != null) callback.onSucess(player);}
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
+                    public void onError(com.spotify.sdk.android.player.Error error) {if(callback != null) callback.onFailure(player);}
                 });
             }
 
@@ -612,7 +663,7 @@ public abstract class Source
                     public void onSuccess() {if(callback != null) callback.onSucess(player);}
 
                     @Override
-                    public void onError(Error error) {if(callback != null) callback.onFailure(player);}
+                    public void onError(com.spotify.sdk.android.player.Error error) {if(callback != null) callback.onFailure(player);}
                 }, "spotify:track:" + spot.getId(), 0, 0);
             }
 
@@ -730,7 +781,7 @@ public abstract class Source
                     {
                         String[] tp = spr.readLine().split(CACHE_SEPARATOR);
                         Song song = LibraryService.registerSong(tp[2],  tp[1],
-                                Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
+                                Integer.parseInt(tp[4]), 0, Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
                         song.setFormat(tp[3]);
 
                         if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
@@ -756,10 +807,10 @@ public abstract class Source
                         {
                             String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
-                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]),
+                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]), 0,
                                             Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY))
                                     : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                    new SongSources.SongSource(tp[6], SOURCE_SPOTIFY), Integer.parseInt(tp[4]));
+                                    new SongSources.SongSource(tp[6], SOURCE_SPOTIFY), Integer.parseInt(tp[4]), 0);
                             song.setFormat(tp[3]);
                             thisList.add(song);
 
@@ -832,7 +883,7 @@ public abstract class Source
                     {
                         Track t = track.track;
                         Song s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,
-                                t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
+                                t.track_number, 0, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                         spotifySongs.add(s);
                         if(!s.getAlbum().hasArt())
                         {
@@ -869,7 +920,7 @@ public abstract class Source
                         for(Track t : tracks.items)
                         {
                             Song s = LibraryService.registerSong(t.artists.get(0).name,  alb.name,
-                                    t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
+                                    t.track_number, 0, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                             spotifySongs.add(s);
                             if (savedAlbum == null) savedAlbum = s.getAlbum();
                         }
@@ -916,13 +967,15 @@ public abstract class Source
                             for(PlaylistTrack pt : tracks.items)
                             {
                                 Track t = pt.track;
+                                if(t == null) continue;
+
                                 Song s;
                                 if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
                                     s = LibraryService.registerSong(t.artists.get(0).name,  t.album.name,
-                                            t.track_number, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
+                                            t.track_number, 0, t.duration_ms, t.name, new SongSources.SongSource(t.id, SOURCE_SPOTIFY));
                                 else
                                     s = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY),
-                                            t.track_number);
+                                            t.track_number, 0);
 
                                 //get albumart for this song
                                 if(!s.getAlbum().hasArt())
@@ -1026,7 +1079,7 @@ public abstract class Source
                     //handle returned data
                     for(Track t : tracks.tracks.items)
                     {
-                        Song song = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number);
+                        Song song = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number, 0);
                         tr.add(song);
 
                         if(!song.getAlbum().hasArt())
@@ -1041,7 +1094,7 @@ public abstract class Source
                         Pager<Track> albumTracks = spotifyApi.getService().getAlbumTracks(a.id);
                         for(Track t : tracks.tracks.items)
                         {
-                            Song currentSong = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number);
+                            Song currentSong = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number, 0);
                             if(album == null) album = currentSong.getAlbum();
                         }
 
@@ -1138,6 +1191,11 @@ public abstract class Source
                             addSongsToPlaylist(songs, list, callback);
                         }
                         else callback.onFailure();
+                    }
+                    catch(Exception ex)
+                    {
+                        if(mePrivate == null) checkAndRefreshSpotifyToken();
+                        callback.onFailure();
                     }
                 }
             }.start();
@@ -1407,7 +1465,7 @@ public abstract class Source
                         {
                             //todo : find a better way (registersong is heavy) ; that is just lazyness
                             LibraryService.registerSong(song.getArtist().getName(),  song.getAlbum().getName(),
-                                     song.getTrackNumber(), song.getDuration(), song.getName(), spot);
+                                     song.getTrackNumber(), song.getYear(), song.getDuration(), song.getName(), spot);
                         }
 
                         //add to cache
@@ -1668,7 +1726,7 @@ public abstract class Source
                     {
                         String[] tp = spr.readLine().split(CACHE_SEPARATOR);
                         Song song = LibraryService.registerSong(tp[2],  tp[1],
-                                Integer.parseInt(tp[4]), Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER));
+                                Integer.parseInt(tp[4]), 0, Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER));
                         song.setFormat(tp[3]);
 
                         if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
@@ -1696,9 +1754,9 @@ public abstract class Source
 
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
                                     LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]),
-                                            Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER))
+                                            0, Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER))
                                     : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                    new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER), Integer.parseInt(tp[4]));
+                                    new SongSources.SongSource(Long.parseLong(tp[6]), SOURCE_DEEZER), Integer.parseInt(tp[4]), 0);
                             song.setFormat(tp[3]);
                             thisList.add(song);
 
@@ -1762,7 +1820,7 @@ public abstract class Source
                 for(com.deezer.sdk.model.Track t : tracks)
                 {
                     Song s = LibraryService.registerSong(t.getArtist().getName(),  t.getAlbum().getTitle(),
-                            t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
+                            t.getTrackPosition(), 0, t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                     deezerSongs.add(s);
                     if(!s.getAlbum().hasArt())
                     {
@@ -1778,7 +1836,7 @@ public abstract class Source
                     for(com.deezer.sdk.model.Track t : albTracks)
                     {
                         Song s = LibraryService.registerSong(t.getArtist().getName(),  album.getTitle(),
-                                t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
+                                t.getTrackPosition(), 0, t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                         deezerSongs.add(s);
                         if(alb == null) alb = s.getAlbum();
                     }
@@ -1800,7 +1858,7 @@ public abstract class Source
                         for(com.deezer.sdk.model.Track t : albTracks)
                         {
                             Song s = LibraryService.registerSong(t.getArtist().getName(),  album.getTitle(),
-                                    t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
+                                    t.getTrackPosition(), 0, t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                             deezerSongs.add(s);
                             if(alb == null) alb = s.getAlbum();
                         }
@@ -1842,10 +1900,10 @@ public abstract class Source
                             Song s;
                             if(LibraryService.SAVE_PLAYLISTS_TO_LIBRARY)
                                 s = LibraryService.registerSong(t.getArtist().getName(), t.getAlbum().getTitle(),
-                                        t.getTrackPosition(), t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
+                                        t.getTrackPosition(), 0, t.getDuration()*1000, t.getTitle(), new SongSources.SongSource(t.getId(), SOURCE_DEEZER));
                             else
                                 s = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(),
-                                        t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition());
+                                        t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition(), 0);
 
                             //get albumart for this song
                             if(!s.getAlbum().hasArt())
@@ -1918,7 +1976,7 @@ public abstract class Source
                     //handle returned data
                     for(com.deezer.sdk.model.Track t : tracks)
                     {
-                        Song currentSong = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition());
+                        Song currentSong = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition(), 0);
                         tr.add(currentSong);
 
                         if(!currentSong.getAlbum().hasArt())
@@ -1932,7 +1990,7 @@ public abstract class Source
                         List<com.deezer.sdk.model.Track> albTracks = (List<com.deezer.sdk.model.Track>) JsonUtils.deserializeJson(deezerApi.requestSync(DeezerRequestFactory.requestAlbumTracks(alb.getId())));
                         for(com.deezer.sdk.model.Track t : albTracks)
                         {
-                            Song currentSong = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition());
+                            Song currentSong = LibraryService.getSongHandle(t.getTitle(), t.getAlbum().getTitle(), t.getArtist().getName(), t.getDuration()*1000, new SongSources.SongSource(t.getId(), SOURCE_DEEZER), t.getTrackPosition(), 0);
                             if(album == null) album = currentSong.getAlbum();
                         }
 
@@ -2187,7 +2245,7 @@ public abstract class Source
                         {
                             //todo : find a better way (registersong is heavy) ; that is just lazyness
                             LibraryService.registerSong(song.getArtist().getName(), song.getAlbum().getName(),
-                                    song.getTrackNumber(), song.getDuration(), song.getName(), deezer);
+                                    song.getTrackNumber(), 0, song.getDuration(), song.getName(), deezer);
                         }
 
                         //add to cache

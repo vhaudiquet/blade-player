@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="v.blade.ui.TagEditorActivity"
+        android:orientation="vertical"
+        android:id="@+id/tag_editor_layout">
+
+    <include layout="@layout/app_bar_main"
+             android:layout_width="match_parent"
+             android:layout_height="55dp"
+             android:id="@+id/include"/>
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="5dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
+                                                           android:theme="@style/Theme.ControlTheme">
+                <EditText android:id="@+id/name_edit"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:layout_margin="5dp"
+                          android:theme="@style/Theme.ControlTheme"
+                          android:hint="@string/name"/>
+            </android.support.design.widget.TextInputLayout>
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
+                                                           android:theme="@style/Theme.ControlTheme">
+            <EditText android:id="@+id/album_edit"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:layout_margin="5dp"
+                      android:theme="@style/Theme.ControlTheme"
+                      android:hint="@string/album"/>
+            </android.support.design.widget.TextInputLayout>
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
+                                                           android:theme="@style/Theme.ControlTheme">
+            <EditText android:id="@+id/artist_edit"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:layout_margin="5dp"
+                      android:theme="@style/Theme.ControlTheme"
+                      android:hint="@string/artist"/>
+            </android.support.design.widget.TextInputLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="wrap_content"
+                                                               android:theme="@style/Theme.ControlTheme" android:layout_weight="1.0">
+                <EditText android:id="@+id/year_edit"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:layout_margin="5dp"
+                          android:theme="@style/Theme.ControlTheme"
+                          android:hint="@string/year"/>
+                </android.support.design.widget.TextInputLayout>
+                <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="wrap_content"
+                                                               android:theme="@style/Theme.ControlTheme" android:layout_weight="1.0">
+                <EditText android:id="@+id/track_edit"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:layout_margin="5dp"
+                          android:theme="@style/Theme.ControlTheme"
+                          android:hint="@string/track"/>
+                </android.support.design.widget.TextInputLayout>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/button_cancel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.5"
+                        android:text="@string/cancel"
+                        android:onClick="cancel"/>
+                <Button android:id="@+id/button_ok"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.0"
+                        android:text="OK"
+                        android:onClick="save"/>
+            </LinearLayout>
+        </LinearLayout>
+</ScrollView>
+</LinearLayout>

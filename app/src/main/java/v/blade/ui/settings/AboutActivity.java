@@ -2,6 +2,7 @@ package v.blade.ui.settings;
 
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
@@ -14,6 +15,9 @@ public class AboutActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_about);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -23,10 +27,13 @@ public class AboutActivity extends AppCompatActivity
         try
         {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(getPackageName(), 0);
-            version.setText("Version " + packageInfo.versionName);
+            version.setText("Version " + packageInfo.versionName + " Nightly " + packageInfo.versionCode);
         }
         catch(Exception e){}
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        //set theme
+        findViewById(R.id.about_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
     }
 }

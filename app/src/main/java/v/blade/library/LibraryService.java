@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
 import v.blade.ui.settings.SettingsActivity;
@@ -27,6 +28,7 @@ public class LibraryService
     public static boolean configured = false;
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
+    public static Uri TREE_URI;
 
     /* library */
     private static final List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
@@ -102,9 +104,9 @@ public class LibraryService
                         String[] tp = raf.readUTF().split(CACHE_SEPARATOR);
                         Song song = bestSource == Source.SOURCE_DEEZER ?
                                 getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                        new SongSources.SongSource(Long.parseLong(tp[6]), bestSource), Integer.parseInt(tp[4])) :
+                                        new SongSources.SongSource(Long.parseLong(tp[6]), bestSource), Integer.parseInt(tp[4]), 0) :
                                 getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                        new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]));
+                                        new SongSources.SongSource(tp[6], bestSource), Integer.parseInt(tp[4]), 0);
                         song.setFormat(tp[3]);
                     }
                     raf.close();
@@ -152,6 +154,9 @@ public class LibraryService
         SharedPreferences accountsPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
         SharedPreferences generalPrefs = appContext.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
 
+        String treeUri = generalPrefs.getString("sdcard_uri", null);
+        if(treeUri != null) TREE_URI = Uri.parse(treeUri);
+
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
         REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
 
@@ -164,7 +169,7 @@ public class LibraryService
     /*
      * Registers a song in user library
      */
-    static Song registerSong(String artist, String album, int albumTrack, long duration, String name,
+    public static Song registerSong(String artist, String album, int albumTrack, int year, long duration, String name,
                              SongSources.SongSource source)
     {
         //REGISTER : this song is in the library of this source
@@ -226,7 +231,8 @@ public class LibraryService
         synchronized (songArtist.getAlbums())
         {
             for(int i = 0;i<songArtist.getAlbums().size();i++)
-                if(songArtist.getAlbums().get(i).getName().equalsIgnoreCase(album)) songAlbum = songArtist.getAlbums().get(i);
+                if(songArtist.getAlbums().get(i).getName().equalsIgnoreCase(album))
+                    songAlbum = songArtist.getAlbums().get(i);
         }
 
         if(songAlbum == null)
@@ -237,7 +243,7 @@ public class LibraryService
         }
         songAlbum.getSources().addSource(source);
 
-        Song song = new Song(name, songArtist, songAlbum, albumTrack, duration);
+        Song song = new Song(name, songArtist, songAlbum, albumTrack, duration, year);
         song.getSources().addSource(source);
         songAlbum.addSong(song);
         songs.add(song);
@@ -252,7 +258,7 @@ public class LibraryService
         return song;
     }
 
-    static void unregisterSong(Song song, SongSources.SongSource toUnregister)
+    public static void unregisterSong(Song song, SongSources.SongSource toUnregister)
     {
         //remove songsource
         SongSources sources = song.getSources();
@@ -507,12 +513,12 @@ public class LibraryService
             {
                 String[] line = reader.readLine().split(CACHE_SEPARATOR);
                 System.out.println(Arrays.toString(line));
-                Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0);
+                Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0, 0);
                 if(song == null) continue;
                 int size = Integer.parseInt(line[3]);
                 for(int i = 0;i<size;i++)
                 {
-                    Song toLink = getSongHandle(line[6+i], line[5+i], line[4+i], 0, null, 0);
+                    Song toLink = getSongHandle(line[6+i], line[5+i], line[4+i], 0, null, 0, 0);
                     if(toLink == null) continue;
                     linkSong(toLink, song, false);
                 }
@@ -662,10 +668,10 @@ public class LibraryService
         return trfinal;
     }
 
-    static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track)
+    static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track, int year)
     {
         //if song is already registered, return song from library
-        ArrayList<Song> snames = songsByName.get(name.toLowerCase());
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems
         if(snames != null)
         {
             //check if the song is already registered
@@ -709,12 +715,18 @@ public class LibraryService
 
         Album songAlbum = null;
         synchronized (albums)
-        {for(Album alb : albums) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;}
-        if(songAlbum == null) for(Album alb : albumHandles) if(alb.getName().equalsIgnoreCase(album)) songAlbum = alb;
+        {
+            for(Album alb : albums)
+                if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
+                    songAlbum = alb;
+        }
+        if(songAlbum == null) for(Album alb : albumHandles)
+            if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
+                songAlbum = alb;
         if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true); albumHandles.add(songAlbum);}
         songAlbum.getSources().addSource(source);
 
-        Song s = new Song(name, songArtist, songAlbum, track, duration);
+        Song s = new Song(name, songArtist, songAlbum, track, duration, year);
         s.getSources().addSource(source);
         s.setHandled(true);
         handles.add(s);
@@ -745,8 +757,8 @@ public class LibraryService
         else
         {
             String fileName = obj.getName();
-            if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
             if(obj instanceof Album) fileName += "." + ((Album) obj).getArtist().getName();
+            if(fileName.contains("/")) fileName = fileName.replaceAll("/", "#");
             fileName += "." + obj.getType();
             File toSave = new File(artCacheDir.getAbsolutePath() + "/" + fileName + ".png");
             if(!toSave.exists())

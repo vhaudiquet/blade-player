@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -39,7 +40,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.*;
 import android.view.inputmethod.EditorInfo;
@@ -50,6 +50,7 @@ import v.blade.library.*;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
+import v.blade.ui.settings.ThemesActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,6 +119,8 @@ public class MainActivity extends AppCompatActivity
     private static boolean fromPlaylists;
     private static boolean globalSearch = false;
     private static LibraryObject currentObject = null;
+    //for tag activity to edit song, we need to keep 'more' object here
+    static LibraryObject selectedObject = null;
 
     /* currently playing display */
     private RelativeLayout currentPlay;
@@ -341,6 +344,13 @@ public class MainActivity extends AppCompatActivity
                             showLinkToSearchFor(MainActivity.this, object);
                             break;
                         }
+
+                        case R.id.action_tag_edit:
+                        {
+                            selectedObject = object;
+                            Intent intent = new Intent(MainActivity.this, TagEditorActivity.class);
+                            startActivity(intent);
+                        }
                     }
                     return false;
                 }
@@ -363,6 +373,9 @@ public class MainActivity extends AppCompatActivity
             if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_SEARCH)
                 popupMenu.getMenu().findItem(R.id.action_link_to).setVisible(false);
 
+            if(object.getSources() == null || object.getSources().getLocal() == null)
+                popupMenu.getMenu().findItem(R.id.action_tag_edit).setVisible(false);
+
             popupMenu.show();
         }
     };
@@ -372,8 +385,11 @@ public class MainActivity extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
 
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -428,6 +444,15 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
+        //set theme
+        mainListView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
+        currentPlay.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
+        currentPlayTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        currentPlaySubtitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        navigationView.setItemBackgroundResource(ThemesActivity.currentColorBackground);
+        navigationView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
+        navigationView.getHeaderView(0).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
     }
 
     @Override
@@ -755,6 +780,8 @@ public class MainActivity extends AppCompatActivity
     /* currently playing */
     private void showCurrentPlay(Song song, boolean play)
     {
+        if(song == null) return;
+
         if(!currentPlayShown)
         {
             //show
@@ -825,7 +852,11 @@ public class MainActivity extends AppCompatActivity
     }
     private void restoreInstanceState(Bundle bundle, LibraryObject currentObject)
     {
-        if(bundle == null) return;
+        if(bundle == null)
+        {
+            if(PlayerConnection.getService() != null) needShowCurrentPlay = true;
+            return;
+        }
 
         int restoreContext = bundle.getInt("currentContext");
         fromPlaylists = bundle.getBoolean("fromPlaylists");
@@ -856,7 +887,7 @@ public class MainActivity extends AppCompatActivity
 
         mainListView.setSelection(bundle.getInt("listSelection"));
 
-        if(bundle.getBoolean("currentPlayShown") && PlayerConnection.getService() != null)
+        if((bundle.getBoolean("currentPlayShown")) && PlayerConnection.getService() != null)
         {
             needShowCurrentPlay = true;
         }
@@ -971,6 +1002,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
             }
         });
@@ -1180,6 +1212,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
             }
         });
@@ -1204,6 +1237,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
                 Spinner listView = dialog.findViewById(R.id.playlist_source);
@@ -1301,6 +1335,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onShow(DialogInterface arg0)
             {
+                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
                 dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
                 ListView listView = dialog.findViewById(R.id.search_dialog_results);
                 List<Song> results = LibraryService.getSongs(); results.remove(source);

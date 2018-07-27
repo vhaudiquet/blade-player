@@ -15,4 +15,6 @@
           android:title="@string/manage_libraries"/>
     <item android:id="@+id/action_link_to"
           android:title="@string/link_to"/>
+    <item android:id="@+id/action_tag_edit"
+          android:title="@string/tag_edit"/>
 </menu>

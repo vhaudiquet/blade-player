@@ -6,8 +6,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="@color/colorPrimary"
         tools:context="v.blade.ui.PlayActivity"
+        android:id="@+id/play_layout"
         android:fitsSystemWindows="true">
 
     <include layout="@layout/app_bar_main"
@@ -16,8 +16,7 @@
             android:id="@+id/include"/>
 
     <RelativeLayout android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@color/colorPrimary">
+                    android:layout_height="match_parent">
         <ImageView android:layout_width="match_parent"
                    android:layout_height="wrap_content"
                    android:layout_alignParentStart="true"
@@ -36,6 +35,7 @@
                 android:visibility="gone"
                 android:choiceMode="singleChoice"
                 android:id="@+id/playlist_view"
+                android:theme="@style/Theme.ControlTheme"
                 app:use_default_controller="false"/>
         <RelativeLayout android:layout_alignParentBottom="true"
                         android:layout_alignParentEnd="true"
@@ -43,7 +43,6 @@
                         android:layout_marginBottom="10dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@color/colorPrimary"
                         android:id="@+id/playControlLayout">
             <ImageView android:layout_width="45dp"
                        android:layout_height="45dp"
@@ -57,14 +56,12 @@
                       android:layout_toEndOf="@id/playlist_edit"
                       android:layout_marginLeft="10dp"
                       android:layout_marginStart="10dp"
-                      android:textColor="@color/colorAccent"
                       android:visibility="gone"
                       android:text="xxx/xxx"/>
             <TextView android:layout_width="200dp"
                       android:layout_height="wrap_content"
                       android:layout_centerHorizontal="true"
                       android:id="@+id/textview_title"
-                      android:textColor="@color/colorAccent"
                       android:textSize="20sp"
                       android:singleLine="true"
                       android:textAlignment="center"
@@ -74,7 +71,6 @@
                       android:id="@+id/textview_subtitle"
                       android:layout_centerHorizontal="true"
                       android:layout_below="@id/textview_title"
-                      android:textColor="@color/colorAccent"
                       android:textSize="15sp"
                       android:textAlignment="center"
                       android:singleLine="true"
@@ -142,7 +138,6 @@
                       android:layout_marginTop="22dp"
                       android:layout_marginLeft="8dp"
                       android:layout_marginStart="8dp"
-                      android:textColor="@color/colorAccent"
                       android:textSize="12sp"
                       android:text="0:00"
                       android:id="@+id/song_position"/>
@@ -165,7 +160,6 @@
                       android:layout_alignParentEnd="true"
                       android:layout_marginRight="8dp"
                       android:layout_marginEnd="8dp"
-                      android:textColor="@color/colorAccent"
                       android:textSize="12sp"
                       android:text="0:00"
                       android:id="@+id/song_duration"/>

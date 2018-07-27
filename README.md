@@ -2,25 +2,21 @@
 ![logo](Images/horizontal.png)
 
 
-Blade-player is a free and open source simple music player built for android devices. Blade-Player is developed to allow songs be played from local user libraries and other third-party sources which includes Spotify, Deezer.
+Blade is a free and open source simple music player built for Android devices. Blade is developed to allow songs to be played from local user libraries and other third-party sources which includes Spotify and Deezer.
 
-
-![screenshot](Images/screen0.png)
+<img src="Images/screen0.png" width="275"/>
+<img src="Images/screen1.png" width="275"/>
+<img src="Images/screen2.png" width="275"/>
 
 ## Blade-Player features
 
-Blade-Player contain features that makes it an ideal simple music player. 
-
-The features of blade-player are;
+Blade-Player contain features that makes it an ideal simple music player.
 
 - **Categorized Lists**
 
 Song list contains the list of all the songs in your library.
-
-Artists list groups all the arists of songs in the library in individual lists.
-
+Artists list groups all the artists of songs in the library.
 Album list contains the list of albums.
-
 These lists are sorted according to the metadata or information of the music file,
 
 - **Blade Player supports playlists** 
@@ -29,64 +25,42 @@ Already created playlists are available in the music player and new playlists ca
 
 - **Search feature** 
 
-Used to quickly search  for songs, artists or albums in the library.
+Used to quickly search  for songs, artists or albums in the library. 2 search modes : local search (will search on your local/Spotify/Deezer library) and web search (will also search on Spotify and Deezer (can take a little bit of time if you have a bad connection)).
 
+- **Blade-Player doesn't contain unneccesary ads and pop-ups**
 
-- Supports Spotify and Deezer music source in the library of the music player.
-
-- Blade-Player is doesn't contain unneccesary ads and pop-ups
-
-- The app is totally free and open source.
+- **The app is totally free and open source**
 
 
 ## Releases
 
-[Latest realease V1.1.1](https://github.com/Valou3433/blade-player/releases/download/v1.1.1/blade-1.1.1.apk)
+[Latest realease V1.2](https://github.com/Valou3433/blade-player/releases/download/v1.2/blade-1.2.apk)
+[Mirror](http://valou3433.fr/blade/blade-1.2.apk)
 
-- little bugfixes since last release.
-- added FAQ to repository.
+- added ability to edit local songs metadata
+- added themes (for now only blade, nightly and green)
+- added image generation for local playlists, ...
+- fixed bugs
+<hr>
+
+Link to all [Blade-Player Releases](https://github.com/Valou3433/blade-player/releases)
 
 <hr>
 
-[V 1.1](https://github.com/Valou3433/blade-player/releases/download/v1.1/blade-1.1.apk)
+## Informations
 
-- Added new feature : "song links", now you can link a song to another to say they are the same even if they have not the same name/album/artist.
-
-- Added playlists images
-
-- Bugfixes, on Oreo and on the players, but also on UI (gfx improvements) or in permission asking. <hr>
-
-
-[V 1.0](https://github.com/Valou3433/blade-player/releases/download/v1.0/blade-1.0.apk)
-
-
-Blade first release. No support for SoundCloud at the moment, as i can't get an API key.
-NOTE : known bugs : crashes on null playlist name, multiple issues on OREO+ systems.
-
-This version is the first stable version of Blade, and should be stable. However i could not test it on Oreo+ devices, so i'm not really sure of the behaviour on theses systems.
-Keep in mind that this is the first Blade release, and that more features will be coming soon ; if you really want more you can download the Nightly builds, or add features yourself by forking the repo :)
-
-
-Link to all [Blade-Player Realeases](https://github.com/Valou3433/blade-player/releases) 
-
-<hr>
-
-## Privacy Policy
-
-Read Blade-Player [Privacy Policy]()
+Read Blade [Privacy Policy](https://github.com/Valou3433/blade-player/blob/master/Privacy.md)
+Read Blade [License](https://github.com/Valou3433/blade-player/blob/master/LICENSE)
+[FAQ](https://github.com/Valou3433/blade-player/blob/master/FAQ.md)
 
 ## License
 
-Read [Blade-Player License here](https://github.com/Valou3433/blade-player/blob/master/LICENSE)
 
 
 ## Contributors
+- Valou3433 is the main developer
+- zularizal made the Blade logo
+- HarryHeights and olayhemi made documentation
 
-Contributions to Blade-Player are welcomed. Feel free to fork the project and start developing or open an issue for suggestions or bug reports. 
-
-
-
-
-
-
-
+Contributions to Blade-Player are welcomed. If you want to work on it, you can send me a mail at vhaudiquet343@hotmail.fr or talk to me on GitHub.
+You can pen an issue for suggestions or bug reports.

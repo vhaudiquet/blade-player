@@ -2,10 +2,11 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/nightlyColorPrimary</item>
+        <item name="colorPrimaryDark">@color/nightlyColorPrimaryDark</item>
+        <item name="colorAccent">@color/nightlyColorAccent</item>
         <item name="preferenceTheme">@style/Theme.Preferences</item>
+        <item name="android:itemBackground">@color/nightlyColorBackground</item>
     </style>
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -14,17 +15,62 @@
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
 
+    <style name="Nightly.AppTheme" parent="AppTheme"/>
+    <style name="Nightly.AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Blade.AppTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/bladeColorPrimary</item>
+        <item name="colorPrimaryDark">@color/bladeColorPrimaryDark</item>
+        <item name="colorAccent">@color/bladeColorAccent</item>
+        <item name="preferenceTheme">@style/Blade.Preferences</item>
+        <item name="android:itemBackground">@color/bladeColorBackground</item>
+    </style>
+    <style name="Blade.AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Green.AppTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/greenColorPrimary</item>
+        <item name="colorPrimaryDark">@color/greenColorPrimaryDark</item>
+        <item name="colorAccent">@color/greenColorAccent</item>
+        <item name="preferenceTheme">@style/Green.Preferences</item>
+        <item name="android:itemBackground">@color/greenColorBackground</item>
+    </style>
+    <style name="Green.AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
     <!-- Controls (buttons, listviews, ...) theme -->
     <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorAccent">@color/colorPrimary</item>
-        <item name="colorControlNormal">@color/colorPrimary</item>
-        <item name="colorControlActivated">@color/colorPrimary</item>
-        <item name="colorControlHighlight">@color/colorPrimaryLight</item>
+        <item name="colorAccent">@color/nightlyColorPrimary</item>
+        <item name="colorControlNormal">@color/nightlyColorPrimary</item>
+        <item name="colorControlActivated">@color/nightlyColorPrimary</item>
+        <item name="colorControlHighlight">@color/nightlyColorPrimaryLight</item>
     </style>
+
     <!-- Preference theme -->
     <style name="Theme.Preferences" parent="PreferenceThemeOverlay.v14.Material">
-        <item name="colorControlNormal">@color/colorPrimary</item>
-        <item name="colorControlActivated">@color/colorPrimary</item>
+        <item name="colorControlNormal">@color/nightlyColorPrimary</item>
+        <item name="colorControlActivated">@color/nightlyColorPrimary</item>
+        <item name="android:windowBackground">@color/nightlyColorBackground</item>
+        <item name="android:background">@color/nightlyColorBackground</item>
+    </style>
+
+    <style name="Nightly.Preferences" parent="Theme.Preferences"/>
+    <style name="Blade.Preferences" parent="Theme.Preferences">
+        <item name="colorControlNormal">@color/bladeColorPrimary</item>
+        <item name="colorControlActivated">@color/bladeColorPrimary</item>
+        <item name="android:windowBackground">@color/bladeColorBackground</item>
+        <item name="android:background">@color/bladeColorBackground</item>
+    </style>
+    <style name="Green.Preferences" parent="Theme.Preferences">
+        <item name="colorControlNormal">@color/greenColorPrimary</item>
+        <item name="colorControlActivated">@color/greenColorPrimary</item>
+        <item name="android:windowBackground">@color/greenColorBackground</item>
+        <item name="android:background">@color/greenColorBackground</item>
     </style>
 
 </resources>

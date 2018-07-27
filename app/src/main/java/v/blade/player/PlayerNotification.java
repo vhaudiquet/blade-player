@@ -35,6 +35,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import v.blade.R;
 import v.blade.library.Song;
 import v.blade.ui.PlayActivity;
+import v.blade.ui.settings.ThemesActivity;
 
 public class PlayerNotification
 {
@@ -98,7 +99,7 @@ public class PlayerNotification
         builder.setStyle(style)
                 .setWhen(0) //remove 'now' text on notification top
                 //.setSubText("") //text between 'Blade' and 'Now' (notification top)
-                .setColor(ContextCompat.getColor(mService, R.color.colorPrimary))
+                .setColor(ContextCompat.getColor(mService, ThemesActivity.currentColorPrimary))
                 .setSmallIcon(R.drawable.app_icon_notif) //icon that will be displayed in status bar
                 .setContentIntent(contentIntent) //intent that will be sent on notification click
                 .setLargeIcon(mService.getCurrentArt())

@@ -20,12 +20,13 @@ package v.blade.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
@@ -36,11 +37,14 @@ import v.blade.library.Song;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
+import v.blade.ui.settings.ThemesActivity;
 
 import java.util.ArrayList;
 
 public class PlayActivity extends AppCompatActivity
 {
+    private static final float DELTA_X_MIN = 350;
+
     private PlayerService musicPlayer;
     boolean isDisplayingAlbumArt = true;
     /* activity components */
@@ -99,6 +103,47 @@ public class PlayActivity extends AppCompatActivity
             }
 
             LibraryService.currentCallback.onLibraryChange();
+        }
+    };
+
+    private ImageView.OnTouchListener albumDragListener = new ImageView.OnTouchListener()
+    {
+        float touchStartX = 0;
+        float touchStartY = 0;
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event)
+        {
+            switch(event.getAction())
+            {
+                case MotionEvent.ACTION_DOWN:
+                {
+                    //image was touched, start touch action
+                    touchStartX = event.getX();
+                    touchStartY = event.getY();
+                }
+                case MotionEvent.ACTION_UP:
+                {
+                    //image was released, look at diff and change song if enough
+                    float touchDeltaX = event.getX() - touchStartX;
+                    if(touchDeltaX >= DELTA_X_MIN)
+                    {
+                        //swipe back
+                        if(PlayerConnection.getService().getCurrentPosition() > 5000) onPrevClicked(v);
+                        onPrevClicked(v);
+                    }
+                    else if(touchDeltaX <= -DELTA_X_MIN)
+                    {
+                        //swipe next
+                        onNextClicked(v);
+                    }
+                }
+                case MotionEvent.ACTION_MOVE:
+                {
+                    //TODO : animate during touch event
+                }
+            }
+            return true;
         }
     };
 
@@ -166,8 +211,12 @@ public class PlayActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        //set theme
+        setTheme(ThemesActivity.currentAppTheme);
+
         setContentView(R.layout.activity_play);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         //get all components
@@ -192,6 +241,7 @@ public class PlayActivity extends AppCompatActivity
         playlistView.setOnTouchListener(playlistDragController);
         playlistDragController.setDragHandleId(R.id.element_more);
         playlistView.setDropListener(playlistDropListener);
+        albumView.setOnTouchListener(albumDragListener);
 
         LibraryService.configureLibrary(getApplicationContext());
         if(!PlayerConnection.init(new PlayerConnection.Callback()
@@ -243,6 +293,15 @@ public class PlayActivity extends AppCompatActivity
         });
 
         moreAction.setOnClickListener(moreListener);
+
+        //set theme
+        findViewById(R.id.play_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
+        playlistView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
+        playlistPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songArtistAlbum.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songCurrentPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        songDuration.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
     }
 
     @Override
@@ -272,6 +331,7 @@ public class PlayActivity extends AppCompatActivity
         Song currentSong = musicPlayer.getCurrentSong();
 
         //set album view / playlistView
+        if(currentSong == null) return;
         if(currentSong.getAlbum().hasArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
         else albumView.setImageResource(R.drawable.ic_albums);
 

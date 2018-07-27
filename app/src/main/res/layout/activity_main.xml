@@ -25,8 +25,7 @@
                 android:layout_above="@id/currentPlay"
                 android:id="@+id/libraryList"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:theme="@style/Theme.ControlTheme"/>
+                android:layout_height="match_parent"/>
 
         <RelativeLayout
                 android:layout_alignParentBottom="true"
@@ -35,7 +34,6 @@
                 android:layout_height="60dp"
                 android:orientation="vertical"
                 android:padding="5dp"
-                android:background="@color/colorPrimary"
                 android:visibility="gone">
 
             <ImageView
@@ -48,7 +46,6 @@
                     android:id="@+id/element_title"
                     android:layout_width="250dp"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/colorAccent"
                     android:textSize="18sp"
                     android:layout_alignParentTop="true"
                     android:layout_toRightOf="@id/element_image"
@@ -62,7 +59,6 @@
                     android:id="@+id/element_subtitle"
                     android:layout_width="250dp"
                     android:layout_height="wrap_content"
-                    android:textColor="#bdbdbd"
                     android:textSize="12sp"
                     android:layout_below="@+id/element_title"
                     android:layout_toRightOf="@id/element_image"
