@@ -1192,6 +1192,11 @@ public abstract class Source
                         }
                         else callback.onFailure();
                     }
+                    catch(Exception ex)
+                    {
+                        if(mePrivate == null) checkAndRefreshSpotifyToken();
+                        callback.onFailure();
+                    }
                 }
             }.start();
         }
