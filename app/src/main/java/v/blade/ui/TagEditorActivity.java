@@ -124,7 +124,7 @@ public class TagEditorActivity extends AppCompatActivity
                 File basicFile = new File(currentSong.getPath());
                 AudioFile currentFile = AudioFileIO.read(basicFile);
 
-                Tag currentTag = currentFile.getTag();
+                Tag currentTag = currentFile.getTagOrCreateAndSetDefault();
                 if(nameEdit.isEnabled()) currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
                 if(albumEdit.isEnabled()) currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
                 if(artistEdit.isEnabled()) currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
