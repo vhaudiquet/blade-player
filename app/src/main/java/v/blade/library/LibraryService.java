@@ -437,27 +437,31 @@ public class LibraryService
 
         //search all songs on best source
         ArrayList<Song> bestSourceSongs = new ArrayList<>();
-        for(Song s : songs)
+        synchronized (songs)
         {
-            if(s.getSources().getSourceByPriority(0).getSource() != bestSource && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
+            for(Song s : songs)
             {
-                //query bestSource for this song
-                try
+                if(s.getSources().getSourceByPriority(0).getSource() != bestSource && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                 {
-                    if(bestSource.searchForSong(s))
+                    //query bestSource for this song
+                    try
                     {
-                        bestSourceSongs.add(s);
+                        if(bestSource.searchForSong(s))
+                        {
+                            bestSourceSongs.add(s);
+                        }
+                        addedSongs++;
+                        if(addedSongs >= BETTER_SOURCES_MAX) break;
                     }
-                    addedSongs++;
-                    if(addedSongs >= BETTER_SOURCES_MAX) break;
-                }
-                catch (Exception error)
-                {
-                    //TODO : handle error
-                    continue;
+                    catch (Exception error)
+                    {
+                        //TODO : handle error
+                        continue;
+                    }
                 }
             }
         }
+
         //also search for songs in playlist
         if(!SAVE_PLAYLISTS_TO_LIBRARY)
         {
@@ -720,9 +724,13 @@ public class LibraryService
                 if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
                     songAlbum = alb;
         }
-        if(songAlbum == null) for(Album alb : albumHandles)
-            if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
-                songAlbum = alb;
+        if(songAlbum == null)
+            synchronized (albumHandles)
+            {
+                for (Album alb : albumHandles)
+                    if (alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
+                        songAlbum = alb;
+            }
         if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true); albumHandles.add(songAlbum);}
         songAlbum.getSources().addSource(source);
 

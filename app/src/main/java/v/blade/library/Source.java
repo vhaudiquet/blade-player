@@ -676,7 +676,7 @@ public abstract class Source
             @Override
             public int getCurrentPosition()
             {
-                return spotifyPlayer == null ? 0 : (int) spotifyPlayer.getPlaybackState().positionMs;
+                return spotifyPlayer == null ? 0 : (spotifyPlayer.getPlaybackState() == null ? 0 : (int) spotifyPlayer.getPlaybackState().positionMs);
             }
         };
 
@@ -794,42 +794,45 @@ public abstract class Source
                     spr.close();
 
                     //spotify playlists
-                    for(File f : spotifyPlaylistsCache.listFiles())
+                    if(spotifyPlaylistsCache.exists())
                     {
-                        ArrayList<Song> thisList = new ArrayList<>();
-                        BufferedReader sppr = new BufferedReader(new FileReader(f));
-                        String id = sppr.readLine();
-                        boolean isMine = Boolean.parseBoolean(sppr.readLine());
-                        String owner = null; String ownerID = null;
-                        if(!isMine) {owner = sppr.readLine(); ownerID = sppr.readLine();}
-                        boolean isCollab = Boolean.parseBoolean(sppr.readLine());
-                        while(sppr.ready())
+                        for(File f : spotifyPlaylistsCache.listFiles())
                         {
-                            String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
-                            Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
-                                    LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]), 0,
-                                            Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY))
-                                    : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
-                                    new SongSources.SongSource(tp[6], SOURCE_SPOTIFY), Integer.parseInt(tp[4]), 0);
-                            song.setFormat(tp[3]);
-                            thisList.add(song);
-
-                            if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
+                            ArrayList<Song> thisList = new ArrayList<>();
+                            BufferedReader sppr = new BufferedReader(new FileReader(f));
+                            String id = sppr.readLine();
+                            boolean isMine = Boolean.parseBoolean(sppr.readLine());
+                            String owner = null; String ownerID = null;
+                            if(!isMine) {owner = sppr.readLine(); ownerID = sppr.readLine();}
+                            boolean isCollab = Boolean.parseBoolean(sppr.readLine());
+                            while(sppr.ready())
                             {
-                                //the image is supposed to be cached locally, so no need to provide URL
-                                spotifyCachedToLoadArt.add(song.getAlbum());
-                                song.getAlbum().setArtLoading();
-                            }
-                        }
-                        sppr.close();
+                                String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
+                                Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
+                                        LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]), 0,
+                                                Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY))
+                                        : LibraryService.getSongHandle(tp[0], tp[1], tp[2], Long.parseLong(tp[5]),
+                                        new SongSources.SongSource(tp[6], SOURCE_SPOTIFY), Integer.parseInt(tp[4]), 0);
+                                song.setFormat(tp[3]);
+                                thisList.add(song);
 
-                        Playlist p = new Playlist(f.getName(), thisList);
-                        if(!isMine) p.setOwner(owner, ownerID);
-                        if(isCollab) p.setCollaborative();
-                        spotifyCachedToLoadArt.add(p);
-                        p.setArtLoading();
-                        p.getSources().addSource(new SongSources.SongSource(id, SOURCE_SPOTIFY));
-                        LibraryService.getPlaylists().add(p);
+                                if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
+                                {
+                                    //the image is supposed to be cached locally, so no need to provide URL
+                                    spotifyCachedToLoadArt.add(song.getAlbum());
+                                    song.getAlbum().setArtLoading();
+                                }
+                            }
+                            sppr.close();
+
+                            Playlist p = new Playlist(f.getName(), thisList);
+                            if(!isMine) p.setOwner(owner, ownerID);
+                            if(isCollab) p.setCollaborative();
+                            spotifyCachedToLoadArt.add(p);
+                            p.setArtLoading();
+                            p.getSources().addSource(new SongSources.SongSource(id, SOURCE_SPOTIFY));
+                            LibraryService.getPlaylists().add(p);
+                        }
                     }
                 }
             }

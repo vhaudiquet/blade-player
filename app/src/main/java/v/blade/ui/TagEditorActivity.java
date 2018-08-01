@@ -124,12 +124,23 @@ public class TagEditorActivity extends AppCompatActivity
                 File basicFile = new File(currentSong.getPath());
                 AudioFile currentFile = AudioFileIO.read(basicFile);
 
-                Tag currentTag = currentFile.getTag();
-                if(nameEdit.isEnabled()) currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
-                if(albumEdit.isEnabled()) currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
-                if(artistEdit.isEnabled()) currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
-                if(yearEdit.isEnabled()) currentTag.setField(FieldKey.YEAR, yearEdit.getText().toString());
-                if(trackEdit.isEnabled()) currentTag.setField(FieldKey.TRACK, trackEdit.getText().toString());
+                boolean nameEditE = nameEdit.isEnabled() && !nameEdit.getText().toString().equals("");
+                boolean albumEditE = albumEdit.isEnabled() && !albumEdit.getText().toString().equals("");
+                boolean artistEditE = artistEdit.isEnabled() && !artistEdit.getText().toString().equals("");
+                boolean yearEditE = yearEdit.isEnabled() && !yearEdit.getText().toString().equals("");
+                boolean trackEditE = trackEdit.isEnabled() && !trackEdit.getText().toString().equals("");
+
+                Tag currentTag = currentFile.getTagOrCreateAndSetDefault();
+                if(nameEditE)
+                    currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
+                if(albumEditE)
+                    currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
+                if(artistEditE)
+                    currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
+                if(yearEditE)
+                    currentTag.setField(FieldKey.YEAR, yearEdit.getText().toString());
+                if(trackEditE)
+                    currentTag.setField(FieldKey.TRACK, trackEdit.getText().toString());
                 currentFile.commit();
 
                 //actualize contentprovider
@@ -138,12 +149,12 @@ public class TagEditorActivity extends AppCompatActivity
                 //actualize song in library
                 SongSources.SongSource localOld = currentSong.getSources().getLocal();
                 LibraryService.unregisterSong(currentSong, localOld);
-                LibraryService.registerSong(artistEdit.isEnabled() ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
-                        albumEdit.isEnabled() ? albumEdit.getText().toString() : currentSong.getAlbum().getName(),
-                        trackEdit.isEnabled() ? Integer.parseInt(trackEdit.getText().toString()) : currentSong.getTrackNumber(),
-                        yearEdit.isEnabled() ? Integer.parseInt(yearEdit.getText().toString()) : currentSong.getYear(),
+                LibraryService.registerSong(artistEditE ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
+                        albumEditE ? albumEdit.getText().toString() : currentSong.getAlbum().getName(),
+                        trackEditE ? Integer.parseInt(trackEdit.getText().toString()) : currentSong.getTrackNumber(),
+                        yearEditE ? Integer.parseInt(yearEdit.getText().toString()) : currentSong.getYear(),
                         currentSong.getDuration(),
-                        nameEdit.isEnabled() ? nameEdit.getText().toString() : currentSong.getName(),
+                        nameEditE ? nameEdit.getText().toString() : currentSong.getName(),
                         localOld);
             }
 

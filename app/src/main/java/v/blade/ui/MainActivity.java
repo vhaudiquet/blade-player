@@ -423,6 +423,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View v)
             {
+                if(musicPlayer == null) return;
                 if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
                 else PlayerConnection.musicController.getTransportControls().play();
             }

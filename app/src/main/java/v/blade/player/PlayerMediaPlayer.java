@@ -239,6 +239,8 @@ public class PlayerMediaPlayer
         if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
+        if(song.getSources().getSourceByPriority(0) == null)
+        {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
         currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
 
         if(requestAudioFocus())
