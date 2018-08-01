@@ -202,7 +202,11 @@ public class PlayerMediaPlayer
     }
     public void seekTo(int msec)
     {
-        if(currentActivePlayer != null) currentActivePlayer.seekTo(msec);
+        if(currentActivePlayer != null)
+        {
+            currentActivePlayer.seekTo(msec);
+            listener.onStateChange(); //update mediasession position
+        }
     }
     public int getCurrentPosition()
     {
@@ -293,7 +297,9 @@ public class PlayerMediaPlayer
         long actions = PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID
                 | PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
                 | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+                | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                | PlaybackStateCompat.ACTION_SET_REPEAT_MODE
+                | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
 
         int playbackState = 0;
         switch(currentState)

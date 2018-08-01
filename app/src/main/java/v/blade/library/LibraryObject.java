@@ -19,6 +19,7 @@ package v.blade.library;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 
 import java.io.Serializable;
 
@@ -52,6 +53,7 @@ public abstract class LibraryObject implements Serializable
     public boolean getArtLoading() {return this.artLoad;}
     public Bitmap getArtMiniature() {return miniatureArt;}
     public Bitmap getArt() {return BitmapFactory.decodeFile(artPath);}
+    public Uri getArtUri() {return artPath == null ? null : Uri.parse(artPath);}
     public boolean hasArt() {return hasArt;}
 
     public String getType() {return this.getClass().getSimpleName();}

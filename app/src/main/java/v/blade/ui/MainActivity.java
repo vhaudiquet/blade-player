@@ -373,7 +373,7 @@ public class MainActivity extends AppCompatActivity
             if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_SEARCH)
                 popupMenu.getMenu().findItem(R.id.action_link_to).setVisible(false);
 
-            if(object.getSources() == null || object.getSources().getLocal() == null)
+            if(object.getSources() == null || object.getSources().getLocal() == null || object instanceof Playlist)
                 popupMenu.getMenu().findItem(R.id.action_tag_edit).setVisible(false);
 
             popupMenu.show();

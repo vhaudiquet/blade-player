@@ -69,28 +69,45 @@ public class PlayerService extends Service
                 else mPlayer.setPlaylistEnded();
             }
 
-            /* send current playbackstate to mediasession */
+            /* send current state to mediasession */
+
+            //send PlaybackState
             mSession.setPlaybackState(mPlayer.getPlaybackState());
 
-            currentArt = getCurrentPlaylist().get(currentPosition).getAlbum().getArt();
+            //build and send current media informations
             MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder();
+            Song currentSong = getCurrentSong();
+            currentArt = currentSong.getAlbum().getArt();
             builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentArt);
-            builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentPlaylist.get(currentPosition).getArtist().getName());
-            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentPlaylist.get(currentPosition).getAlbum().getName());
-            builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentPlaylist.get(currentPosition).getTitle());
+            builder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, currentArt);
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ART_URI, currentSong.getAlbum().getArtUri() == null ? null : currentSong.getAlbum().getArtUri().toString());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, currentSong.getAlbum().getArtUri() == null ? null : currentSong.getAlbum().getArtUri().toString());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, currentSong.getArtist().getName());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, currentSong.getAlbum().getName());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_TITLE, currentSong.getTitle());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, currentSong.getTitle());
+            builder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, currentSong.getArtist().getName() + " - " + currentSong.getAlbum().getName());
+            builder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, mPlayer.getDuration());
             MediaMetadataCompat metadata = builder.build();
             mSession.setMetadata(metadata);
+
+            //send shuffle/repeat infos
+            mSession.setShuffleMode(shuffleMode ? PlaybackStateCompat.SHUFFLE_MODE_NONE : PlaybackStateCompat.SHUFFLE_MODE_ALL);
+            mSession.setRepeatMode(repeatMode);
+
+            //set mediasession active if it was not
+            if(!mSession.isActive()) mSession.setActive(true);
 
             /* update notification */
             if(mNotification == null)
             {
-                mNotification = mNotificationManager.getNotification(getCurrentSong(), mPlayer.getCurrentState(), mSession.getSessionToken());
+                mNotification = mNotificationManager.getNotification(currentSong, mPlayer.getCurrentState(), mSession.getSessionToken());
                 startForeground(PlayerNotification.NOTIFICATION_ID, mNotification);
             }
             else
             {
                 stopForeground(false);
-                mNotification = mNotificationManager.getNotification(getCurrentSong(), mPlayer.getCurrentState(), mSession.getSessionToken());
+                mNotification = mNotificationManager.getNotification(currentSong, mPlayer.getCurrentState(), mSession.getSessionToken());
                 mNotificationManager.getNotificationManager().notify(PlayerNotification.NOTIFICATION_ID, mNotification);
             }
         }
@@ -164,6 +181,7 @@ public class PlayerService extends Service
         @Override
         public void onStop()
         {
+            //TODO : find a way to stop correctly (on intent reception, doesnt really stop)
             mPlayer.stop();
             mSession.setActive(false);
 
