@@ -46,6 +46,8 @@ public class BladeApplication extends Application
                 ThemesActivity.setThemeToBlade();
             else if(theme.equalsIgnoreCase("green"))
                 ThemesActivity.setThemeToGreen();
+            else if(theme.equalsIgnoreCase("red"))
+                ThemesActivity.setThemeToRed();
         }
     }
 }

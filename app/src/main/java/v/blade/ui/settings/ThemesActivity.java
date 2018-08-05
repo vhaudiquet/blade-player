@@ -51,7 +51,7 @@ public class ThemesActivity extends AppCompatActivity
                 ImageView more;
             }
             @Override
-            public int getCount() {return 3;}
+            public int getCount() {return 4;}
             @Override
             public Object getItem(int position) {return null;}
             @Override
@@ -108,6 +108,15 @@ public class ThemesActivity extends AppCompatActivity
                         mViewHolder.desc.setText(getText(R.string.theme_green_desc));
                         break;
                     }
+                    case 3:
+                    {
+                        //red theme
+                        mViewHolder.img.setImageResource(0);
+                        mViewHolder.img.setBackgroundColor(ContextCompat.getColor(ThemesActivity.this, R.color.redColorPrimary));
+                        mViewHolder.title.setText("Red");
+                        mViewHolder.desc.setText(getText(R.string.theme_red_desc));
+                        break;
+                    }
                 }
 
                 mViewHolder.more.setImageResource(0);
@@ -161,6 +170,19 @@ public class ThemesActivity extends AppCompatActivity
 
                         break;
                     }
+                    case 3:
+                    {
+                        //blade red
+                        if(currentColorPrimary == R.color.redColorPrimary) return;
+                        setThemeToRed();
+
+                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("theme", "red");
+                        editor.apply();
+
+                        break;
+                    }
                 }
 
                 Intent intent = new Intent(ThemesActivity.this, MainActivity.class);
@@ -207,6 +229,18 @@ public class ThemesActivity extends AppCompatActivity
         currentColorBackground = R.color.greenColorBackground;
         currentAppTheme = R.style.Green_AppTheme_NoActionBar;
         currentAppThemeWithActionBar = R.style.Green_AppTheme;
+        currentControlTheme = R.style.Theme_ControlTheme;
+    }
+    public static void setThemeToRed()
+    {
+        currentColorPrimary = R.color.redColorPrimary;
+        currentColorPrimaryDark = R.color.redColorPrimaryDark;
+        currentColorPrimaryLight = R.color.redColorPrimaryLight;
+        currentColorAccent = R.color.redColorAccent;
+        currentColorPrimaryLighter = R.color.redColorPrimaryLighter;
+        currentColorBackground = R.color.redColorBackground;
+        currentAppTheme = R.style.Red_AppTheme_NoActionBar;
+        currentAppThemeWithActionBar = R.style.Red_AppTheme;
         currentControlTheme = R.style.Theme_ControlTheme;
     }
 }

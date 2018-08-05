@@ -18,9 +18,13 @@ import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagOptionSingleton;
 import v.blade.R;
 import v.blade.library.*;
+import v.blade.ui.settings.SettingsActivity;
 import v.blade.ui.settings.ThemesActivity;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -122,7 +126,42 @@ public class TagEditorActivity extends AppCompatActivity
             for(Song currentSong : songs)
             {
                 File basicFile = new File(currentSong.getPath());
-                AudioFile currentFile = AudioFileIO.read(basicFile);
+
+                String[] splitted = basicFile.getAbsolutePath().split("/");
+                String[] splittedTreeUri = LibraryService.TREE_URI.getPath().split("/");
+
+                int index = -1;
+                for(int i = 0; i < splitted.length; i++)
+                {
+                    if(splittedTreeUri[2].substring(0, splittedTreeUri[2].length()-1).equals(splitted[i]))
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+                AudioFile currentFile = null;
+
+                if(index != -1)
+                {
+                    //file is on SD card, lets retrieve path
+                    DocumentFile f = DocumentFile.fromTreeUri(this, LibraryService.TREE_URI);
+                    for(int i = index+1; i < splitted.length; i++) f = f.findFile(splitted[i]);
+                    if(!f.canWrite())
+                    {
+                        Toast.makeText(this, R.string.give_perm_ext, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    //OutputStream os = getContentResolver().openOutputStream(f.getUri());
+                    //InputStream is = getContentResolver().openInputStream(f.getUri());
+                    Toast.makeText(this, "Edition on SD Card is not supported for now", Toast.LENGTH_LONG).show();
+                }
+                else
+                {
+                    //file is on local storage, direct access
+                    currentFile = AudioFileIO.read(basicFile);
+                }
 
                 boolean nameEditE = nameEdit.isEnabled() && !nameEdit.getText().toString().equals("");
                 boolean albumEditE = albumEdit.isEnabled() && !albumEdit.getText().toString().equals("");
@@ -161,6 +200,7 @@ public class TagEditorActivity extends AppCompatActivity
             MainActivity.selectedObject = null;
 
             Intent intent = new Intent(TagEditorActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         }
         catch (Exception e)

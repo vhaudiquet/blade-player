@@ -76,7 +76,7 @@
     <string name="tag_save_failed">Impossible de sauvegarder les tags</string>
     <string name="give_perm_ext">Donnez la permission d\'accéder à la Carte SD (dans les paramètres)</string>
     <string name="sd_perm">Permission Carte SD</string>
-    <string name="select_sd_card">Sélectionner le dossier auquel Blade pourra accéder (la racine de la carte SD ou votre dossier de musiques)</string>
+    <string name="select_sd_card">Sélectionner le dossier auquel Blade pourra accéder (la racine de la carte SD)</string>
     <string name="sd_perm_unneeded">La permission d\'accéder à la carte SD est uniquement nécessaire sur Android KitKat (19) ou plus.</string>
     <string name="perm_granted">Permission obtenue</string>
     <string name="themes">Thèmes</string>
@@ -85,4 +85,6 @@
     <string name="theme_nightly_desc">Le thème par défaut de Blade Nightly</string>
     <string name="theme_blade_desc">Le thème par défaut de Blade Release</string>
     <string name="theme_green_desc">Un thème simple et vert</string>
+    <string name="theme_red_desc">Un thème simple et rouge</string>
+    <string name="please_sd_root">S'il vous plait sélectionnez la racine de la carte SD !</string>
 </resources>

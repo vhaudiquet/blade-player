@@ -58,6 +58,13 @@ public class SettingsActivity extends AppCompatActivity
                 // Get Uri from Storage Access Framework.
                 Uri treeUri = resultData.getData();
 
+                if(!treeUri.toString().endsWith("%3A"))
+                {
+                    //show the user that we are not happy
+                    Toast.makeText(this, R.string.please_sd_root, Toast.LENGTH_LONG).show();
+                    return;
+                }
+
                 // Persist URI in shared preference so that you can use it later.
                 SharedPreferences sharedPreferences = getSharedPreferences(PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();

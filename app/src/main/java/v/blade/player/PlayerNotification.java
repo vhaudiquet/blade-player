@@ -23,6 +23,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
@@ -102,7 +103,7 @@ public class PlayerNotification
                 .setColor(ContextCompat.getColor(mService, ThemesActivity.currentColorPrimary))
                 .setSmallIcon(R.drawable.app_icon_notif) //icon that will be displayed in status bar
                 .setContentIntent(contentIntent) //intent that will be sent on notification click
-                .setLargeIcon(mService.getCurrentArt())
+                .setLargeIcon(mService.getCurrentArt() == null ? BitmapFactory.decodeResource(mService.getResources(), R.drawable.ic_albums) : mService.getCurrentArt())
                 .setContentTitle(playing.getTitle())
                 .setContentText(playing.getArtist().getName() + " - " + playing.getAlbum().getName())
                 .setDeleteIntent(null) //intent on notification slide
