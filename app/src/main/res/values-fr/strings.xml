@@ -86,5 +86,6 @@
     <string name="theme_blade_desc">Le thème par défaut de Blade Release</string>
     <string name="theme_green_desc">Un thème simple et vert</string>
     <string name="theme_red_desc">Un thème simple et rouge</string>
-    <string name="please_sd_root">S'il vous plait sélectionnez la racine de la carte SD !</string>
+    <string name="please_sd_root">S\'il vous plait sélectionnez la racine de la carte SD !</string>
+    <string name="enable_song_change_anim">Activer l\'animation de changement de son</string>
 </resources>

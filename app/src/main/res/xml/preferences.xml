@@ -8,6 +8,9 @@
                         android:summary="@string/register_better_sources_expl"
                         android:key="register_better_sources"
                         android:defaultValue="true"/>
+    <CheckBoxPreference android:title="@string/enable_song_change_anim"
+                        android:key="anim_0"
+                        android:defaultValue="true"/>
     <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
     <PreferenceScreen android:title="@string/themes" android:key="themes"/>
     <PreferenceScreen android:title="@string/sd_perm" android:key="sd_perm"/>

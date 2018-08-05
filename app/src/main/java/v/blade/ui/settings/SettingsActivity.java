@@ -138,6 +138,11 @@ public class SettingsActivity extends AppCompatActivity
                 LibraryService.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
                 Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
             }
+            else if(preference.getKey().equals("anim_0"))
+            {
+                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                LibraryService.ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
+            }
 
             return super.onPreferenceTreeClick(preference);
         }

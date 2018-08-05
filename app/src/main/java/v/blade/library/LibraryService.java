@@ -29,6 +29,7 @@ public class LibraryService
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
     public static Uri TREE_URI;
+    public static boolean ENABLE_SONG_CHANGE_ANIM;
 
     /* library */
     private static final List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
@@ -156,6 +157,8 @@ public class LibraryService
 
         String treeUri = generalPrefs.getString("sdcard_uri", null);
         if(treeUri != null) TREE_URI = Uri.parse(treeUri);
+
+        ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
 
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
         REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
