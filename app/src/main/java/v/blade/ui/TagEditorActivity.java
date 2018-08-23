@@ -188,13 +188,15 @@ public class TagEditorActivity extends AppCompatActivity
                 //actualize song in library
                 SongSources.SongSource localOld = currentSong.getSources().getLocal();
                 LibraryService.unregisterSong(currentSong, localOld);
-                LibraryService.registerSong(artistEditE ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
+                Song newSong = LibraryService.registerSong(artistEditE ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
                         albumEditE ? albumEdit.getText().toString() : currentSong.getAlbum().getName(),
                         trackEditE ? Integer.parseInt(trackEdit.getText().toString()) : currentSong.getTrackNumber(),
                         yearEditE ? Integer.parseInt(yearEdit.getText().toString()) : currentSong.getYear(),
                         currentSong.getDuration(),
                         nameEditE ? nameEdit.getText().toString() : currentSong.getName(),
                         localOld);
+                newSong.setFormat(currentSong.getFormat());
+                newSong.setPath(currentSong.getPath());
             }
 
             MainActivity.selectedObject = null;

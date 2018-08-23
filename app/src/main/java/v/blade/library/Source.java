@@ -148,7 +148,7 @@ public abstract class Source
                 if(local == null) {if(callback != null) callback.onFailure(player); return;}
                 if(mediaPlayer == null) {if(callback != null) callback.onFailure(player); return;}
 
-                if(song.getFormat().equals("audio/x-ms-wma"))
+                if(song.getFormat() != null && song.getFormat().equals("audio/x-ms-wma"))
                 {
                     Toast.makeText(LibraryService.appContext, LibraryService.appContext.getString(R.string.format_unsupported), Toast.LENGTH_SHORT).show();
                     callback.onFailure(player);

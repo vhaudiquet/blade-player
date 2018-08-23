@@ -98,4 +98,5 @@
     <string name="theme_red_desc">A clean red theme</string>
     <string name="please_sd_root">Please select the SD Card root folder !</string>
     <string name="enable_song_change_anim">Enable animation on song change</string>
+    <string name="link_manager">Song links manager</string>
 </resources>

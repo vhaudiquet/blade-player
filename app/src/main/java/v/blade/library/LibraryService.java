@@ -44,7 +44,7 @@ public class LibraryService
     static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
     //song linkss
-    private static final HashMap<Song, List<Song>> songLinks = new HashMap<>();
+    public static final HashMap<Song, List<Song>> songLinks = new HashMap<>();
 
     /* list callbacks */
     public interface UserLibraryCallback{void onLibraryChange();}

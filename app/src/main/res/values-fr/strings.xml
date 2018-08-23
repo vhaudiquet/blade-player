@@ -88,4 +88,5 @@
     <string name="theme_red_desc">Un thème simple et rouge</string>
     <string name="please_sd_root">S\'il vous plait sélectionnez la racine de la carte SD !</string>
     <string name="enable_song_change_anim">Activer l\'animation de changement de son</string>
+    <string name="link_manager">Gérer les liens entre titres</string>
 </resources>

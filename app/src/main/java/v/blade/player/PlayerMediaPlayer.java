@@ -139,6 +139,8 @@ public class PlayerMediaPlayer
     {
         if(requestAudioFocus())
         {
+            if(currentActivePlayer == null) return;
+
             currentActivePlayer.play(new SourcePlayer.PlayerCallback() {
                 @Override
                 public void onSucess(SourcePlayer player)
@@ -159,10 +161,9 @@ public class PlayerMediaPlayer
                 @Override
                 public void onFailure(SourcePlayer player)
                 {
-                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
-
                     if(player == currentActivePlayer)
                     {
+                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
@@ -270,10 +271,9 @@ public class PlayerMediaPlayer
                 @Override
                 public void onFailure(SourcePlayer player)
                 {
-                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
-
                     if(currentActivePlayer == player)
                     {
+                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
