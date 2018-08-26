@@ -350,27 +350,32 @@ public class LibraryService
         list.add(source);
 
         //save songlinks to cache (by rewriting hashmap)
-        if(save)
+        if(save) writeLinks();
+    }
+
+    /*
+    * Rewrite song links on disk
+     */
+    public static void writeLinks()
+    {
+        try
         {
-            try
+            songLinksFile.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(songLinksFile));
+            for(Song s : songLinks.keySet())
             {
-                songLinksFile.createNewFile();
-                BufferedWriter writer = new BufferedWriter(new FileWriter(songLinksFile));
-                for(Song s : songLinks.keySet())
-                {
-                    List<Song> links = songLinks.get(s);
-                    writer.write(s.getArtist() + CACHE_SEPARATOR + s.getAlbum() + CACHE_SEPARATOR + s.getTitle() + CACHE_SEPARATOR +
-                    links.size() + CACHE_SEPARATOR);
-                    for(Song linked : links)
-                        writer.write(linked.getArtist() + CACHE_SEPARATOR + linked.getAlbum() + CACHE_SEPARATOR + linked.getTitle() + CACHE_SEPARATOR);
-                    writer.newLine();
-                }
-                writer.close();
+                List<Song> links = songLinks.get(s);
+                writer.write(s.getArtist() + CACHE_SEPARATOR + s.getAlbum() + CACHE_SEPARATOR + s.getTitle() + CACHE_SEPARATOR +
+                        links.size() + CACHE_SEPARATOR);
+                for(Song linked : links)
+                    writer.write(linked.getArtist() + CACHE_SEPARATOR + linked.getAlbum() + CACHE_SEPARATOR + linked.getTitle() + CACHE_SEPARATOR);
+                writer.newLine();
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
+            writer.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
         }
     }
 

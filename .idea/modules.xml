@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/blade-again.iml" filepath="$PROJECT_DIR$/blade-again.iml" />
       <module fileurl="file://$PROJECT_DIR$/blade-player.iml" filepath="$PROJECT_DIR$/blade-player.iml" />
       <module fileurl="file://$PROJECT_DIR$/libraries/drag-sort-listview/drag-sort-listview.iml" filepath="$PROJECT_DIR$/libraries/drag-sort-listview/drag-sort-listview.iml" />
       <module fileurl="file://$PROJECT_DIR$/libraries/libraries.iml" filepath="$PROJECT_DIR$/libraries/libraries.iml" />
