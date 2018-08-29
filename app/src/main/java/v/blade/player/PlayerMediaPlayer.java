@@ -59,7 +59,8 @@ public class PlayerMediaPlayer
         {
             if(currentActivePlayer == player)
             {
-                Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+                if(context != null) Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+
                 currentState = PLAYER_STATE_PAUSED;
                 listener.onStateChange();
             }
@@ -239,6 +240,7 @@ public class PlayerMediaPlayer
         //oreo+ : we need to show notification as soon as first 'playSong()' is called (service start)
         if(!notificationShown) {listener.onStateChange(); notificationShown = true;}
 
+        if(song == null) return;
         currentSong = song;
 
         if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);

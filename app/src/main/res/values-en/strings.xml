@@ -89,4 +89,5 @@
     <string name="please_sd_root">Please select the SD Card root folder !</string>
     <string name="enable_song_change_anim">Enable animation on song change</string>
     <string name="link_manager">Song links manager</string>
+    <string name="no_results_found">No results found</string>
 </resources>

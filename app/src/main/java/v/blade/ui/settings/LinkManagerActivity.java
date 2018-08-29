@@ -1,8 +1,8 @@
 package v.blade.ui.settings;
 
+import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,7 +12,6 @@ import v.blade.R;
 import v.blade.library.LibraryService;
 import v.blade.library.Song;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LinkManagerActivity extends AppCompatActivity
@@ -109,7 +108,7 @@ public class LinkManagerActivity extends AppCompatActivity
                                 viewHolder.image = convertView.findViewById(R.id.element_image);
                                 viewHolder.more = convertView.findViewById(R.id.element_more);
 
-                                viewHolder.more.setImageResource(R.drawable.ic_cancel);
+                                viewHolder.more.setImageResource(R.drawable.ic_cancel_black);
 
                                 viewHolder.image.setVisibility(View.GONE);
                                 convertView.setTag(viewHolder);

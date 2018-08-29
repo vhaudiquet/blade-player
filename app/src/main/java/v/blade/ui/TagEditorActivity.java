@@ -3,13 +3,13 @@ package v.blade.ui;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
@@ -18,20 +18,16 @@ import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagOptionSingleton;
 import v.blade.R;
 import v.blade.library.*;
-import v.blade.ui.settings.SettingsActivity;
 import v.blade.ui.settings.ThemesActivity;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TagEditorActivity extends AppCompatActivity
 {
     private LibraryObject currentObject;
     EditText nameEdit, albumEdit, artistEdit, yearEdit, trackEdit;
+    ImageView imageEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -52,6 +48,7 @@ public class TagEditorActivity extends AppCompatActivity
         artistEdit = findViewById(R.id.artist_edit);
         yearEdit = findViewById(R.id.year_edit);
         trackEdit = findViewById(R.id.track_edit);
+        imageEdit = findViewById(R.id.image_edit);
 
         //get current object and fill details
         currentObject = MainActivity.selectedObject;
@@ -66,6 +63,10 @@ public class TagEditorActivity extends AppCompatActivity
             artistEdit.setText(((Song) currentObject).getArtist().getName());
             trackEdit.setText(((Song) currentObject).getTrackNumber() == 0 ? "" : "" + ((Song) currentObject).getTrackNumber());
             yearEdit.setText(((Song) currentObject).getYear() == 0 ? "" : "" + ((Song) currentObject).getYear());
+            imageEdit.setImageBitmap(((Song) currentObject).getAlbum().getArt());
+
+            if(((Song) currentObject).getAlbum().hasArt()) imageEdit.setImageBitmap(((Song) currentObject).getAlbum().getArt());
+            else imageEdit.setImageResource(R.drawable.ic_albums);
         }
         else if(currentObject instanceof Album)
         {
@@ -73,6 +74,9 @@ public class TagEditorActivity extends AppCompatActivity
             albumEdit.setText(currentObject.getName());
             artistEdit.setText(((Album) currentObject).getArtist().getName());
             trackEdit.setEnabled(false);
+
+            if(((Album) currentObject).hasArt()) imageEdit.setImageBitmap(((Album) currentObject).getArt());
+            else imageEdit.setImageResource(R.drawable.ic_albums);
         }
         else if(currentObject instanceof Artist)
         {
@@ -81,6 +85,7 @@ public class TagEditorActivity extends AppCompatActivity
             artistEdit.setText(currentObject.getName());
             trackEdit.setEnabled(false);
             yearEdit.setEnabled(false);
+            imageEdit.setEnabled(false);
         }
 
         //set theme

@@ -775,6 +775,10 @@ public class MainActivity extends AppCompatActivity
         currentContext = CONTEXT_SEARCH;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, searchResult);
         adapter.registerMoreClickListener(mainListViewMoreListener);
+
+        if(searchResult.isEmpty())
+            Toast.makeText(this, R.string.no_results_found, Toast.LENGTH_SHORT).show();
+
         mainListView.setAdapter(adapter);
     }
 
