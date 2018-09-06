@@ -322,7 +322,7 @@ public class LibraryService
         {
             if(src != null)
             {
-                destination.getSources().addSource(src);
+                destination.getSources().addSource(src); //addSource is checking for double-add
                 unregisterSong(source, src);
             }
         }
@@ -524,7 +524,7 @@ public class LibraryService
             while (reader.ready())
             {
                 String[] line = reader.readLine().split(CACHE_SEPARATOR);
-                System.out.println(Arrays.toString(line));
+                //System.out.println(Arrays.toString(line));
                 Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0, 0);
                 if(song == null) continue;
                 int size = Integer.parseInt(line[3]);
@@ -539,6 +539,7 @@ public class LibraryService
         }
         catch (IOException e)
         {
+            System.err.println("registerSongLinks() encoutered IOException");
             e.printStackTrace();
         }
     }

@@ -70,72 +70,6 @@ public class LinkManagerActivity extends AppCompatActivity
                     viewHolder.image = convertView.findViewById(R.id.element_image);
                     viewHolder.links = convertView.findViewById(R.id.element_list);
 
-                    List<Song> linkedSongs = LibraryService.songLinks.get(currentSong);
-                    viewHolder.links.setAdapter(new BaseAdapter()
-                    {
-                        class ViewHolder
-                        {
-                            ImageView image;
-                            TextView songTitle;
-                            TextView songInfo;
-                            ImageView more;
-                        }
-
-                        @Override
-                        public int getCount() {return linkedSongs.size();}
-                        @Override
-                        public Object getItem(int i) {return linkedSongs.get(i);}
-                        @Override
-                        public long getItemId(int i) {return i;}
-
-                        @Override
-                        public View getView(int position, View convertView, ViewGroup viewGroup)
-                        {
-                            Song currentSong1 = linkedSongs.get(position);
-
-                            ViewHolder viewHolder = new ViewHolder();
-
-                            if(convertView == null)
-                            {
-                                viewHolder = new ViewHolder();
-
-                                //map to song layout
-                                convertView = LayoutInflater.from(LinkManagerActivity.this).inflate(R.layout.list_layout, parent, false);
-
-                                //get title and subtitle views
-                                viewHolder.songTitle = convertView.findViewById(R.id.element_title);
-                                viewHolder.songInfo = convertView.findViewById(R.id.element_subtitle);
-                                viewHolder.image = convertView.findViewById(R.id.element_image);
-                                viewHolder.more = convertView.findViewById(R.id.element_more);
-
-                                viewHolder.more.setImageResource(R.drawable.ic_cancel_black);
-
-                                viewHolder.image.setVisibility(View.GONE);
-                                convertView.setTag(viewHolder);
-                            }
-                            else viewHolder = (ViewHolder) convertView.getTag();
-
-                            viewHolder.songTitle.setText(currentSong1.getTitle());
-                            viewHolder.songInfo.setText(currentSong1.getAlbum().getName() + " - " + currentSong1.getArtist().getName());
-
-                            viewHolder.more.setOnClickListener(new View.OnClickListener()
-                            {
-                                @Override
-                                public void onClick(View view)
-                                {
-                                    LibraryService.songLinks.get(currentSong).remove(currentSong1);
-                                    notifyDataSetChanged();
-                                    LibraryService.writeLinks();
-
-                                    //put message to user to notify him we need resync
-                                    Toast.makeText(LinkManagerActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-
-                            return convertView;
-                        }
-                    });
-
                     convertView.setTag(viewHolder);
                 }
                 else viewHolder = (ViewHolder) convertView.getTag();
@@ -143,6 +77,72 @@ public class LinkManagerActivity extends AppCompatActivity
                 viewHolder.image.setImageBitmap(currentSong.getAlbum().getArtMiniature());
                 viewHolder.originalSongTitle.setText(currentSong.getTitle());
                 viewHolder.originalSongInfo.setText(currentSong.getAlbum().getName() + " - " + currentSong.getArtist().getName());
+                List<Song> linkedSongs = LibraryService.songLinks.get(currentSong);
+                viewHolder.links.setAdapter(new BaseAdapter()
+                {
+                    class ViewHolder
+                    {
+                        ImageView image;
+                        TextView songTitle;
+                        TextView songInfo;
+                        ImageView more;
+                    }
+
+                    @Override
+                    public int getCount() {return linkedSongs.size();}
+                    @Override
+                    public Object getItem(int i) {return linkedSongs.get(i);}
+                    @Override
+                    public long getItemId(int i) {return i;}
+
+                    @Override
+                    public View getView(int position, View convertView, ViewGroup viewGroup)
+                    {
+                        Song currentSong1 = linkedSongs.get(position);
+
+                        ViewHolder viewHolder = new ViewHolder();
+
+                        if(convertView == null)
+                        {
+                            viewHolder = new ViewHolder();
+
+                            //map to song layout
+                            convertView = LayoutInflater.from(LinkManagerActivity.this).inflate(R.layout.list_layout, parent, false);
+
+                            //get title and subtitle views
+                            viewHolder.songTitle = convertView.findViewById(R.id.element_title);
+                            viewHolder.songInfo = convertView.findViewById(R.id.element_subtitle);
+                            viewHolder.image = convertView.findViewById(R.id.element_image);
+                            viewHolder.more = convertView.findViewById(R.id.element_more);
+
+                            viewHolder.more.setImageResource(R.drawable.ic_cancel_black);
+
+                            viewHolder.image.setVisibility(View.GONE);
+                            viewHolder.image.setEnabled(false);
+                            convertView.setTag(viewHolder);
+                        }
+                        else viewHolder = (ViewHolder) convertView.getTag();
+
+                        viewHolder.songTitle.setText(currentSong1.getTitle());
+                        viewHolder.songInfo.setText(currentSong1.getAlbum().getName() + " - " + currentSong1.getArtist().getName());
+
+                        viewHolder.more.setOnClickListener(new View.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(View view)
+                            {
+                                LibraryService.songLinks.get(currentSong).remove(currentSong1);
+                                notifyDataSetChanged();
+                                LibraryService.writeLinks();
+
+                                //put message to user to notify him we need resync
+                                Toast.makeText(LinkManagerActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
+                            }
+                        });
+
+                        return convertView;
+                    }
+                });
 
                 return convertView;
             }
