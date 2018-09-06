@@ -35,7 +35,6 @@ import v.blade.ui.settings.SettingsActivity;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.lang.Error;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1085,19 +1084,21 @@ public abstract class Source
                         Song song = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number, 0);
                         tr.add(song);
 
+                        //System.out.println("[SART] Song : " + song.getName() + " - " + song.getAlbum() + " - " + song.getArtist() + " , hasArt = " + song.getAlbum().hasArt() + " art = " + song.getAlbum().getArtUri());
                         if(!song.getAlbum().hasArt())
                         {
                             if(t.album.images.get(0) != null)
                                 urls.put(song.getAlbum(), t.album.images.get(0).url);
+                            //System.out.println("[SART] Album " + song.getAlbum() + " (artist = " + song.getArtist() + ") : img = " + t.album.images.get(0).url);
                         }
                     }
                     for(kaaes.spotify.webapi.android.models.AlbumSimple a : albums.albums.items)
                     {
                         Album album = null;
                         Pager<Track> albumTracks = spotifyApi.getService().getAlbumTracks(a.id);
-                        for(Track t : tracks.tracks.items)
+                        for(Track t : albumTracks.items)
                         {
-                            Song currentSong = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number, 0);
+                            Song currentSong = LibraryService.getSongHandle(t.name, a.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY), t.track_number, 0);
                             if(album == null) album = currentSong.getAlbum();
                         }
 
@@ -1134,6 +1135,7 @@ public abstract class Source
 
                     for(Album a : urls.keySet())
                     {
+                        System.out.println("[SART] Loading albumArt for " + a.getName() + " - " + a.getArtist().getName() + " ; img = " + urls.get(a));
                         LibraryService.loadArt(a, urls.get(a), false);
                     }
                 }
