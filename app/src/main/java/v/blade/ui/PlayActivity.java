@@ -18,6 +18,8 @@
 package v.blade.ui;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
@@ -28,6 +30,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.*;
 import com.mobeta.android.dslv.DragSortController;
 import com.mobeta.android.dslv.DragSortListView;
@@ -49,6 +53,8 @@ public class PlayActivity extends AppCompatActivity
     boolean isDisplayingAlbumArt = true;
     /* activity components */
     private ImageView albumView;
+    private Bitmap lastAlbumBitmap = null;
+    private Bitmap nullBitmap = null;
     private TextView songTitle;
     private TextView songArtistAlbum;
     private TextView playlistPosition;
@@ -137,10 +143,6 @@ public class PlayActivity extends AppCompatActivity
                         //swipe next
                         onNextClicked(v);
                     }
-                }
-                case MotionEvent.ACTION_MOVE:
-                {
-                    //TODO : animate during touch event
                 }
             }
             return true;
@@ -243,6 +245,8 @@ public class PlayActivity extends AppCompatActivity
         playlistView.setDropListener(playlistDropListener);
         albumView.setOnTouchListener(albumDragListener);
 
+        nullBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_albums);
+
         LibraryService.configureLibrary(getApplicationContext());
         if(!PlayerConnection.init(new PlayerConnection.Callback()
         {
@@ -332,8 +336,37 @@ public class PlayActivity extends AppCompatActivity
 
         //set album view / playlistView
         if(currentSong == null) return;
-        if(currentSong.getAlbum().hasArt()) albumView.setImageBitmap(musicPlayer.getCurrentArt());
-        else albumView.setImageResource(R.drawable.ic_albums);
+
+        Bitmap currentAlbumBitmap = musicPlayer.getCurrentArt() == null ? nullBitmap : musicPlayer.getCurrentArt();
+        if(lastAlbumBitmap == null | (!LibraryService.ENABLE_SONG_CHANGE_ANIM))
+        {
+            albumView.setImageBitmap(currentAlbumBitmap);
+            lastAlbumBitmap = currentAlbumBitmap;
+        }
+        else if(!lastAlbumBitmap.sameAs(currentAlbumBitmap))
+        {
+            final Animation anim_out = AnimationUtils.loadAnimation(PlayActivity.this, android.R.anim.fade_out);
+            final Animation anim_in  = AnimationUtils.loadAnimation(PlayActivity.this, android.R.anim.fade_in);
+            anim_out.setDuration(150);
+            anim_in.setDuration(300);
+            anim_out.setAnimationListener(new Animation.AnimationListener()
+            {
+                @Override public void onAnimationStart(Animation animation) {}
+                @Override public void onAnimationRepeat(Animation animation) {}
+                @Override public void onAnimationEnd(Animation animation)
+                {
+                    albumView.setImageBitmap(currentAlbumBitmap);
+                    lastAlbumBitmap = currentAlbumBitmap;
+                    anim_in.setAnimationListener(new Animation.AnimationListener() {
+                        @Override public void onAnimationStart(Animation animation) {}
+                        @Override public void onAnimationRepeat(Animation animation) {}
+                        @Override public void onAnimationEnd(Animation animation) {}
+                    });
+                    albumView.startAnimation(anim_in);
+                }
+            });
+            albumView.startAnimation(anim_out);
+        }
 
         if(playlistAdapter == null)
         {

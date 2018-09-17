@@ -3,13 +3,13 @@ package v.blade.ui;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.provider.DocumentFile;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
@@ -22,12 +22,12 @@ import v.blade.ui.settings.ThemesActivity;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TagEditorActivity extends AppCompatActivity
 {
     private LibraryObject currentObject;
     EditText nameEdit, albumEdit, artistEdit, yearEdit, trackEdit;
+    ImageView imageEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -48,6 +48,7 @@ public class TagEditorActivity extends AppCompatActivity
         artistEdit = findViewById(R.id.artist_edit);
         yearEdit = findViewById(R.id.year_edit);
         trackEdit = findViewById(R.id.track_edit);
+        imageEdit = findViewById(R.id.image_edit);
 
         //get current object and fill details
         currentObject = MainActivity.selectedObject;
@@ -62,6 +63,10 @@ public class TagEditorActivity extends AppCompatActivity
             artistEdit.setText(((Song) currentObject).getArtist().getName());
             trackEdit.setText(((Song) currentObject).getTrackNumber() == 0 ? "" : "" + ((Song) currentObject).getTrackNumber());
             yearEdit.setText(((Song) currentObject).getYear() == 0 ? "" : "" + ((Song) currentObject).getYear());
+            imageEdit.setImageBitmap(((Song) currentObject).getAlbum().getArt());
+
+            if(((Song) currentObject).getAlbum().hasArt()) imageEdit.setImageBitmap(((Song) currentObject).getAlbum().getArt());
+            else imageEdit.setImageResource(R.drawable.ic_albums);
         }
         else if(currentObject instanceof Album)
         {
@@ -69,6 +74,9 @@ public class TagEditorActivity extends AppCompatActivity
             albumEdit.setText(currentObject.getName());
             artistEdit.setText(((Album) currentObject).getArtist().getName());
             trackEdit.setEnabled(false);
+
+            if(((Album) currentObject).hasArt()) imageEdit.setImageBitmap(((Album) currentObject).getArt());
+            else imageEdit.setImageResource(R.drawable.ic_albums);
         }
         else if(currentObject instanceof Artist)
         {
@@ -77,6 +85,7 @@ public class TagEditorActivity extends AppCompatActivity
             artistEdit.setText(currentObject.getName());
             trackEdit.setEnabled(false);
             yearEdit.setEnabled(false);
+            imageEdit.setEnabled(false);
         }
 
         //set theme
@@ -122,14 +131,61 @@ public class TagEditorActivity extends AppCompatActivity
             for(Song currentSong : songs)
             {
                 File basicFile = new File(currentSong.getPath());
-                AudioFile currentFile = AudioFileIO.read(basicFile);
+
+                String[] splitted = basicFile.getAbsolutePath().split("/");
+                String[] splittedTreeUri = LibraryService.TREE_URI.getPath().split("/");
+
+                int index = -1;
+                for(int i = 0; i < splitted.length; i++)
+                {
+                    if(splittedTreeUri[2].substring(0, splittedTreeUri[2].length()-1).equals(splitted[i]))
+                    {
+                        index = i;
+                        break;
+                    }
+                }
+
+                AudioFile currentFile = null;
+
+                if(index != -1)
+                {
+                    //file is on SD card, lets retrieve path
+                    DocumentFile f = DocumentFile.fromTreeUri(this, LibraryService.TREE_URI);
+                    for(int i = index+1; i < splitted.length; i++) f = f.findFile(splitted[i]);
+                    if(!f.canWrite())
+                    {
+                        Toast.makeText(this, R.string.give_perm_ext, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    //OutputStream os = getContentResolver().openOutputStream(f.getUri());
+                    //InputStream is = getContentResolver().openInputStream(f.getUri());
+                    Toast.makeText(this, "Edition on SD Card is not supported for now", Toast.LENGTH_LONG).show();
+                }
+                else
+                {
+                    //file is on local storage, direct access
+                    currentFile = AudioFileIO.read(basicFile);
+                }
+
+                boolean nameEditE = nameEdit.isEnabled() && !nameEdit.getText().toString().equals("");
+                boolean albumEditE = albumEdit.isEnabled() && !albumEdit.getText().toString().equals("");
+                boolean artistEditE = artistEdit.isEnabled() && !artistEdit.getText().toString().equals("");
+                boolean yearEditE = yearEdit.isEnabled() && !yearEdit.getText().toString().equals("");
+                boolean trackEditE = trackEdit.isEnabled() && !trackEdit.getText().toString().equals("");
 
                 Tag currentTag = currentFile.getTagOrCreateAndSetDefault();
-                if(nameEdit.isEnabled()) currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
-                if(albumEdit.isEnabled()) currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
-                if(artistEdit.isEnabled()) currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
-                if(yearEdit.isEnabled()) currentTag.setField(FieldKey.YEAR, yearEdit.getText().toString());
-                if(trackEdit.isEnabled()) currentTag.setField(FieldKey.TRACK, trackEdit.getText().toString());
+                if(nameEditE)
+                    currentTag.setField(FieldKey.TITLE, nameEdit.getText().toString());
+                if(albumEditE)
+                    currentTag.setField(FieldKey.ALBUM, albumEdit.getText().toString());
+                if(artistEditE)
+                    currentTag.setField(FieldKey.ARTIST, artistEdit.getText().toString());
+                if(yearEditE)
+                    currentTag.setField(FieldKey.YEAR, yearEdit.getText().toString());
+                if(trackEditE)
+                    currentTag.setField(FieldKey.TRACK, trackEdit.getText().toString());
+
                 currentFile.commit();
 
                 //actualize contentprovider
@@ -138,18 +194,21 @@ public class TagEditorActivity extends AppCompatActivity
                 //actualize song in library
                 SongSources.SongSource localOld = currentSong.getSources().getLocal();
                 LibraryService.unregisterSong(currentSong, localOld);
-                LibraryService.registerSong(artistEdit.isEnabled() ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
-                        albumEdit.isEnabled() ? albumEdit.getText().toString() : currentSong.getAlbum().getName(),
-                        trackEdit.isEnabled() ? Integer.parseInt(trackEdit.getText().toString()) : currentSong.getTrackNumber(),
-                        yearEdit.isEnabled() ? Integer.parseInt(yearEdit.getText().toString()) : currentSong.getYear(),
+                Song newSong = LibraryService.registerSong(artistEditE ? artistEdit.getText().toString() : currentSong.getArtist().getName(),
+                        albumEditE ? albumEdit.getText().toString() : currentSong.getAlbum().getName(),
+                        trackEditE ? Integer.parseInt(trackEdit.getText().toString()) : currentSong.getTrackNumber(),
+                        yearEditE ? Integer.parseInt(yearEdit.getText().toString()) : currentSong.getYear(),
                         currentSong.getDuration(),
-                        nameEdit.isEnabled() ? nameEdit.getText().toString() : currentSong.getName(),
+                        nameEditE ? nameEdit.getText().toString() : currentSong.getName(),
                         localOld);
+                newSong.setFormat(currentSong.getFormat());
+                newSong.setPath(currentSong.getPath());
             }
 
             MainActivity.selectedObject = null;
 
             Intent intent = new Intent(TagEditorActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         }
         catch (Exception e)

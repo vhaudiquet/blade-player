@@ -58,6 +58,13 @@ public class SettingsActivity extends AppCompatActivity
                 // Get Uri from Storage Access Framework.
                 Uri treeUri = resultData.getData();
 
+                if(!treeUri.toString().endsWith("%3A"))
+                {
+                    //show the user that we are not happy
+                    Toast.makeText(this, R.string.please_sd_root, Toast.LENGTH_LONG).show();
+                    return;
+                }
+
                 // Persist URI in shared preference so that you can use it later.
                 SharedPreferences sharedPreferences = getSharedPreferences(PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -104,6 +111,11 @@ public class SettingsActivity extends AppCompatActivity
                 Intent intent = new Intent(getActivity(), ThemesActivity.class);
                 startActivity(intent);
             }
+            else if(preference.getKey().equals("link_manager"))
+            {
+                Intent intent = new Intent(getActivity(), LinkManagerActivity.class);
+                startActivity(intent);
+            }
             else if(preference.getKey().equals("sd_perm"))
             {
                 if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
@@ -130,6 +142,11 @@ public class SettingsActivity extends AppCompatActivity
                 SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
                 LibraryService.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
                 Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
+            }
+            else if(preference.getKey().equals("anim_0"))
+            {
+                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                LibraryService.ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
             }
 
             return super.onPreferenceTreeClick(preference);

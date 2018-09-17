@@ -89,12 +89,21 @@
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="v.blade.ui.MainActivity"/>
         </activity>
-        <activity android:name=".ui.settings.ThemesActivity"
-                  android:label="@string/themes"
-                  android:parentActivityName=".ui.settings.SettingsActivity"
-                  android:theme="@style/Blade.AppTheme.NoActionBar">
-            <meta-data android:name="android.support.PARENT_ACTIVITY"
-                       android:value=".ui.settings.SettingsActivity"/>
+        <activity
+                android:name=".ui.settings.ThemesActivity"
+                android:label="@string/themes"
+                android:parentActivityName=".ui.settings.SettingsActivity"
+                android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                    android:name="android.support.PARENT_ACTIVITY"
+                    android:value=".ui.settings.SettingsActivity"/>
+        </activity>
+        <activity android:name=".ui.settings.LinkManagerActivity"
+                  android:label="@string/link_manager"
+                  android:parentActivityName=".ui.settings.SettingsActivity">
+            <meta-data
+                    android:name="android.support.PARENT_ACTIVITY"
+                    android:value=".ui.settings.SettingsActivity"/>
         </activity>
     </application>
 

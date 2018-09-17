@@ -373,7 +373,7 @@ public class MainActivity extends AppCompatActivity
             if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_SEARCH)
                 popupMenu.getMenu().findItem(R.id.action_link_to).setVisible(false);
 
-            if(object.getSources() == null || object.getSources().getLocal() == null)
+            if(object.getSources() == null || object.getSources().getLocal() == null || object instanceof Playlist)
                 popupMenu.getMenu().findItem(R.id.action_tag_edit).setVisible(false);
 
             popupMenu.show();
@@ -423,6 +423,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View v)
             {
+                if(musicPlayer == null) return;
                 if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
                 else PlayerConnection.musicController.getTransportControls().play();
             }
@@ -627,7 +628,7 @@ public class MainActivity extends AppCompatActivity
                 searchView.setQueryHint(getString(R.string.search_web));
                 // Set to empty activity
                 fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
-                setContentToSearch(new ArrayList<LibraryObject>());
+                setContentToSearch(null);
                 break;
 
             case R.id.nav_artists:
@@ -772,8 +773,14 @@ public class MainActivity extends AppCompatActivity
         currentObject = null; fromPlaylists = false;
         this.setTitle(getResources().getString(R.string.action_search));
         currentContext = CONTEXT_SEARCH;
+
+        if(searchResult == null) searchResult = new ArrayList<>();
+        else if(searchResult.isEmpty())
+            Toast.makeText(this, R.string.no_results_found, Toast.LENGTH_SHORT).show();
+
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, searchResult);
         adapter.registerMoreClickListener(mainListViewMoreListener);
+
         mainListView.setAdapter(adapter);
     }
 

@@ -15,6 +15,10 @@
              android:id="@+id/include"/>
     <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="5dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <ImageView android:layout_width="match_parent"
+                       android:layout_height="170dp"
+                       app:srcCompat="@drawable/ic_cancel_black"
+                       android:id="@+id/image_edit"/>
             <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
                                                            android:theme="@style/Theme.ControlTheme">
                 <EditText android:id="@+id/name_edit"

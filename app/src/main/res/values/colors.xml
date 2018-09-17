@@ -20,4 +20,11 @@
     <color name="greenColorAccent">#ffffff</color>
     <color name="greenColorPrimaryLighter">#c8e6c9</color>
     <color name="greenColorBackground">#e8f5e9</color>
+
+    <color name="redColorPrimary">#d32f2f</color>
+    <color name="redColorPrimaryDark">#b71c1c</color>
+    <color name="redColorPrimaryLight">#f44336</color>
+    <color name="redColorAccent">#ffffff</color>
+    <color name="redColorPrimaryLighter">#ef9a9a</color>
+    <color name="redColorBackground">#fbe9e7</color>
 </resources>

@@ -59,7 +59,8 @@ public class PlayerMediaPlayer
         {
             if(currentActivePlayer == player)
             {
-                Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+                if(context != null) Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+
                 currentState = PLAYER_STATE_PAUSED;
                 listener.onStateChange();
             }
@@ -139,6 +140,8 @@ public class PlayerMediaPlayer
     {
         if(requestAudioFocus())
         {
+            if(currentActivePlayer == null) return;
+
             currentActivePlayer.play(new SourcePlayer.PlayerCallback() {
                 @Override
                 public void onSucess(SourcePlayer player)
@@ -159,10 +162,9 @@ public class PlayerMediaPlayer
                 @Override
                 public void onFailure(SourcePlayer player)
                 {
-                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
-
                     if(player == currentActivePlayer)
                     {
+                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
@@ -202,7 +204,11 @@ public class PlayerMediaPlayer
     }
     public void seekTo(int msec)
     {
-        if(currentActivePlayer != null) currentActivePlayer.seekTo(msec);
+        if(currentActivePlayer != null)
+        {
+            currentActivePlayer.seekTo(msec);
+            listener.onStateChange(); //update mediasession position
+        }
     }
     public int getCurrentPosition()
     {
@@ -234,11 +240,14 @@ public class PlayerMediaPlayer
         //oreo+ : we need to show notification as soon as first 'playSong()' is called (service start)
         if(!notificationShown) {listener.onStateChange(); notificationShown = true;}
 
+        if(song == null) return;
         currentSong = song;
 
         if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
+        if(song.getSources().getSourceByPriority(0) == null)
+        {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
         currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
 
         if(requestAudioFocus())
@@ -264,10 +273,9 @@ public class PlayerMediaPlayer
                 @Override
                 public void onFailure(SourcePlayer player)
                 {
-                    Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
-
                     if(currentActivePlayer == player)
                     {
+                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
@@ -291,7 +299,9 @@ public class PlayerMediaPlayer
         long actions = PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID
                 | PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
                 | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+                | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                | PlaybackStateCompat.ACTION_SET_REPEAT_MODE
+                | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
 
         int playbackState = 0;
         switch(currentState)

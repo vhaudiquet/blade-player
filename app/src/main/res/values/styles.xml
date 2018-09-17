@@ -42,6 +42,17 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
+    <style name="Red.AppTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/redColorPrimary</item>
+        <item name="colorPrimaryDark">@color/redColorPrimaryDark</item>
+        <item name="colorAccent">@color/redColorAccent</item>
+        <item name="preferenceTheme">@style/Red.Preferences</item>
+        <item name="android:itemBackground">@color/redColorBackground</item>
+    </style>
+    <style name="Red.AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 
     <!-- Controls (buttons, listviews, ...) theme -->
     <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light.DarkActionBar">
@@ -71,6 +82,12 @@
         <item name="colorControlActivated">@color/greenColorPrimary</item>
         <item name="android:windowBackground">@color/greenColorBackground</item>
         <item name="android:background">@color/greenColorBackground</item>
+    </style>
+    <style name="Red.Preferences" parent="Theme.Preferences">
+        <item name="colorControlNormal">@color/redColorPrimary</item>
+        <item name="colorControlActivated">@color/redColorPrimary</item>
+        <item name="android:windowBackground">@color/redColorBackground</item>
+        <item name="android:background">@color/redColorBackground</item>
     </style>
 
 </resources>

@@ -29,6 +29,7 @@ public class LibraryService
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
     public static Uri TREE_URI;
+    public static boolean ENABLE_SONG_CHANGE_ANIM;
 
     /* library */
     private static final List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
@@ -43,7 +44,7 @@ public class LibraryService
     static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
     //song linkss
-    private static final HashMap<Song, List<Song>> songLinks = new HashMap<>();
+    public static final HashMap<Song, List<Song>> songLinks = new HashMap<>();
 
     /* list callbacks */
     public interface UserLibraryCallback{void onLibraryChange();}
@@ -156,6 +157,8 @@ public class LibraryService
 
         String treeUri = generalPrefs.getString("sdcard_uri", null);
         if(treeUri != null) TREE_URI = Uri.parse(treeUri);
+
+        ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
 
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
         REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
@@ -319,7 +322,7 @@ public class LibraryService
         {
             if(src != null)
             {
-                destination.getSources().addSource(src);
+                destination.getSources().addSource(src); //addSource is checking for double-add
                 unregisterSong(source, src);
             }
         }
@@ -347,27 +350,32 @@ public class LibraryService
         list.add(source);
 
         //save songlinks to cache (by rewriting hashmap)
-        if(save)
+        if(save) writeLinks();
+    }
+
+    /*
+    * Rewrite song links on disk
+     */
+    public static void writeLinks()
+    {
+        try
         {
-            try
+            songLinksFile.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(songLinksFile));
+            for(Song s : songLinks.keySet())
             {
-                songLinksFile.createNewFile();
-                BufferedWriter writer = new BufferedWriter(new FileWriter(songLinksFile));
-                for(Song s : songLinks.keySet())
-                {
-                    List<Song> links = songLinks.get(s);
-                    writer.write(s.getArtist() + CACHE_SEPARATOR + s.getAlbum() + CACHE_SEPARATOR + s.getTitle() + CACHE_SEPARATOR +
-                    links.size() + CACHE_SEPARATOR);
-                    for(Song linked : links)
-                        writer.write(linked.getArtist() + CACHE_SEPARATOR + linked.getAlbum() + CACHE_SEPARATOR + linked.getTitle() + CACHE_SEPARATOR);
-                    writer.newLine();
-                }
-                writer.close();
+                List<Song> links = songLinks.get(s);
+                writer.write(s.getArtist() + CACHE_SEPARATOR + s.getAlbum() + CACHE_SEPARATOR + s.getTitle() + CACHE_SEPARATOR +
+                        links.size() + CACHE_SEPARATOR);
+                for(Song linked : links)
+                    writer.write(linked.getArtist() + CACHE_SEPARATOR + linked.getAlbum() + CACHE_SEPARATOR + linked.getTitle() + CACHE_SEPARATOR);
+                writer.newLine();
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
+            writer.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
         }
     }
 
@@ -437,27 +445,31 @@ public class LibraryService
 
         //search all songs on best source
         ArrayList<Song> bestSourceSongs = new ArrayList<>();
-        for(Song s : songs)
+        synchronized (songs)
         {
-            if(s.getSources().getSourceByPriority(0).getSource() != bestSource && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
+            for(Song s : songs)
             {
-                //query bestSource for this song
-                try
+                if(s.getSources().getSourceByPriority(0).getSource() != bestSource && s.getSources().getSourceByPriority(0).getSource() != Source.SOURCE_LOCAL_LIB)
                 {
-                    if(bestSource.searchForSong(s))
+                    //query bestSource for this song
+                    try
                     {
-                        bestSourceSongs.add(s);
+                        if(bestSource.searchForSong(s))
+                        {
+                            bestSourceSongs.add(s);
+                        }
+                        addedSongs++;
+                        if(addedSongs >= BETTER_SOURCES_MAX) break;
                     }
-                    addedSongs++;
-                    if(addedSongs >= BETTER_SOURCES_MAX) break;
-                }
-                catch (Exception error)
-                {
-                    //TODO : handle error
-                    continue;
+                    catch (Exception error)
+                    {
+                        //TODO : handle error
+                        continue;
+                    }
                 }
             }
         }
+
         //also search for songs in playlist
         if(!SAVE_PLAYLISTS_TO_LIBRARY)
         {
@@ -512,7 +524,7 @@ public class LibraryService
             while (reader.ready())
             {
                 String[] line = reader.readLine().split(CACHE_SEPARATOR);
-                System.out.println(Arrays.toString(line));
+                //System.out.println(Arrays.toString(line));
                 Song song = getSongHandle(line[2], line[1], line[0], 0, null, 0, 0);
                 if(song == null) continue;
                 int size = Integer.parseInt(line[3]);
@@ -527,6 +539,7 @@ public class LibraryService
         }
         catch (IOException e)
         {
+            System.err.println("registerSongLinks() encoutered IOException");
             e.printStackTrace();
         }
     }
@@ -720,9 +733,13 @@ public class LibraryService
                 if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
                     songAlbum = alb;
         }
-        if(songAlbum == null) for(Album alb : albumHandles)
-            if(alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
-                songAlbum = alb;
+        if(songAlbum == null)
+            synchronized (albumHandles)
+            {
+                for (Album alb : albumHandles)
+                    if (alb.getName().equalsIgnoreCase(album) && alb.getArtist().getName().equalsIgnoreCase(songArtist.getName()))
+                        songAlbum = alb;
+            }
         if(songAlbum == null) {songAlbum = new Album(album, songArtist); songAlbum.setHandled(true); albumHandles.add(songAlbum);}
         songAlbum.getSources().addSource(source);
 
