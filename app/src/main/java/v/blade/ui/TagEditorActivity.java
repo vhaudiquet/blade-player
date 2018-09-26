@@ -128,20 +128,24 @@ public class TagEditorActivity extends AppCompatActivity
 
             TagOptionSingleton.getInstance().setAndroid(true);
 
+
             for(Song currentSong : songs)
             {
                 File basicFile = new File(currentSong.getPath());
 
                 String[] splitted = basicFile.getAbsolutePath().split("/");
-                String[] splittedTreeUri = LibraryService.TREE_URI.getPath().split("/");
-
                 int index = -1;
-                for(int i = 0; i < splitted.length; i++)
+                if(LibraryService.TREE_URI != null)
                 {
-                    if(splittedTreeUri[2].substring(0, splittedTreeUri[2].length()-1).equals(splitted[i]))
+                    String[] splittedTreeUri = LibraryService.TREE_URI.getPath().split("/");
+
+                    for(int i = 0; i < splitted.length; i++)
                     {
-                        index = i;
-                        break;
+                        if(splittedTreeUri[2].substring(0, splittedTreeUri[2].length()-1).equals(splitted[i]))
+                        {
+                            index = i;
+                            break;
+                        }
                     }
                 }
 

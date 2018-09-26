@@ -8,6 +8,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -1604,10 +1605,16 @@ public abstract class Source
                     @Override
                     public void onPlayerStateChange(PlayerState playerState, long l)
                     {
-                        if(playerState.equals(PlayerState.PLAYBACK_COMPLETED))
-                        {
-                            listener.onSongCompletion();
-                        }
+                        new Handler(Looper.getMainLooper()).post(new Runnable() {
+                            @Override
+                            public void run()
+                            {
+                                if(playerState.equals(PlayerState.PLAYBACK_COMPLETED))
+                                {
+                                    listener.onSongCompletion();
+                                }
+                            }
+                        });
                     }
                 });
             }
