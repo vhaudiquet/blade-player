@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/action_search"
-          android:icon="@drawable/ic_search_white"
-          android:menuCategory="secondary"
-          app:showAsAction="ifRoom"
-          android:title="@string/action_search"
-          app:actionViewClass="android.widget.SearchView"/>
-    <item android:id="@+id/action_sync"
-          android:menuCategory="secondary"
-          app:showAsAction="ifRoom"
-          android:icon="@drawable/ic_sync"
-          android:title="@string/sync"/>
-    <item android:id="@+id/action_settings"
-          android:title="@string/action_settings"
-          android:orderInCategory="100"
-          app:showAsAction="never"/>
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search_white"
+        android:menuCategory="secondary"
+        android:title="@string/action_search"
+        app:actionViewClass="android.widget.SearchView"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_sync"
+        android:icon="@drawable/ic_sync"
+        android:menuCategory="secondary"
+        android:title="@string/sync"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
 </menu>

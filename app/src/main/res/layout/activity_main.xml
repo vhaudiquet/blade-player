@@ -1,90 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.DrawerLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/drawer_layout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="true"
-        tools:openDrawer="start">
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start">
 
     <RelativeLayout
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/mainLinearLayout">
+        android:id="@+id/mainLinearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <include layout="@layout/app_bar_main"
-             android:layout_width="match_parent"
-             android:layout_height="55dp"
-             android:id="@+id/include"/>
+        <include
+            android:id="@+id/include"
+            layout="@layout/app_bar_main"
+            android:layout_width="match_parent"
+            android:layout_height="55dp" />
 
         <ListView
-                android:layout_below="@id/include"
-                android:layout_above="@id/currentPlay"
-                android:id="@+id/libraryList"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+            android:id="@+id/libraryList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/currentPlay"
+            android:layout_below="@id/include" />
 
         <RelativeLayout
-                android:layout_alignParentBottom="true"
-                android:id="@+id/currentPlay"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:orientation="vertical"
-                android:padding="5dp"
-                android:visibility="gone">
+            android:id="@+id/currentPlay"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical"
+            android:padding="5dp"
+            android:visibility="gone">
 
             <ImageView
-                    android:id="@+id/element_image"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    app:srcCompat="@drawable/ic_unknown"/>
+                android:id="@+id/element_image"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                app:srcCompat="@drawable/ic_unknown" />
 
             <TextView
-                    android:id="@+id/element_title"
-                    android:layout_width="250dp"
-                    android:layout_height="wrap_content"
-                    android:textSize="18sp"
-                    android:layout_alignParentTop="true"
-                    android:layout_toRightOf="@id/element_image"
-                    android:layout_toEndOf="@id/element_image"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginStart="10dp"
-                    android:singleLine="true"
-                    android:text="Titre"
-            />
+                android:id="@+id/element_title"
+                android:layout_width="250dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_marginStart="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_toEndOf="@id/element_image"
+                android:layout_toRightOf="@id/element_image"
+                android:singleLine="true"
+                android:text="Titre"
+                android:textSize="18sp" />
+
             <TextView
-                    android:id="@+id/element_subtitle"
-                    android:layout_width="250dp"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:layout_below="@+id/element_title"
-                    android:layout_toRightOf="@id/element_image"
-                    android:layout_toEndOf="@id/element_image"
-                    android:layout_marginLeft="10dp"
-                    android:layout_marginStart="10dp"
-                    android:singleLine="true"
-                    android:text="Artiste - Album"/>
-            <ImageView android:id="@+id/element_action"
-                       android:layout_width="wrap_content"
-                       android:layout_height="match_parent"
-                       android:layout_alignParentRight="true"
-                       android:layout_alignParentEnd="true"
-                       android:layout_centerVertical="true"
-                       app:srcCompat="@drawable/ic_play_action"/>
+                android:id="@+id/element_subtitle"
+                android:layout_width="250dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/element_title"
+                android:layout_marginStart="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_toEndOf="@id/element_image"
+                android:layout_toRightOf="@id/element_image"
+                android:singleLine="true"
+                android:text="Artiste - Album"
+                android:textSize="12sp" />
+
+            <ImageView
+                android:id="@+id/element_action"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                app:srcCompat="@drawable/ic_play_action" />
         </RelativeLayout>
 
     </RelativeLayout>
 
     <android.support.design.widget.NavigationView
-            android:id="@+id/nav_view"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="start"
-            android:fitsSystemWindows="true"
-            app:headerLayout="@layout/nav_header_main"
-            app:menu="@menu/activity_main_drawer"/>
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header_main"
+        app:menu="@menu/activity_main_drawer" />
 
 </android.support.v4.widget.DrawerLayout>

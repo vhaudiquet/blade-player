@@ -27,18 +27,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
 import android.widget.Toast;
+
 import v.blade.R;
 import v.blade.library.LibraryService;
 
-public class SettingsActivity extends AppCompatActivity
-{
+public class SettingsActivity extends AppCompatActivity {
     public static final String PREFERENCES_ACCOUNT_FILE_NAME = "accounts";
     public static final String PREFERENCES_GENERAL_FILE_NAME = "general";
     private static final int REQUEST_CODE_STORAGE_ACCESS = 1337;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         //set theme
@@ -48,104 +47,102 @@ public class SettingsActivity extends AppCompatActivity
     }
 
     @Override
-    public final void onActivityResult(final int requestCode, final int resultCode, final Intent resultData)
-    {
-        if (resultCode == AppCompatActivity.RESULT_OK && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
-        {
+    public final void onActivityResult(final int requestCode, final int resultCode, final Intent resultData) {
+        if (resultCode == AppCompatActivity.RESULT_OK && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             //if (requestCode == REQUEST_CODE_STORAGE_ACCESS)
             //{
-                // Get Uri from Storage Access Framework.
-                Uri treeUri = resultData.getData();
+            // Get Uri from Storage Access Framework.
+            Uri treeUri = resultData.getData();
 
-                if(!treeUri.toString().endsWith("%3A"))
-                {
-                    //show the user that we are not happy
-                    Toast.makeText(this, R.string.please_sd_root, Toast.LENGTH_LONG).show();
-                    return;
-                }
+            if (!treeUri.toString().endsWith("%3A")) {
+                //show the user that we are not happy
+                Toast.makeText(this, R.string.please_sd_root, Toast.LENGTH_LONG).show();
+                return;
+            }
 
-                // Persist URI in shared preference so that you can use it later.
-                SharedPreferences sharedPreferences = getSharedPreferences(PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("sdcard_uri", treeUri.toString());
-                editor.apply();
+            // Persist URI in shared preference so that you can use it later.
+            SharedPreferences sharedPreferences = getSharedPreferences(PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("sdcard_uri", treeUri.toString());
+            editor.apply();
 
-                LibraryService.TREE_URI = treeUri;
+            LibraryService.TREE_URI = treeUri;
 
-                // Persist access permissions, so you dont have to ask again
-                final int takeFlags = resultData.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                grantUriPermission(getPackageName(), treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                getContentResolver().takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            // Persist access permissions, so you dont have to ask again
+            final int takeFlags = resultData.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            grantUriPermission(getPackageName(), treeUri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            getContentResolver().takePersistableUriPermission(treeUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
-                Toast.makeText(this, getString(R.string.perm_granted) + " : " + treeUri, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.perm_granted) + " : " + treeUri, Toast.LENGTH_LONG).show();
             //}
         }
     }
 
-    public static class SettingsFragment extends PreferenceFragmentCompat
-    {
+    public static class SettingsFragment extends PreferenceFragmentCompat {
         @Override
-        public void onCreatePreferences(Bundle savedInstanceState, String rootKey)
-        {
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             getPreferenceManager().setSharedPreferencesName(PREFERENCES_GENERAL_FILE_NAME);
 
             addPreferencesFromResource(R.xml.preferences);
         }
 
         @Override
-        public boolean onPreferenceTreeClick(Preference preference)
-        {
-            if(preference.getKey().equals("about_screen"))
-            {
-                Intent intent = new Intent(getActivity(), AboutActivity.class);
-                startActivity(intent);
-            }
-            else if(preference.getKey().equals("sources_screen"))
-            {
-                Intent intent = new Intent(getActivity(), SourcesActivity.class);
-                startActivity(intent);
-            }
-            else if(preference.getKey().equals("themes"))
-            {
-                Intent intent = new Intent(getActivity(), ThemesActivity.class);
-                startActivity(intent);
-            }
-            else if(preference.getKey().equals("link_manager"))
-            {
-                Intent intent = new Intent(getActivity(), LinkManagerActivity.class);
-                startActivity(intent);
-            }
-            else if(preference.getKey().equals("sd_perm"))
-            {
-                if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
-                {
-                    Toast.makeText(getActivity(), R.string.sd_perm_unneeded, Toast.LENGTH_LONG).show();
-                    return super.onPreferenceTreeClick(preference);
+        public boolean onPreferenceTreeClick(Preference preference) {
+            switch (preference.getKey()) {
+                case "about_screen": {
+                    Intent intent = new Intent(getActivity(), AboutActivity.class);
+                    startActivity(intent);
+                    break;
                 }
+                case "sources_screen": {
+                    Intent intent = new Intent(getActivity(), SourcesActivity.class);
+                    startActivity(intent);
+                    break;
+                }
+                case "themes": {
+                    Intent intent = new Intent(getActivity(), ThemesActivity.class);
+                    startActivity(intent);
+                    break;
+                }
+                case "link_manager": {
+                    Intent intent = new Intent(getActivity(), LinkManagerActivity.class);
+                    startActivity(intent);
+                    break;
+                }
+                case "sd_perm": {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                        Toast.makeText(getActivity(), R.string.sd_perm_unneeded, Toast.LENGTH_LONG).show();
+                        return super.onPreferenceTreeClick(preference);
+                    }
 
-                //request user to select entire SD card
-                //TODO : display image
-                Toast.makeText(getActivity(), R.string.select_sd_card, Toast.LENGTH_LONG).show();
+                    //request user to select entire SD card
+                    //TODO : display image
+                    Toast.makeText(getActivity(), R.string.select_sd_card, Toast.LENGTH_LONG).show();
 
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-                startActivityForResult(intent, REQUEST_CODE_STORAGE_ACCESS);
-            }
-            else if(preference.getKey().equals("save_playlists_to_library"))
-            {
-                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-                LibraryService.SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
-                Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
-            }
-            else if(preference.getKey().equals("register_better_sources"))
-            {
-                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-                LibraryService.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
-                Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
-            }
-            else if(preference.getKey().equals("anim_0"))
-            {
-                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
-                LibraryService.ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
+                    Intent intent = null;
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                    }
+                    startActivityForResult(intent, REQUEST_CODE_STORAGE_ACCESS);
+                    break;
+                }
+                case "save_playlists_to_library": {
+                    SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                    LibraryService.SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
+                    Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
+                    break;
+                }
+                case "register_better_sources": {
+                    SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                    LibraryService.REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
+                    Toast.makeText(getActivity(), getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
+                    break;
+                }
+                case "anim_0": {
+                    SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                    LibraryService.ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
+                    break;
+                }
             }
 
             return super.onPreferenceTreeClick(preference);

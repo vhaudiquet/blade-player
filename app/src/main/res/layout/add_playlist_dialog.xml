@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-    <Spinner android:layout_width="match_parent"
-             android:layout_height="wrap_content"
-             android:layout_margin="10dp"
-             android:id="@+id/playlist_source"/>
-    <EditText android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:layout_below="@id/playlist_source"
-              android:layout_margin="10dp"
-              android:hint="@string/name"
-              android:theme="@style/Theme.ControlTheme"
-              android:imeOptions="actionDone"
-              android:id="@+id/playlist_name"/>
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Spinner
+        android:id="@+id/playlist_source"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp" />
+
+    <EditText
+        android:id="@+id/playlist_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/playlist_source"
+        android:layout_margin="10dp"
+        android:hint="@string/name"
+        android:imeOptions="actionDone"
+        android:theme="@style/Theme.ControlTheme" />
 
 </RelativeLayout>

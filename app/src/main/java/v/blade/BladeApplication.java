@@ -4,20 +4,20 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.widget.Toast;
+
 import org.acra.ACRA;
 import org.acra.config.CoreConfigurationBuilder;
 import org.acra.config.HttpSenderConfigurationBuilder;
 import org.acra.config.ToastConfigurationBuilder;
 import org.acra.data.StringFormat;
 import org.acra.sender.HttpSender;
+
 import v.blade.ui.settings.SettingsActivity;
 import v.blade.ui.settings.ThemesActivity;
 
-public class BladeApplication extends Application
-{
+public class BladeApplication extends Application {
     @Override
-    protected void attachBaseContext(Context base)
-    {
+    protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
 
         //initialize ACRA
@@ -38,15 +38,14 @@ public class BladeApplication extends Application
         //load saved theme
         SharedPreferences generalPrefs = base.getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
         String theme = generalPrefs.getString("theme", null);
-        if(theme != null)
-        {
-            if(theme.equalsIgnoreCase("nightly"))
+        if (theme != null) {
+            if (theme.equalsIgnoreCase("nightly"))
                 ThemesActivity.setThemeToNightly();
-            else if(theme.equalsIgnoreCase("blade"))
+            else if (theme.equalsIgnoreCase("blade"))
                 ThemesActivity.setThemeToBlade();
-            else if(theme.equalsIgnoreCase("green"))
+            else if (theme.equalsIgnoreCase("green"))
                 ThemesActivity.setThemeToGreen();
-            else if(theme.equalsIgnoreCase("red"))
+            else if (theme.equalsIgnoreCase("red"))
                 ThemesActivity.setThemeToRed();
         }
     }

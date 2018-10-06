@@ -25,15 +25,21 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import v.blade.R;
-import v.blade.library.*;
-import v.blade.ui.settings.ThemesActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LibraryObjectAdapter extends BaseAdapter
-{
+import v.blade.R;
+import v.blade.library.Album;
+import v.blade.library.Artist;
+import v.blade.library.LibraryObject;
+import v.blade.library.LibraryService;
+import v.blade.library.Playlist;
+import v.blade.library.Song;
+import v.blade.library.SongSources;
+import v.blade.ui.settings.ThemesActivity;
+
+public class LibraryObjectAdapter extends BaseAdapter {
     private List<LibraryObject> original;
     private List<LibraryObject> libraryObjects;
     private Activity context;
@@ -41,92 +47,97 @@ public class LibraryObjectAdapter extends BaseAdapter
 
     private ImageView.OnClickListener moreClickListener;
     private ImageView.OnTouchListener moreTouchListener;
-    private int moreImageRessource = 0;
+    private int moreImageResource = 0;
     private boolean hideMore;
 
     private boolean repaintSongBackground = false;
     private int selectedPosition;
 
-    static class ViewHolder
-    {
-        TextView title;
-        TextView subtitle;
-        ImageView image;
-        ImageView source0;
-        ImageView source1;
-        ImageView source2;
+    public LibraryObjectAdapter(final Activity context, List libraryObjects) {
+        this(context, libraryObjects, true);
     }
 
-    public LibraryObjectAdapter(final Activity context, List libraryObjects)
-    {this(context, libraryObjects, true);}
-
-    public LibraryObjectAdapter(final Activity context, List objects, boolean libraryCallback)
-    {
+    public LibraryObjectAdapter(final Activity context, List objects, boolean libraryCallback) {
         this.original = objects;
         this.libraryObjects = new ArrayList<>(original);
         this.context = context;
         this.inflater = LayoutInflater.from(context);
 
-        if(libraryCallback) LibraryService.currentCallback = new LibraryService.UserLibraryCallback()
-        {
-            @Override
-            public void onLibraryChange()
-            {
-                context.runOnUiThread(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
+        if (libraryCallback)
+            LibraryService.currentCallback = () ->
+                    context.runOnUiThread(() -> {
                         libraryObjects = new ArrayList<>(original);
                         LibraryObjectAdapter.this.notifyDataSetChanged();
-                    }
-                });
-            }
-        };
+                    });
     }
 
-    public void registerMoreClickListener(ImageView.OnClickListener clickListener)
-    {this.moreClickListener = clickListener;}
-    public void registerMoreTouchListener(ImageView.OnTouchListener touchListener)
-    {this.moreTouchListener = touchListener;}
-    public void setMoreImage(int ressource) {this.moreImageRessource = ressource;}
-    public void setHideMore(boolean hideMore) {this.hideMore = hideMore;}
-    public void repaintSongBackground() {repaintSongBackground = true;}
-    public void setSelectedPosition(int selectedPosition) {this.selectedPosition  = selectedPosition;}
-    public void resetList(List objects)
-    {
+    public void registerMoreClickListener(ImageView.OnClickListener clickListener) {
+        this.moreClickListener = clickListener;
+    }
+
+    public void registerMoreTouchListener(ImageView.OnTouchListener touchListener) {
+        this.moreTouchListener = touchListener;
+    }
+
+    public void setMoreImage(int resource) {
+        this.moreImageResource = resource;
+    }
+
+    public void setHideMore(boolean hideMore) {
+        this.hideMore = hideMore;
+    }
+
+    public void repaintSongBackground() {
+        repaintSongBackground = true;
+    }
+
+    public void setSelectedPosition(int selectedPosition) {
+        this.selectedPosition = selectedPosition;
+    }
+
+    public void resetList(List objects) {
         this.original = objects;
         this.libraryObjects = new ArrayList<>(original);
         this.notifyDataSetChanged();
     }
 
     @Override
-    public int getCount() {return libraryObjects.size();}
+    public int getCount() {
+        return libraryObjects.size();
+    }
 
     @Override
-    public Object getItem(int position) {return libraryObjects.get(position);}
+    public Object getItem(int position) {
+        return libraryObjects.get(position);
+    }
 
     @Override
-    public long getItemId(int position)
-    {
-        if(position < 0 || position >= libraryObjects.size()) return -1;
+    public long getItemId(int position) {
+        if (position < 0 || position >= libraryObjects.size()) return -1;
         return position;
     }
-    @Override public boolean hasStableIds() {return true;}
-
-    public List getObjectList() {return libraryObjects;}
-    public List<LibraryObject> getObjects() {return libraryObjects;}
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent)
-    {
+    public boolean hasStableIds() {
+        return true;
+    }
+
+    public List getObjectList() {
+        return libraryObjects;
+    }
+
+    public List<LibraryObject> getObjects() {
+        return libraryObjects;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder mViewHolder;
 
         //get item using position
         LibraryObject obj = libraryObjects.get(position);
 
-        if(convertView == null)
-        {
+        if (convertView == null) {
             mViewHolder = new ViewHolder();
 
             //map to song layout
@@ -142,65 +153,59 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             //set 'more' action
             ImageView more = convertView.findViewById(R.id.element_more);
-            if(moreClickListener != null) more.setOnClickListener(moreClickListener);
-            if(moreTouchListener != null) more.setOnTouchListener(moreTouchListener);
-            if(moreImageRessource != 0) more.setImageResource(moreImageRessource);
-            if(hideMore) more.setVisibility(View.INVISIBLE);
+            if (moreClickListener != null) more.setOnClickListener(moreClickListener);
+            if (moreTouchListener != null) more.setOnTouchListener(moreTouchListener);
+            if (moreImageResource != 0) more.setImageResource(moreImageResource);
+            if (hideMore) more.setVisibility(View.INVISIBLE);
 
             convertView.setTag(mViewHolder);
-        }
-        else mViewHolder = (ViewHolder) convertView.getTag();
+        } else mViewHolder = (ViewHolder) convertView.getTag();
 
         ImageView more = convertView.findViewById(R.id.element_more);
         more.setTag(obj);
 
         mViewHolder.title.setText(obj.getName());
 
-        if(obj instanceof Song)
-        {
+        if (obj instanceof Song) {
             Song song = (Song) obj;
             //set subtitle : Artist
             mViewHolder.subtitle.setText(song.getArtist().getName());
 
             //set image to song album art
-            if(song.getAlbum().hasArt())
+            if (song.getAlbum().hasArt())
                 mViewHolder.image.setImageBitmap(song.getAlbum().getArtMiniature());
             else
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
 
-            if(repaintSongBackground)
-                if(position != selectedPosition)
+            if (repaintSongBackground)
+                if (position != selectedPosition)
                     convertView.setBackground(ContextCompat.getDrawable(context, ThemesActivity.currentColorBackground));
-                else convertView.setBackground(ContextCompat.getDrawable(context, ThemesActivity.currentColorPrimaryLight));
-        }
-        else if(obj instanceof Album)
-        {
+                else
+                    convertView.setBackground(ContextCompat.getDrawable(context, ThemesActivity.currentColorPrimaryLight));
+        } else if (obj instanceof Album) {
             //set subtitle : Artist
-            mViewHolder.subtitle.setText(((Album)obj).getArtist().getName());
+            mViewHolder.subtitle.setText(((Album) obj).getArtist().getName());
 
             //set image to art
-            if(((Album) obj).hasArt()) mViewHolder.image.setImageBitmap(((Album) obj).getArtMiniature());
+            if (obj.hasArt())
+                mViewHolder.image.setImageBitmap(obj.getArtMiniature());
             else mViewHolder.image.setImageResource(R.drawable.ic_albums);
-        }
-        else if(obj instanceof Artist)
-        {
+        } else if (obj instanceof Artist) {
             //set subtitle : song numbers
             mViewHolder.subtitle.setText(((Artist) obj).getSongCount() + " " + context.getResources().getString(R.string.songs).toLowerCase());
 
             //set image to default artist image
-            mViewHolder.image.setImageResource(R.drawable.ic_artists);
-        }
-        else if(obj instanceof Playlist)
-        {
+            mViewHolder.image.setImageResource(R.drawablie.c_artists);
+        } else if (obj instanceof Playlist) {
             //set subtitle : song numbers
-            if(((Playlist) obj).getContent() != null)
+            if (((Playlist) obj).getContent() != null)
                 mViewHolder.subtitle.setText(((Playlist) obj).getContent().size() + " " + context.getResources().getString(R.string.songs).toLowerCase() +
-                    (((Playlist) obj).isCollaborative() ? (" - " + context.getString(R.string.collaborative)) : "") +
-                    (((Playlist) obj).isMine() ? "" : (" - " + ((Playlist) obj).getOwner())));
+                        (((Playlist) obj).isCollaborative() ? (" - " + context.getString(R.string.collaborative)) : "") +
+                        (((Playlist) obj).isMine() ? "" : (" - " + ((Playlist) obj).getOwner())));
             else mViewHolder.subtitle.setText("");
 
             //set image to playlist image
-            if(obj.hasArt()) mViewHolder.image.setImageBitmap(obj.getArtMiniature());
+            if (obj.hasArt()) mViewHolder.image.setImageBitmap(obj.getArtMiniature());
             else mViewHolder.image.setImageResource(R.drawable.ic_playlists);
         }
 
@@ -209,13 +214,22 @@ public class LibraryObjectAdapter extends BaseAdapter
         SongSources.SongSource source1 = obj.getSources().getSourceByPriority(1);
         SongSources.SongSource source2 = obj.getSources().getSourceByPriority(2);
 
-        if(source0 == null) mViewHolder.source0.setImageResource(0);
+        if (source0 == null) mViewHolder.source0.setImageResource(0);
         else mViewHolder.source0.setImageResource(source0.getSource().getIconImage());
-        if(source1 == null) mViewHolder.source1.setImageResource(0);
+        if (source1 == null) mViewHolder.source1.setImageResource(0);
         else mViewHolder.source1.setImageResource(source1.getSource().getIconImage());
-        if(source2 == null) mViewHolder.source2.setImageResource(0);
+        if (source2 == null) mViewHolder.source2.setImageResource(0);
         else mViewHolder.source2.setImageResource(source2.getSource().getIconImage());
 
         return convertView;
+    }
+
+    static class ViewHolder {
+        TextView title;
+        TextView subtitle;
+        ImageView image;
+        ImageView source0;
+        ImageView source1;
+        ImageView source2;
     }
 }

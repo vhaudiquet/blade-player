@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="v.blade.ui.settings.SourcesActivity">
+
+    <include
+        layout="@layout/app_bar_main"
+        android:layout_width="match_parent"
+        android:layout_height="55dp" />
+
+    <com.mobeta.android.dslv.DragSortListView
+        android:id="@+id/sources_listview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="v.blade.ui.settings.SourcesActivity">
-
-    <include layout="@layout/app_bar_main"
-             android:layout_width="match_parent"
-             android:layout_height="55dp"/>
-
-    <com.mobeta.android.dslv.DragSortListView android:layout_width="match_parent"
-                                              android:layout_height="match_parent"
-                                              android:layout_marginTop="55dp"
-                                              android:id="@+id/sources_listview"
-                                              android:theme="@style/Theme.ControlTheme"/>
+        android:layout_marginTop="55dp"
+        android:theme="@style/Theme.ControlTheme" />
 
 </android.support.design.widget.CoordinatorLayout>

@@ -6,13 +6,12 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
+
 import v.blade.R;
 
-public class AboutActivity extends AppCompatActivity
-{
+public class AboutActivity extends AppCompatActivity {
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         //set theme
@@ -24,12 +23,11 @@ public class AboutActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         TextView version = findViewById(R.id.about_version);
-        try
-        {
+        try {
             PackageInfo packageInfo = this.getPackageManager().getPackageInfo(getPackageName(), 0);
             version.setText("Version " + packageInfo.versionName);
+        } catch (Exception e) {
         }
-        catch(Exception e){}
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 

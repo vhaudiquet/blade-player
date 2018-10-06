@@ -10,7 +10,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.deezer.sdk.model.Permissions;
 import com.deezer.sdk.network.connect.event.DialogListener;
 import com.mobeta.android.dslv.DragSortController;
@@ -18,59 +24,113 @@ import com.mobeta.android.dslv.DragSortListView;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import javax.net.ssl.HttpsURLConnection;
+
 import retrofit.RetrofitError;
 import v.blade.R;
 import v.blade.library.LibraryService;
 import v.blade.library.Source;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-
-public class SourcesActivity extends AppCompatActivity
-{
+public class SourcesActivity extends AppCompatActivity {
     private static int SPOTIFY_REQUEST_CODE = 1337;
 
     private SourceAdapter adapter;
-    private DragSortListView.DropListener dropListener = new DragSortListView.DropListener()
-    {
+    ListView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
-        public void drop(int from, int to)
-        {
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            Source source = adapter.sources.get(position);
+            if (source.isAvailable()) {
+                //disconnect
+                source.disconnect();
+
+                Collections.sort(adapter.sources, (o1, o2) -> o2.getPriority() - o1.getPriority());
+                adapter.notifyDataSetChanged();
+
+                Toast.makeText(SourcesActivity.this, getText(R.string.disconnect_ok), Toast.LENGTH_SHORT).show();
+
+                return;
+            }
+
+            if (source == Source.SOURCE_SPOTIFY) {
+                AuthenticationRequest.Builder builder =
+                        new AuthenticationRequest.Builder(Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
+                                Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI).setShowDialog(true);
+                builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
+                        "playlist-read-private", "playlist-read-collaborative", "user-library-read", "user-library-modify",
+                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify"});
+                AuthenticationRequest request = builder.build();
+                AuthenticationClient.openLoginActivity(SourcesActivity.this, SPOTIFY_REQUEST_CODE, request);
+            } else if (source == Source.SOURCE_DEEZER) {
+                String[] permissions = new String[]{Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
+                        Permissions.EMAIL, Permissions.OFFLINE_ACCESS, Permissions.DELETE_LIBRARY,
+                        Permissions.MANAGE_COMMUNITY};
+
+                //test that
+                LibraryService.configureLibrary(getApplicationContext());
+
+                Source.SOURCE_DEEZER.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener() {
+                    @Override
+                    public void onComplete(Bundle bundle) {
+                        Source.SOURCE_DEEZER.DEEZER_USER_SESSION.save(Source.SOURCE_DEEZER.deezerApi, SourcesActivity.this.getApplicationContext());
+                        Source.SOURCE_DEEZER.setAvailable(true);
+                        Source.SOURCE_DEEZER.setPriority(adapter.sources.get(0).getPriority() + 1);
+                        Source.SOURCE_DEEZER.me = Source.SOURCE_DEEZER.deezerApi.getCurrentUser();
+                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putInt("deezer_prior", Source.SOURCE_DEEZER.getPriority());
+                        editor.apply();
+                        Collections.sort(adapter.sources, (o1, o2) -> o2.getPriority() - o1.getPriority());
+                        adapter.notifyDataSetChanged();
+                        Source.SOURCE_DEEZER.getPlayer().init();
+
+                        Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onCancel() {
+                    }
+
+                    @Override
+                    public void onException(Exception e) {
+                    }
+                });
+            }
+        }
+    };
+    private DragSortListView.DropListener dropListener = new DragSortListView.DropListener() {
+        @Override
+        public void drop(int from, int to) {
             Source toSwap = adapter.sources.get(from);
 
             // we reduced this source priority ; priority.set(to), increase all priorities on the way by 1
-            if(from < to)
-            {
+            if (from < to) {
                 toSwap.setPriority(adapter.sources.get(to).getPriority());
                 from++;
-                for(;from<=to;from++)
-                {
-                    adapter.sources.get(from).setPriority(adapter.sources.get(from).getPriority()+1);
+                for (; from <= to; from++) {
+                    adapter.sources.get(from).setPriority(adapter.sources.get(from).getPriority() + 1);
                 }
             }
             // we increased this source priority ; priority.set(to), reduce all priorities on the way by 1
-            else
-            {
+            else {
                 toSwap.setPriority(adapter.sources.get(to).getPriority());
                 from--;
-                for(;from>=to;from--)
-                {
-                    adapter.sources.get(from).setPriority(adapter.sources.get(from).getPriority()-1);
+                for (; from >= to; from--) {
+                    adapter.sources.get(from).setPriority(adapter.sources.get(from).getPriority() - 1);
                 }
             }
 
-            Collections.sort(adapter.sources, new Comparator<Source>()
-            {
-                @Override
-                public int compare(Source o1, Source o2)
-                {
-                    return o2.getPriority() - o1.getPriority();
-                }
-            });
+            Collections.sort(adapter.sources, (o1, o2) -> o2.getPriority() - o1.getPriority());
             adapter.notifyDataSetChanged();
 
             //reload songs from source
@@ -84,88 +144,8 @@ public class SourcesActivity extends AppCompatActivity
         }
     };
 
-    ListView.OnItemClickListener onItemClickListener = new AdapterView.OnItemClickListener()
-    {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-        {
-            Source source = adapter.sources.get(position);
-            if(source.isAvailable())
-            {
-                //disconnect
-                source.disconnect();
-
-                Collections.sort(adapter.sources, new Comparator<Source>() {
-                    @Override
-                    public int compare(Source o1, Source o2) {
-                        return o2.getPriority() - o1.getPriority();
-                    }
-                });
-                adapter.notifyDataSetChanged();
-
-                Toast.makeText(SourcesActivity.this, getText(R.string.disconnect_ok), Toast.LENGTH_SHORT).show();
-
-                return;
-            }
-
-            if(source == Source.SOURCE_SPOTIFY)
-            {
-                AuthenticationRequest.Builder builder =
-                        new AuthenticationRequest.Builder(Source.SOURCE_SPOTIFY.SPOTIFY_CLIENT_ID, AuthenticationResponse.Type.CODE,
-                                Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI).setShowDialog(true);
-                builder.setScopes(new String[]{"user-read-private", "streaming", "user-read-email", "user-follow-read",
-                        "playlist-read-private", "playlist-read-collaborative", "user-library-read", "user-library-modify",
-                        "playlist-modify-public", "playlist-modify-private", "user-follow-modify"});
-                AuthenticationRequest request = builder.build();
-                AuthenticationClient.openLoginActivity(SourcesActivity.this, SPOTIFY_REQUEST_CODE, request);
-            }
-            else if(source == Source.SOURCE_DEEZER)
-            {
-                String[] permissions = new String[] {Permissions.BASIC_ACCESS, Permissions.MANAGE_LIBRARY,
-                        Permissions.EMAIL, Permissions.OFFLINE_ACCESS, Permissions.DELETE_LIBRARY,
-                Permissions.MANAGE_COMMUNITY};
-
-                //test that
-                LibraryService.configureLibrary(getApplicationContext());
-
-                Source.SOURCE_DEEZER.deezerApi.authorize(SourcesActivity.this, permissions, new DialogListener()
-                {
-                    @Override
-                    public void onComplete(Bundle bundle)
-                    {
-                        Source.SOURCE_DEEZER.DEEZER_USER_SESSION.save(Source.SOURCE_DEEZER.deezerApi, SourcesActivity.this.getApplicationContext());
-                        Source.SOURCE_DEEZER.setAvailable(true);
-                        Source.SOURCE_DEEZER.setPriority(adapter.sources.get(0).getPriority()+1);
-                        Source.SOURCE_DEEZER.me = Source.SOURCE_DEEZER.deezerApi.getCurrentUser();
-                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = pref.edit();
-                        editor.putInt("deezer_prior", Source.SOURCE_DEEZER.getPriority());
-                        editor.apply();
-                        Collections.sort(adapter.sources, new Comparator<Source>() {
-                            @Override
-                            public int compare(Source o1, Source o2) {
-                                return o2.getPriority() - o1.getPriority();
-                            }
-                        });
-                        adapter.notifyDataSetChanged();
-                        Source.SOURCE_DEEZER.getPlayer().init();
-
-                        Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onCancel() {}
-
-                    @Override
-                    public void onException(Exception e) {}
-                });
-            }
-        }
-    };
-
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         //set theme
@@ -192,23 +172,17 @@ public class SourcesActivity extends AppCompatActivity
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent intent)
-    {
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
 
-        if(requestCode == SPOTIFY_REQUEST_CODE)
-        {
+        if (requestCode == SPOTIFY_REQUEST_CODE) {
             AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
-            if(response.getType() == AuthenticationResponse.Type.CODE)
-            {
+            if (response.getType() == AuthenticationResponse.Type.CODE) {
                 final String code = response.getCode();
-                Thread t = new Thread()
-                {
-                    public void run()
-                    {
+                Thread t = new Thread() {
+                    public void run() {
                         Looper.prepare();
-                        try
-                        {
+                        try {
                             URL apiUrl = new URL("https://accounts.spotify.com/api/token");
                             HttpsURLConnection urlConnection = (HttpsURLConnection) apiUrl.openConnection();
                             urlConnection.setDoInput(true);
@@ -217,7 +191,7 @@ public class SourcesActivity extends AppCompatActivity
 
                             //write POST parameters
                             OutputStream out = new BufferedOutputStream(urlConnection.getOutputStream());
-                            BufferedWriter writer = new BufferedWriter (new OutputStreamWriter(out, "UTF-8"));
+                            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out, "UTF-8"));
                             writer.write("grant_type=authorization_code&");
                             writer.write("code=" + code + "&");
                             writer.write("redirect_uri=" + Source.SOURCE_SPOTIFY.SPOTIFY_REDIRECT_URI + "&");
@@ -229,131 +203,100 @@ public class SourcesActivity extends AppCompatActivity
 
                             urlConnection.connect();
 
-                            System.out.println("[BLADE] [AUTH] Result : " + urlConnection.getResponseCode() + " " + urlConnection.getResponseMessage());
+                            System.out.println("[BLADE] [AUTH] Result : " + urlConnection.getResponseCode() + " " + urlConnection.getResponseMessage());
 
                             BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
                             String result = reader.readLine();
                             reader.close();
                             result = result.substring(1);
-                            result = result.substring(0, result.length()-1);
+                            result = result.substring(0, result.length() - 1);
                             String[] results = result.split(",");
-                            for(String param : results)
-                            {
-                                if(param.startsWith("\"access_token\":\""))
-                                {
+                            for (String param : results) {
+                                if (param.startsWith("\"access_token\":\"")) {
                                     param = param.replaceFirst("\"access_token\":\"", "");
                                     param = param.replaceFirst("\"", "");
                                     Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN = param;
                                     SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                                     SharedPreferences.Editor editor = pref.edit();
                                     editor.putString("spotify_token", Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
-                                    editor.commit();
-                                }
-                                else if(param.startsWith("\"refresh_token\":\""))
-                                {
+                                    editor.apply();
+                                } else if (param.startsWith("\"refresh_token\":\"")) {
                                     param = param.replaceFirst("\"refresh_token\":\"", "");
                                     param = param.replaceFirst("\"", "");
                                     Source.SOURCE_SPOTIFY.SPOTIFY_REFRESH_TOKEN = param;
                                     SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                                     SharedPreferences.Editor editor = pref.edit();
                                     editor.putString("spotify_refresh_token", Source.SOURCE_SPOTIFY.SPOTIFY_REFRESH_TOKEN);
-                                    editor.commit();
+                                    editor.apply();
                                 }
                             }
 
                             Source.SOURCE_SPOTIFY.setAvailable(true);
-                            Source.SOURCE_SPOTIFY.setPriority(adapter.sources.get(0).getPriority()+1);
+                            Source.SOURCE_SPOTIFY.setPriority(adapter.sources.get(0).getPriority() + 1);
                             SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_ACCOUNT_FILE_NAME, Context.MODE_PRIVATE);
                             SharedPreferences.Editor editor = pref.edit();
                             editor.putInt("spotify_prior", Source.SOURCE_SPOTIFY.getPriority());
                             editor.apply();
-                            Collections.sort(adapter.sources, new Comparator<Source>() {
-                                @Override
-                                public int compare(Source o1, Source o2) {
-                                    return o2.getPriority() - o1.getPriority();
-                                }
-                            });
+                            Collections.sort(adapter.sources, (o1, o2) -> o2.getPriority() - o1.getPriority());
 
-                            runOnUiThread(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    adapter.notifyDataSetChanged();
-                                }
-                            });
+                            runOnUiThread(() -> adapter.notifyDataSetChanged());
 
                             Source.SOURCE_SPOTIFY.spotifyApi.setAccessToken(Source.SOURCE_SPOTIFY.SPOTIFY_USER_TOKEN);
 
-                            try
-                            {
+                            try {
                                 Source.SOURCE_SPOTIFY.mePrivate = Source.SOURCE_SPOTIFY.spotifyApi.getService().getMe();
-                            }
-                            catch(RetrofitError e)
-                            {
+                            } catch (RetrofitError e) {
                                 e.printStackTrace();
                             }
 
                             Source.SOURCE_SPOTIFY.getPlayer().init();
                             Toast.makeText(SourcesActivity.this, getText(R.string.pls_resync), Toast.LENGTH_SHORT).show();
-                        }
-                        catch(Exception e)
-                        {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                 };
                 t.start();
-            }
-            else
-            {
+            } else {
                 System.err.println("Wrong reponse received.\n");
                 System.err.println("Error : " + response.getError());
             }
         }
     }
 
-    public static class SourceAdapter extends BaseAdapter
-    {
+    public static class SourceAdapter extends BaseAdapter {
         public ArrayList<Source> sources;
         private Context context;
 
-        class ViewHolder
-        {
-            ImageView source;
-            TextView status;
-            ImageView more;
-        }
-
-        public SourceAdapter(Context context)
-        {
+        public SourceAdapter(Context context) {
             this.context = context;
 
             sources = new ArrayList<>();
             sources.add(Source.SOURCE_SPOTIFY);
             sources.add(Source.SOURCE_DEEZER);
-            Collections.sort(sources, new Comparator<Source>() {
-                @Override
-                public int compare(Source o1, Source o2) {
-                    return o2.getPriority() - o1.getPriority();
-                }
-            });
+            Collections.sort(sources, (o1, o2) -> o2.getPriority() - o1.getPriority());
         }
 
         @Override
-        public int getCount() {return sources.size();}
-        @Override
-        public Object getItem(int position) {return sources.get(position);}
-        @Override
-        public long getItemId(int position) {return position;}
+        public int getCount() {
+            return sources.size();
+        }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent)
-        {
+        public Object getItem(int position) {
+            return sources.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder mViewHolder;
 
-            if(convertView == null)
-            {
+            if (convertView == null) {
                 mViewHolder = new ViewHolder();
 
                 //map to layout
@@ -364,13 +307,18 @@ public class SourcesActivity extends AppCompatActivity
                 mViewHolder.status = convertView.findViewById(R.id.element_subtitle);
 
                 convertView.setTag(mViewHolder);
-            }
-            else mViewHolder = (ViewHolder) convertView.getTag();
+            } else mViewHolder = (ViewHolder) convertView.getTag();
 
             Source source = sources.get(position);
             mViewHolder.source.setImageResource(source.getLogoImage());
             mViewHolder.status.setText(source.isAvailable() ? context.getString(R.string.connected) + " (" + source.getUserName() + ")" : context.getString(R.string.disconnected));
             return convertView;
+        }
+
+        class ViewHolder {
+            ImageView source;
+            TextView status;
+            ImageView more;
         }
     }
 }

@@ -1,48 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="5dp"
-                android:background="?android:attr/activatedBackgroundIndicator">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/activatedBackgroundIndicator"
+    android:orientation="vertical"
+    android:padding="5dp">
 
     <ImageView
-            android:id="@+id/element_image"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            app:srcCompat="@drawable/ic_unknown"/>
+        android:id="@+id/element_image"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        app:srcCompat="@drawable/ic_unknown" />
 
     <TextView
-            android:id="@+id/element_title"
-            android:layout_width="350dp"
-            android:layout_height="wrap_content"
-            android:textColor="#000000"
-            android:textSize="18sp"
-            android:layout_alignParentTop="true"
-            android:layout_toRightOf="@id/element_image"
-            android:layout_toEndOf="@id/element_image"
-            android:layout_marginLeft="10dp"
-            android:layout_marginStart="10dp"
-            android:singleLine="true"
-    />
-    <TextView
-            android:id="@+id/element_subtitle"
-            android:layout_width="350dp"
-            android:layout_height="wrap_content"
-            android:textColor="#424242"
-            android:textSize="12sp"
-            android:layout_below="@id/element_title"
-            android:layout_toRightOf="@id/element_image"
-            android:layout_toEndOf="@id/element_image"
-            android:layout_marginLeft="10dp"
-            android:layout_marginStart="10dp"
-            android:singleLine="true"/>
+        android:id="@+id/element_title"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_toEndOf="@id/element_image"
+        android:layout_toRightOf="@id/element_image"
+        android:singleLine="true"
+        android:textColor="#000000"
+        android:textSize="18sp" />
 
-    <ListView android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:layout_marginLeft="50dp"
-              android:layout_marginStart="50dp"
-              android:id="@+id/element_list"
-              android:layout_below="@id/element_image"/>
+    <TextView
+        android:id="@+id/element_subtitle"
+        android:layout_width="350dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/element_title"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_toEndOf="@id/element_image"
+        android:layout_toRightOf="@id/element_image"
+        android:singleLine="true"
+        android:textColor="#424242"
+        android:textSize="12sp" />
+
+    <ListView
+        android:id="@+id/element_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/element_image"
+        android:layout_marginStart="50dp"
+        android:layout_marginLeft="50dp" />
 </RelativeLayout>

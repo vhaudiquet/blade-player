@@ -33,13 +33,13 @@ import android.support.v4.media.app.NotificationCompat.MediaStyle;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+
 import v.blade.R;
 import v.blade.library.Song;
 import v.blade.ui.PlayActivity;
 import v.blade.ui.settings.ThemesActivity;
 
-public class PlayerNotification
-{
+public class PlayerNotification {
     public static final int NOTIFICATION_ID = 0x42;
     private static final int REQUEST_CODE = 501;
     private static final String CHANNEL_ID = "v.blade.mediachannel";
@@ -53,8 +53,7 @@ public class PlayerNotification
     private final NotificationCompat.Action mNextAction;
     private final NotificationCompat.Action mPrevAction;
 
-    PlayerNotification(PlayerService service)
-    {
+    PlayerNotification(PlayerService service) {
         this.mService = service;
 
         mNotificationManager = NotificationManagerCompat.from(service);
@@ -71,17 +70,17 @@ public class PlayerNotification
         mNotificationManager.cancelAll();
     }
 
-    public NotificationManagerCompat getNotificationManager() {return mNotificationManager;}
+    public NotificationManagerCompat getNotificationManager() {
+        return mNotificationManager;
+    }
 
-    public Notification getNotification(Song song, int playerState, MediaSessionCompat.Token token)
-    {
+    public Notification getNotification(Song song, int playerState, MediaSessionCompat.Token token) {
         NotificationCompat.Builder builder = buildNotification(playerState, token, song);
         return builder.build();
     }
 
-    private NotificationCompat.Builder buildNotification(int playerState, MediaSessionCompat.Token token, Song playing)
-    {
-        if(Build.VERSION.SDK_INT >= 26) createChannel();
+    private NotificationCompat.Builder buildNotification(int playerState, MediaSessionCompat.Token token, Song playing) {
+        if (Build.VERSION.SDK_INT >= 26) createChannel();
 
         boolean isPlaying = (playerState == PlayerMediaPlayer.PLAYER_STATE_PLAYING);
 
@@ -118,9 +117,9 @@ public class PlayerNotification
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private void createChannel()
-    {
-        NotificationManager mNotificationManager = (NotificationManager) mService.getSystemService(Context.NOTIFICATION_SERVICE);
+    private void createChannel() {
+        NotificationManager mNotificationManager =
+                (NotificationManager) mService.getSystemService(Context.NOTIFICATION_SERVICE);
         // The id of the channel.
         // The user-visible name of the channel.
         CharSequence name = "Media playback";

@@ -26,13 +26,13 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
+
 import v.blade.R;
 import v.blade.library.Song;
 import v.blade.library.Source;
 import v.blade.library.SourcePlayer;
 
-public class PlayerMediaPlayer
-{
+public class PlayerMediaPlayer {
     private static final float MEDIA_VOLUME_DEFAULT = 1.0f;
     private static final float MEDIA_VOLUME_DUCK = 0.2f;
     private static final boolean PLAY_ON_AUDIOFOCUS = false;
@@ -45,75 +45,75 @@ public class PlayerMediaPlayer
     public static final int PLAYER_STATE_STOPPED = 5;
     private static int currentState = PLAYER_STATE_NONE;
     public static MediaPlayerListener listener;
-    public static SourcePlayer.PlayerListener playerListener = new SourcePlayer.PlayerListener()
-    {
+    private static final IntentFilter AUDIO_NOISY_INTENT_FILTER =
+            new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+
+    private static SourcePlayer currentActivePlayer = null;
+
+    private Song currentSong;
+    static Context context;
+    public static SourcePlayer.PlayerListener playerListener = new SourcePlayer.PlayerListener() {
         @Override
-        public void onSongCompletion()
-        {
+        public void onSongCompletion() {
             currentState = PLAYER_STATE_SONGEND;
             listener.onStateChange();
         }
 
         @Override
-        public void onPlaybackError(SourcePlayer player, String errMsg)
-        {
-            if(currentActivePlayer == player)
-            {
-                if(context != null) Toast.makeText(context, context.getString(R.string.playback_error) + " : " + errMsg, Toast.LENGTH_SHORT).show();
+        public void onPlaybackError(SourcePlayer player, String errMsg) {
+            if (currentActivePlayer == player) {
+                if (context != null)
+                    Toast.makeText(context, context.getString(R.string.playback_error) +
+                            " : " + errMsg, Toast.LENGTH_SHORT).show();
 
                 currentState = PLAYER_STATE_PAUSED;
                 listener.onStateChange();
             }
         }
     };
+    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
+            new AudioManager.OnAudioFocusChangeListener() {
+                @Override
+                public void onAudioFocusChange(int focusChange) {
+                    switch (focusChange) {
+                        case AudioManager.AUDIOFOCUS_GAIN:
+                            if (playOnAudioFocus && !isPlaying()) play();
+                            else if (isPlaying())
+                                setVolume(MEDIA_VOLUME_DEFAULT, MEDIA_VOLUME_DEFAULT);
+                            playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
+                            break;
 
-    private static SourcePlayer currentActivePlayer = null;
+                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                            //setVolume(MEDIA_VOLUME_DUCK, MEDIA_VOLUME_DUCK);
+                            /* we don't want to 'duck' for now, so take the same action as AUDIOFOCUS_LOSS_TRANSIENT */
+                            if (isPlaying()) {
+                                playOnAudioFocus = true;
+                                pause();
+                            }
+                            break;
 
-    private Song currentSong;
-    static Context context;
+                        /* We only lost audiofocus for a small ammount of time, relaunch player just after */
+                        case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                            if (isPlaying()) {
+                                playOnAudioFocus = true;
+                                pause();
+                            }
+                            break;
 
-    private static final IntentFilter AUDIO_NOISY_INTENT_FILTER = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-    private final BroadcastReceiver mAudioNoisyReceiver = new BroadcastReceiver()
-    {
-        @Override
-        public void onReceive(Context context, Intent intent)
-        {
-            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction()))
-            {
-                if (isPlaying()) pause();
-            }
-        }
-    };
+                        /* We lost audiofocus definitely ; maybe another player was started or ... */
+                        case AudioManager.AUDIOFOCUS_LOSS:
+                            if (isPlaying()) pause();
+                            break;
+                    }
+                }
+            };
 
     private final AudioManager audioManager;
-    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener()
-    {
+    private final BroadcastReceiver mAudioNoisyReceiver = new BroadcastReceiver() {
         @Override
-        public void onAudioFocusChange(int focusChange)
-        {
-            switch(focusChange)
-            {
-                case AudioManager.AUDIOFOCUS_GAIN:
-                    if(playOnAudioFocus && !isPlaying()) play();
-                    else if(isPlaying()) setVolume(MEDIA_VOLUME_DEFAULT, MEDIA_VOLUME_DEFAULT);
-                    playOnAudioFocus = PLAY_ON_AUDIOFOCUS;
-                    break;
-
-                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    //setVolume(MEDIA_VOLUME_DUCK, MEDIA_VOLUME_DUCK);
-                    /* we don't want to 'duck' for now, so take the same action as AUDIOFOCUS_LOSS_TRANSIENT */
-                    if(isPlaying()) {playOnAudioFocus = true; pause();}
-                    break;
-
-                /* We only lost audiofocus for a small ammount of time, relaunch player just after */
-                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                    if(isPlaying()) {playOnAudioFocus = true; pause();}
-                    break;
-
-                /* We lost audiofocus definetely ; maybe another player was started or ... */
-                case AudioManager.AUDIOFOCUS_LOSS:
-                    if(isPlaying()) pause();
-                    break;
+        public void onReceive(Context context, Intent intent) {
+            if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+                if (isPlaying()) pause();
             }
         }
     };
@@ -121,50 +121,42 @@ public class PlayerMediaPlayer
 
     private boolean notificationShown = false;
 
-    public PlayerMediaPlayer(@NonNull final Context context, final MediaPlayerListener listener)
-    {
-        this.context = context;
+    public PlayerMediaPlayer(@NonNull final Context context, final MediaPlayerListener listener) {
+        PlayerMediaPlayer.context = context;
 
         context.registerReceiver(mAudioNoisyReceiver, AUDIO_NOISY_INTENT_FILTER);
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
-        this.listener = listener;
+        PlayerMediaPlayer.listener = listener;
     }
-    public void destroy()
-    {
+
+    public void destroy() {
         context.unregisterReceiver(mAudioNoisyReceiver);
     }
 
     /* player operations */
-    public void play()
-    {
-        if(requestAudioFocus())
-        {
-            if(currentActivePlayer == null) return;
+    public void play() {
+        if (requestAudioFocus()) {
+            if (currentActivePlayer == null) return;
 
             currentActivePlayer.play(new SourcePlayer.PlayerCallback() {
                 @Override
-                public void onSucess(SourcePlayer player)
-                {
-                    if(currentActivePlayer != player)
-                    {
+                public void onSuccess(SourcePlayer player) {
+                    if (currentActivePlayer != player) {
                         //during callback time, user switched to another song of another player
                         //just stop playback
                         player.pause(null);
-                    }
-                    else
-                    {
+                    } else {
                         currentState = PLAYER_STATE_PLAYING;
                         listener.onStateChange();
                     }
                 }
 
                 @Override
-                public void onFailure(SourcePlayer player)
-                {
-                    if(player == currentActivePlayer)
-                    {
-                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+                public void onFailure(SourcePlayer player) {
+                    if (player == currentActivePlayer) {
+                        Toast.makeText(context, context.getString(R.string.playback_error),
+                                Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
@@ -172,61 +164,57 @@ public class PlayerMediaPlayer
             });
         }
     }
-    public void pause()
-    {
-        if(currentState == PLAYER_STATE_PAUSED) return;
 
-        if(!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
+    public void pause() {
+        if (currentState == PLAYER_STATE_PAUSED) return;
 
-        currentActivePlayer.pause(new SourcePlayer.PlayerCallback()
-        {
+        if (!playOnAudioFocus) audioManager.abandonAudioFocus(audioFocusChangeListener);
+
+        currentActivePlayer.pause(new SourcePlayer.PlayerCallback() {
             @Override
-            public void onSucess(SourcePlayer player)
-            {
-                if(currentActivePlayer == player)
-                {
+            public void onSuccess(SourcePlayer player) {
+                if (currentActivePlayer == player) {
                     currentState = PLAYER_STATE_PAUSED;
                     listener.onStateChange();
                 }
             }
 
             @Override
-            public void onFailure(SourcePlayer player)
-            {
-                Toast.makeText(context, context.getString(R.string.playback_pause_error), Toast.LENGTH_SHORT).show();
+            public void onFailure(SourcePlayer player) {
+                Toast.makeText(context, context.getString(R.string.playback_pause_error),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
-    public void stop()
-    {
+
+    public void stop() {
         audioManager.abandonAudioFocus(audioFocusChangeListener);
         pause();
     }
-    public void seekTo(int msec)
-    {
-        if(currentActivePlayer != null)
-        {
+
+    public void seekTo(int msec) {
+        if (currentActivePlayer != null) {
             currentActivePlayer.seekTo(msec);
             listener.onStateChange(); //update mediasession position
         }
     }
-    public int getCurrentPosition()
-    {
+
+    public int getCurrentPosition() {
         return (currentState == PLAYER_STATE_DO_NOTHING) ? getDuration() :
                 currentActivePlayer == null ? 0 : currentActivePlayer.getCurrentPosition();
     }
-    public boolean isPlaying()
-    {
+
+    public boolean isPlaying() {
         return (currentState == PLAYER_STATE_PLAYING);
     }
-    public int getDuration()
-    {
-        if(currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer())
+
+    public int getDuration() {
+        if (currentActivePlayer == Source.SOURCE_LOCAL_LIB.getPlayer())
             return currentActivePlayer.getDuration();
         return currentSong == null ? 0 : ((int) currentSong.getDuration());
     }
-    public void setVolume(float left, float right)
-    {
+
+    public void setVolume(float left, float right) {
         /*
         if(currentActivePlayer == LOCAL_PLAYER_ACTIVE) mediaPlayer.setVolume(left, right);
         else if(currentActivePlayer == SPOTIFY_PLAYER_ACTIVE) return;
@@ -235,47 +223,44 @@ public class PlayerMediaPlayer
     }
 
 
-    public void playSong(final Song song)
-    {
+    public void playSong(final Song song) {
         //oreo+ : we need to show notification as soon as first 'playSong()' is called (service start)
-        if(!notificationShown) {listener.onStateChange(); notificationShown = true;}
+        if (!notificationShown) {
+            listener.onStateChange();
+            notificationShown = true;
+        }
 
-        if(song == null) return;
+        if (song == null) return;
         currentSong = song;
 
-        if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
+        if (currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
 
         /* select appropriate mediaplayer and start playback */
-        if(song.getSources().getSourceByPriority(0) == null)
-        {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
+        if (song.getSources().getSourceByPriority(0) == null) {
+            currentState = PLAYER_STATE_PAUSED;
+            listener.onStateChange();
+        }
         currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
 
-        if(requestAudioFocus())
-        {
-            currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback()
-            {
+        if (requestAudioFocus()) {
+            currentActivePlayer.playSong(song, new SourcePlayer.PlayerCallback() {
                 @Override
-                public void onSucess(SourcePlayer player)
-                {
-                    if(currentActivePlayer != player)
-                    {
+                public void onSuccess(SourcePlayer player) {
+                    if (currentActivePlayer != player) {
                         //during callback time, user switched to another song of another player
                         //just stop playback
                         player.pause(null);
-                    }
-                    else
-                    {
+                    } else {
                         currentState = PLAYER_STATE_PLAYING;
                         listener.onStateChange();
                     }
                 }
 
                 @Override
-                public void onFailure(SourcePlayer player)
-                {
-                    if(currentActivePlayer == player)
-                    {
-                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+                public void onFailure(SourcePlayer player) {
+                    if (currentActivePlayer == player) {
+                        Toast.makeText(context, context.getString(R.string.playback_error),
+                                Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
@@ -284,18 +269,23 @@ public class PlayerMediaPlayer
         }
     }
 
-    private boolean requestAudioFocus()
-    {
+    private boolean requestAudioFocus() {
         final int result = audioManager.requestAudioFocus(audioFocusChangeListener,
                 AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
         return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
     }
 
     /* state change listener */
-    public int getCurrentState() {return currentState;}
-    public void setCurrentState(int state) {currentState = state; listener.onStateChange();}
-    public PlaybackStateCompat getPlaybackState()
-    {
+    public int getCurrentState() {
+        return currentState;
+    }
+
+    public void setCurrentState(int state) {
+        currentState = state;
+        listener.onStateChange();
+    }
+
+    public PlaybackStateCompat getPlaybackState() {
         long actions = PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID
                 | PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
                 | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
@@ -304,8 +294,7 @@ public class PlayerMediaPlayer
                 | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
 
         int playbackState = 0;
-        switch(currentState)
-        {
+        switch (currentState) {
             case PLAYER_STATE_PAUSED:
                 actions |= PlaybackStateCompat.ACTION_PLAY
                         | PlaybackStateCompat.ACTION_STOP
@@ -340,12 +329,16 @@ public class PlayerMediaPlayer
 
         final PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder();
         stateBuilder.setActions(actions);
-        stateBuilder.setState(playbackState, getCurrentPosition(), 1.0f, SystemClock.elapsedRealtime());
+        stateBuilder.setState(playbackState, getCurrentPosition(), 1.0f,
+                SystemClock.elapsedRealtime());
         return stateBuilder.build();
     }
-    public interface MediaPlayerListener
-    {
+
+    public void setPlaylistEnded() {
+        currentState = PLAYER_STATE_DO_NOTHING;
+    }
+
+    public interface MediaPlayerListener {
         void onStateChange();
     }
-    public void setPlaylistEnded() {currentState = PLAYER_STATE_DO_NOTHING;}
 }

@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/themes_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="v.blade.ui.settings.ThemesActivity">
+
+    <include
+        android:id="@+id/include"
+        layout="@layout/app_bar_main"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:context="v.blade.ui.settings.ThemesActivity"
-        android:id="@+id/themes_layout">
+        android:layout_height="55dp" />
 
-    <include layout="@layout/app_bar_main"
-             android:layout_width="match_parent"
-             android:layout_height="55dp"
-             android:id="@+id/include"/>
-
-    <ListView android:layout_width="match_parent" android:layout_height="match_parent" android:id="@+id/themes_list"/>
+    <ListView
+        android:id="@+id/themes_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </LinearLayout>

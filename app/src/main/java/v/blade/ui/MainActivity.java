@@ -41,63 +41,82 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
-import android.view.*;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.BaseAdapter;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.PopupMenu;
+import android.widget.RelativeLayout;
+import android.widget.SearchView;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import v.blade.R;
-import v.blade.library.*;
+import v.blade.library.Album;
+import v.blade.library.Artist;
+import v.blade.library.LibraryObject;
+import v.blade.library.LibraryService;
+import v.blade.library.Playlist;
+import v.blade.library.Song;
+import v.blade.library.SongSources;
+import v.blade.library.Source;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;
 import v.blade.ui.settings.ThemesActivity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener
-{
+        implements NavigationView.OnNavigationItemSelectedListener {
     private static final int EXT_PERM_REQUEST_CODE = 0x42;
 
     /* music controller and callbacks */
     private PlayerService musicPlayer;
     private boolean musicCallbacksRegistered = false;
-    private MediaControllerCompat.Callback musicCallbacks = new MediaControllerCompat.Callback()
-    {
+    private MediaControllerCompat.Callback musicCallbacks = new MediaControllerCompat.Callback() {
         @Override
-        public void onPlaybackStateChanged(PlaybackStateCompat state)
-        {
-            if(state.getState() == PlaybackStateCompat.STATE_STOPPED) {hideCurrentPlay(); return;}
+        public void onPlaybackStateChanged(PlaybackStateCompat state) {
+            if (state.getState() == PlaybackStateCompat.STATE_STOPPED) {
+                hideCurrentPlay();
+                return;
+            }
 
-            if(musicPlayer != null)
+            if (musicPlayer != null)
                 showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
 
         @Override
-        public void onMetadataChanged(MediaMetadataCompat metadata)
-        {
-            if(musicPlayer != null)
+        public void onMetadataChanged(MediaMetadataCompat metadata) {
+            if (musicPlayer != null)
                 showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
         }
     };
-    private PlayerConnection.Callback connectionCallbacks = new PlayerConnection.Callback()
-    {
+    private PlayerConnection.Callback connectionCallbacks = new PlayerConnection.Callback() {
         @Override
-        public void onConnected()
-        {
+        public void onConnected() {
             musicPlayer = PlayerConnection.getService();
 
-            if(!musicCallbacksRegistered)
-            {
+            if (!musicCallbacksRegistered) {
                 PlayerConnection.musicController.registerCallback(musicCallbacks);
                 musicCallbacksRegistered = true;
             }
         }
 
         @Override
-        public void onDisconnected()
-        {
+        public void onDisconnected() {
             musicPlayer = null;
             musicCallbacksRegistered = false;
             hideCurrentPlay();
@@ -135,51 +154,197 @@ public class MainActivity extends AppCompatActivity
 
     /* main list view */
     private ListView mainListView;
-    private ListView.OnItemClickListener mainListViewListener = new ListView.OnItemClickListener()
-    {
+    private ImageView.OnClickListener mainListViewMoreListener = new View.OnClickListener() {
         @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-        {
-            switch(currentContext)
-            {
+        public void onClick(View v) {
+            final LibraryObject object = (LibraryObject) v.getTag();
+
+            PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
+
+            popupMenu.setOnMenuItemClickListener(item -> {
+                switch (item.getItemId()) {
+                    case R.id.action_play:
+                        ArrayList<Song> playlist = new ArrayList<>();
+                        if (object instanceof Song) playlist.add((Song) object);
+                        else if (object instanceof Album)
+                            playlist.addAll(((Album) object).getSongs());
+                        else if (object instanceof Artist)
+                            for (Album a : ((Artist) object).getAlbums())
+                                playlist.addAll(a.getSongs());
+                        else if (object instanceof Playlist)
+                            playlist.addAll(((Playlist) object).getContent());
+                        setPlaylist(playlist, 0);
+                        break;
+
+                    case R.id.action_play_next:
+                        ArrayList<Song> playlist1 = new ArrayList<>();
+                        if (object instanceof Song) playlist1.add((Song) object);
+                        else if (object instanceof Album)
+                            playlist1.addAll(((Album) object).getSongs());
+                        else if (object instanceof Artist)
+                            for (Album a : ((Artist) object).getAlbums())
+                                playlist1.addAll(a.getSongs());
+                        else if (object instanceof Playlist)
+                            playlist1.addAll(((Playlist) object).getContent());
+                        playNext(playlist1);
+                        Toast.makeText(MainActivity.this, playlist1.size() + " " + getString(R.string.added_next_ok), Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case R.id.action_add_to_playlist:
+                        ArrayList<Song> playlist2 = new ArrayList<>();
+                        if (object instanceof Song) playlist2.add((Song) object);
+                        else if (object instanceof Album)
+                            playlist2.addAll(((Album) object).getSongs());
+                        else if (object instanceof Artist)
+                            for (Album a : ((Artist) object).getAlbums())
+                                playlist2.addAll(a.getSongs());
+                        else if (object instanceof Playlist)
+                            playlist2.addAll(((Playlist) object).getContent());
+                        addToPlaylist(playlist2);
+                        Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
+                        break;
+
+                    case R.id.action_add_to_list:
+                        showAddToPlaylist(MainActivity.this, object);
+                        break;
+
+                    case R.id.action_remove_from_playlist: {
+                        Playlist p = ((Playlist) currentObject);
+                        p.getSources().getSourceByPriority(0).getSource()
+                                .removeSongFromPlaylist((Song) object, p, new Source.OperationCallback() {
+                                    @Override
+                                    public void onSuccess(LibraryObject result) {
+                                        runOnUiThread(() -> Toast.makeText(MainActivity.this,
+                                                ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_ok) +
+                                                        " " + p.getName(), Toast.LENGTH_SHORT).show());
+                                    }
+
+                                    @Override
+                                    public void onFailure() {
+                                        runOnUiThread(() -> Toast.makeText(MainActivity.this,
+                                                ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_fail) +
+                                                        " " + p.getName(), Toast.LENGTH_SHORT).show());
+                                    }
+                                });
+                        break;
+                    }
+
+                    case R.id.action_manage_libraries: {
+                        if (currentContext == CONTEXT_PLAYLISTS) {
+                            Playlist p = ((Playlist) object);
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
+                                    .setTitle(getString(R.string.delete))
+                                    .setMessage(R.string.are_you_sure_delete)
+                                    .setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel())
+                                    .setPositiveButton(R.string.yes, (dialog, which) ->
+                                            p.getSources().getSourceByPriority(0).getSource().
+                                                    removePlaylist(p, new Source.OperationCallback() {
+                                                        @Override
+                                                        public void onSuccess(LibraryObject result) {
+                                                            runOnUiThread(() -> Toast.makeText(MainActivity.this, object.getName() + " " + getString(R.string.delete_ok), Toast.LENGTH_SHORT).show());
+                                                        }
+
+                                                        @Override
+                                                        public void onFailure() {
+                                                            runOnUiThread(() -> Toast.makeText(MainActivity.this, object.getName() + " " + getString(R.string.delete_fail), Toast.LENGTH_SHORT).show());
+                                                        }
+                                                    }));
+                            AlertDialog dialog = builder.create();
+                            dialog.setOnShowListener(arg0 -> {
+                                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                            });
+                            dialog.show();
+                        } else showManageLibraries(MainActivity.this, object);
+                        break;
+                    }
+
+                    case R.id.action_link_to: {
+                        showLinkToSearchFor(MainActivity.this, object);
+                        break;
+                    }
+
+                    case R.id.action_tag_edit: {
+                        selectedObject = object;
+                        Intent intent = new Intent(MainActivity.this, TagEditorActivity.class);
+                        startActivity(intent);
+                    }
+                }
+                return false;
+            });
+            getMenuInflater().inflate(R.menu.menu_object_more, popupMenu.getMenu());
+
+            if (currentContext == CONTEXT_PLAYLISTS) {
+                popupMenu.getMenu().findItem(R.id.action_add_to_list).setVisible(false);
+                popupMenu.getMenu().findItem(R.id.action_manage_libraries).setTitle(R.string.delete);
+            } else if (currentContext == CONTEXT_SONGS && fromPlaylists) {
+                popupMenu.getMenu().findItem(R.id.action_remove_from_playlist).setVisible(true);
+            }
+
+            if (currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS && currentContext != CONTEXT_SEARCH)
+                popupMenu.getMenu().findItem(R.id.action_manage_libraries).setVisible(false);
+
+            if (currentContext != CONTEXT_SONGS && currentContext != CONTEXT_SEARCH)
+                popupMenu.getMenu().findItem(R.id.action_link_to).setVisible(false);
+
+            if (object.getSources() == null || object.getSources().getLocal() == null || object instanceof Playlist)
+                popupMenu.getMenu().findItem(R.id.action_tag_edit).setVisible(false);
+
+            popupMenu.show();
+        }
+    };
+    private ListView.OnItemClickListener mainListViewListener = new ListView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            switch (currentContext) {
                 case CONTEXT_SONGS:
-                    ArrayList<Song> songs = new ArrayList<Song>(((LibraryObjectAdapter)mainListView.getAdapter()).getObjectList());
+                    ArrayList<Song> songs = new ArrayList<Song>(((LibraryObjectAdapter) mainListView.getAdapter()).getObjectList());
                     setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = null;
-                    Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
+                    backBundle = new Bundle();
+                    saveInstanceState(backBundle);
+                    backObject = null;
+                    Artist currentArtist = (Artist) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Album> albums = currentArtist.getAlbums();
                     currentObject = currentArtist;
                     setContentToAlbums(albums, currentArtist.getName());
                     break;
                 case CONTEXT_ALBUMS:
-                    if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;}
-                    else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle); back2Object = currentObject;}
-                    Album currentAlbum = (Album) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
+                    if (backBundle == null) {
+                        backBundle = new Bundle();
+                        saveInstanceState(backBundle);
+                        backObject = currentObject;
+                    } else {
+                        back2Bundle = new Bundle();
+                        saveInstanceState(back2Bundle);
+                        back2Object = currentObject;
+                    }
+                    Album currentAlbum = (Album) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> asongs = currentAlbum.getSongs();
                     currentObject = currentAlbum;
                     setContentToSongs(asongs, currentAlbum.getName());
                     break;
                 case CONTEXT_PLAYLISTS:
                     fromPlaylists = true;
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
-                    Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
+                    backBundle = new Bundle();
+                    saveInstanceState(backBundle);
+                    backObject = currentObject;
+                    Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     currentObject = currentPlaylist;
                     setContentToSongs(currentPlaylist.getContent(), currentPlaylist.getName());
                     break;
                 case CONTEXT_SEARCH:
                     currentObject = null;
-                    LibraryObject selected = ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
-                    if(selected instanceof Artist)
+                    LibraryObject selected = ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
+                    if (selected instanceof Artist)
                         setContentToAlbums(((Artist) selected).getAlbums(), selected.getName());
-                    else if(selected instanceof Album)
+                    else if (selected instanceof Album)
                         setContentToSongs(((Album) selected).getSongs(), selected.getName());
-                    else if(selected instanceof Playlist)
+                    else if (selected instanceof Playlist)
                         setContentToSongs(((Playlist) selected).getContent(), selected.getName());
-                    else if(selected instanceof Song)
-                    {
-                        ArrayList<Song> playlist = new ArrayList<Song>();
+                    else if (selected instanceof Song) {
+                        ArrayList<Song> playlist = new ArrayList<>();
                         playlist.add((Song) selected);
                         setPlaylist(playlist, 0);
                     }
@@ -187,202 +352,327 @@ public class MainActivity extends AppCompatActivity
             }
         }
     };
-    private ImageView.OnClickListener mainListViewMoreListener = new View.OnClickListener()
-    {
-        @Override
-        public void onClick(View v)
-        {
-            final LibraryObject object = (LibraryObject) v.getTag();
 
-            PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
+    /* shared dialogs */
+    static void showAddToPlaylist(Activity context, LibraryObject object) {
+        List<Song> toAdd = new ArrayList<>();
+        if (object instanceof Song) toAdd.add((Song) object);
+        else if (object instanceof Album) toAdd.addAll(((Album) object).getSongs());
+        else if (object instanceof Artist)
+            for (Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
+        else if (object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
 
-            popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
-            {
-                @Override
-                public boolean onMenuItemClick(MenuItem item)
-                {
-                    switch(item.getItemId())
-                    {
-                        case R.id.action_play:
-                            ArrayList<Song> playlist = new ArrayList<Song>();
-                            if(object instanceof Song) playlist.add((Song) object);
-                            else if(object instanceof Album) playlist.addAll(((Album) object).getSongs());
-                            else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist.addAll(a.getSongs());
-                            else if(object instanceof Playlist) playlist.addAll(((Playlist) object).getContent());
-                            setPlaylist(playlist, 0);
-                            break;
+        List<Playlist> list = new ArrayList<>(LibraryService.getPlaylists());
+        for (int i = 0; i < list.size(); i++) {
+            Playlist p = list.get(i);
+            if (!p.isMine() && !p.isCollaborative()) list.remove(i);
+        }
+        list.add(0, new Playlist(context.getString(R.string.new_playlist), null));
 
-                        case R.id.action_play_next:
-                            ArrayList<Song> playlist1 = new ArrayList<Song>();
-                            if(object instanceof Song) playlist1.add((Song) object);
-                            else if(object instanceof Album) playlist1.addAll(((Album) object).getSongs());
-                            else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist1.addAll(a.getSongs());
-                            else if(object instanceof Playlist) playlist1.addAll(((Playlist) object).getContent());
-                            playNext(playlist1);
-                            Toast.makeText(MainActivity.this, playlist1.size() + " " + getString(R.string.added_next_ok), Toast.LENGTH_SHORT).show();
-                            break;
-
-                        case R.id.action_add_to_playlist:
-                            ArrayList<Song> playlist2 = new ArrayList<Song>();
-                            if(object instanceof Song) playlist2.add((Song) object);
-                            else if(object instanceof Album) playlist2.addAll(((Album) object).getSongs());
-                            else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist2.addAll(a.getSongs());
-                            else if(object instanceof Playlist) playlist2.addAll(((Playlist) object).getContent());
-                            addToPlaylist(playlist2);
-                            Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
-                            break;
-
-                        case R.id.action_add_to_list:
-                            showAddToPlaylist(MainActivity.this, object);
-                            break;
-
-                        case R.id.action_remove_from_playlist:
-                        {
-                            Playlist p = ((Playlist) currentObject);
-                            p.getSources().getSourceByPriority(0).getSource()
-                                    .removeSongFromPlaylist((Song) object, p, new Source.OperationCallback()
-                                    {
-                                        @Override
-                                        public void onSucess(LibraryObject result)
-                                        {
-                                            runOnUiThread(new Runnable()
-                                            {
-                                                @Override
-                                                public void run()
-                                                {
-                                                    Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_ok) + " " + p.getName(), Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                        }
-
-                                        @Override
-                                        public void onFailure()
-                                        {
-                                            runOnUiThread(new Runnable()
-                                            {
-                                                @Override
-                                                public void run()
-                                                {
-                                                    Toast.makeText(MainActivity.this, ((Song) object).getTitle() + " " + getString(R.string.delete_from_playlist_fail) + " " + p.getName(), Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                                        }
-                                    });
-                            break;
-                        }
-
-                        case R.id.action_manage_libraries:
-                        {
-                            if(currentContext == CONTEXT_PLAYLISTS)
-                            {
-                                Playlist p = ((Playlist) object);
-                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this)
-                                        .setTitle(getString(R.string.delete))
-                                        .setMessage(R.string.are_you_sure_delete)
-                                        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
-                                        {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int which)
-                                            {
-                                                dialog.cancel();
-                                            }
-                                        })
-                                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener()
-                                        {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int which)
-                                            {
-                                                p.getSources().getSourceByPriority(0).getSource().
-                                                        removePlaylist(p, new Source.OperationCallback()
-                                                        {
-                                                            @Override
-                                                            public void onSucess(LibraryObject result)
-                                                            {
-                                                                runOnUiThread(new Runnable()
-                                                                {
-                                                                    @Override
-                                                                    public void run()
-                                                                    {
-                                                                        Toast.makeText(MainActivity.this, ((Playlist) object).getName() + " " + getString(R.string.delete_ok), Toast.LENGTH_SHORT).show();
-                                                                    }
-                                                                });
-                                                            }
-
-                                                            @Override
-                                                            public void onFailure()
-                                                            {
-                                                                runOnUiThread(new Runnable()
-                                                                {
-                                                                    @Override
-                                                                    public void run()
-                                                                    {
-                                                                        Toast.makeText(MainActivity.this, ((Playlist) object).getName() + " " + getString(R.string.delete_fail), Toast.LENGTH_SHORT).show();
-                                                                    }
-                                                                });
-                                                            }
-                                                        });
-                                            }
-                                        });
-                                AlertDialog dialog = builder.create();
-                                dialog.setOnShowListener(new DialogInterface.OnShowListener()
-                                {
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, list, false);
+        adapter.setHideMore(true);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setTitle(context.getString(R.string.add_to_playlist))
+                .setAdapter(adapter, (dialog, which) -> {
+                    if (which == 0) {   //new playlist
+                        showAddPlaylist(context, result -> result.getSources().getSourceByPriority(0).getSource().
+                                addSongsToPlaylist(toAdd, result, new Source.OperationCallback() {
                                     @Override
-                                    public void onShow(DialogInterface arg0)
-                                    {
-                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                                    public void onSuccess(LibraryObject result0) {
+                                        context.runOnUiThread(() -> Toast.makeText(context, toAdd.size() + " " + context.getString(R.string.added_ok) + " " + result.getName(), Toast.LENGTH_SHORT).show());
                                     }
-                                });
-                                dialog.show();
-                            }
-                            else showManageLibraries(MainActivity.this, object);
-                            break;
-                        }
 
-                        case R.id.action_link_to:
-                        {
-                            showLinkToSearchFor(MainActivity.this, object);
-                            break;
-                        }
-
-                        case R.id.action_tag_edit:
-                        {
-                            selectedObject = object;
-                            Intent intent = new Intent(MainActivity.this, TagEditorActivity.class);
-                            startActivity(intent);
-                        }
+                                    @Override
+                                    public void onFailure() {
+                                        context.runOnUiThread(() -> Toast.makeText(context, context.getString(R.string.added_fail) + " " + result.getName(), Toast.LENGTH_SHORT).show());
+                                    }
+                                }));
+                        return;
                     }
-                    return false;
+
+                    Playlist clicked = list.get(which);
+                    clicked.getSources().getSourceByPriority(0).getSource()
+                            .addSongsToPlaylist(toAdd, clicked, new Source.OperationCallback() {
+                                @Override
+                                public void onSuccess(LibraryObject result) {
+                                    context.runOnUiThread(() -> Toast.makeText(context, toAdd.size() + " " + context.getString(R.string.added_ok) + " " + clicked.getName(), Toast.LENGTH_SHORT).show());
+                                }
+
+                                @Override
+                                public void onFailure() {
+                                    context.runOnUiThread(() -> Toast.makeText(context, context.getString(R.string.added_fail) + " " + clicked.getName(), Toast.LENGTH_SHORT).show());
+                                }
+                            });
+                })
+                .setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel());
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(arg0 -> {
+            dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+        });
+        dialog.show();
+    }
+
+    static void showManageLibraries(Activity context, LibraryObject object) {
+        if (!(object instanceof Song)) return;
+
+        /* create special source adapter */
+        BaseAdapter sourceAdapter = new BaseAdapter() {
+            @Override
+            public int getCount() {
+                return Source.SOURCES.length;
+            }
+
+            @Override
+            public Object getItem(int position) {
+                return Source.SOURCES[position];
+            }
+
+            @Override
+            public long getItemId(int position) {
+                return position;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                ViewHolder viewHolder;
+
+                if (convertView == null) {
+                    viewHolder = new ViewHolder();
+
+                    //map to layout
+                    convertView = LayoutInflater.from(context).inflate(R.layout.library_list_layout, parent, false);
+
+                    //get imageview
+                    viewHolder.checkBox = convertView.findViewById(R.id.element_check);
+
+                    convertView.setTag(viewHolder);
+                } else viewHolder = (ViewHolder) convertView.getTag();
+
+                viewHolder.checkBox.setText(Source.SOURCES[position].getName());
+                SongSources.SongSource thisSource = object.getSources().getSourceByAbsolutePriority(position);
+                viewHolder.checkBox.setChecked(thisSource != null && thisSource.getLibrary());
+
+                //disable 'add to library' on local context (only allow to remove from local)
+                if (position == 0 && !viewHolder.checkBox.isChecked())
+                    viewHolder.checkBox.setEnabled(false);
+
+                //handle actions
+                viewHolder.checkBox.setOnClickListener(view -> {
+                    Source source = Source.SOURCES[position];
+                    if (viewHolder.checkBox.isChecked())
+                        source.addSongToLibrary((Song) object, new Source.OperationCallback() {
+                            @Override
+                            public void onSuccess(LibraryObject result) {
+                                context.runOnUiThread(() -> Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_added), Toast.LENGTH_SHORT).show());
+                            }
+
+                            @Override
+                            public void onFailure() {
+                                context.runOnUiThread(() -> {
+                                    Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_add_fail), Toast.LENGTH_SHORT).show();
+                                    viewHolder.checkBox.setChecked(false);
+                                });
+                            }
+                        });
+                    else if (source == Source.SOURCE_LOCAL_LIB) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                                .setTitle(context.getString(R.string.delete))
+                                .setMessage(R.string.are_you_sure_delete)
+                                .setNegativeButton(R.string.cancel, (dialog, which) -> {
+                                    viewHolder.checkBox.setChecked(true);
+                                    dialog.cancel();
+                                })
+                                .setPositiveButton(R.string.yes, (dialog, which) ->
+                                        source.removeSongFromLibrary((Song) object, new Source.OperationCallback() {
+                                            @Override
+                                            public void onSuccess(LibraryObject result) {
+                                                context.runOnUiThread(() -> {
+                                                    Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_removed), Toast.LENGTH_SHORT).show();
+                                                    if (source == Source.SOURCE_LOCAL_LIB)
+                                                        viewHolder.checkBox.setEnabled(false);
+                                                });
+                                            }
+
+                                            @Override
+                                            public void onFailure() {
+                                                context.runOnUiThread(() -> {
+                                                    Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_remove_fail), Toast.LENGTH_SHORT).show();
+                                                    viewHolder.checkBox.setChecked(true);
+                                                });
+                                            }
+                                        }));
+                        AlertDialog dialog = builder.create();
+                        dialog.setOnShowListener(arg0 -> {
+                            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                        });
+                        dialog.show();
+                    } else
+                        source.removeSongFromLibrary((Song) object, new Source.OperationCallback() {
+                            @Override
+                            public void onSuccess(LibraryObject result) {
+                                context.runOnUiThread(() -> {
+                                    Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_removed), Toast.LENGTH_SHORT).show();
+                                    if (source == Source.SOURCE_LOCAL_LIB)
+                                        viewHolder.checkBox.setEnabled(false);
+                                });
+                            }
+
+                            @Override
+                            public void onFailure() {
+                                context.runOnUiThread(() -> {
+                                    Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_remove_fail), Toast.LENGTH_SHORT).show();
+                                    viewHolder.checkBox.setChecked(true);
+                                });
+                            }
+                        });
+                });
+
+                return convertView;
+            }
+
+            class ViewHolder {
+                SwitchCompat checkBox;
+            }
+        };
+
+        /* create dialog */
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setTitle(R.string.manage_libraries)
+                .setAdapter(sourceAdapter, (dialog, which) -> {
+                })
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(arg0 -> {
+            dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+        });
+        dialog.show();
+    }
+
+    static void showAddPlaylist(Activity context, AddPlaylistCallback callback) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.new_playlist);
+        builder.setView(R.layout.add_playlist_dialog);
+        builder.setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel());
+
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(arg0 -> {
+            dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            Spinner listView = dialog.findViewById(R.id.playlist_source);
+            listView.setAdapter(new BaseAdapter() {
+                @Override
+                public int getCount() {
+                    return Source.SOURCES.length;
+                }
+
+                @Override
+                public Object getItem(int position) {
+                    return Source.SOURCES[position];
+                }
+
+                @Override
+                public long getItemId(int position) {
+                    return position;
+                }
+
+                @Override
+                public View getView(int position, View convertView, ViewGroup parent) {
+                    ViewHolder viewHolder;
+
+                    if (convertView == null) {
+                        viewHolder = new ViewHolder();
+
+                        //map to layout
+                        convertView = LayoutInflater.from(context).inflate(R.layout.mini_sources_list_layout, parent, false);
+
+                        //get imageview
+                        viewHolder.title = convertView.findViewById(R.id.element_title);
+                        viewHolder.image = convertView.findViewById(R.id.element_image);
+
+                        convertView.setTag(viewHolder);
+                    } else viewHolder = (ViewHolder) convertView.getTag();
+
+                    viewHolder.title.setText(Source.SOURCES[position].getName());
+                    viewHolder.image.setImageResource(Source.SOURCES[position].getIconImage());
+
+                    return convertView;
+                }
+
+                class ViewHolder {
+                    ImageView image;
+                    TextView title;
                 }
             });
-            getMenuInflater().inflate(R.menu.menu_object_more, popupMenu.getMenu());
+        });
+        dialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK", (d, which) -> {
+            //create playlist
+            Spinner listView = dialog.findViewById(R.id.playlist_source);
+            Source source = Source.SOURCES[listView.getSelectedItemPosition()];
+            EditText editText = dialog.findViewById(R.id.playlist_name);
+            source.addPlaylist(editText.getText().toString(), new Source.OperationCallback() {
+                @Override
+                public void onSuccess(LibraryObject result) {
+                    if (callback != null) callback.onSuccess((Playlist) result);
+                }
 
-            if(currentContext == CONTEXT_PLAYLISTS)
-            {
-                popupMenu.getMenu().findItem(R.id.action_add_to_list).setVisible(false);
-                popupMenu.getMenu().findItem(R.id.action_manage_libraries).setTitle(R.string.delete);
-            }
-            else if(currentContext == CONTEXT_SONGS && fromPlaylists)
-            {
-                popupMenu.getMenu().findItem(R.id.action_remove_from_playlist).setVisible(true);
-            }
+                @Override
+                public void onFailure() {
+                    context.runOnUiThread(() -> Toast.makeText(context, context.getString(R.string.playlist_add_fail), Toast.LENGTH_SHORT).show());
+                }
+            }, false, false);
+        });
+        dialog.show();
+    }
 
-            if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_PLAYLISTS && currentContext != CONTEXT_SEARCH)
-                popupMenu.getMenu().findItem(R.id.action_manage_libraries).setVisible(false);
+    static void showLinkToSearchFor(Activity context, LibraryObject source) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.link_to);
+        builder.setView(R.layout.search_dialog);
+        builder.setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel());
 
-            if(currentContext != CONTEXT_SONGS && currentContext != CONTEXT_SEARCH)
-                popupMenu.getMenu().findItem(R.id.action_link_to).setVisible(false);
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(arg0 -> {
+            dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+            ListView listView = dialog.findViewById(R.id.search_dialog_results);
+            List<Song> results = LibraryService.getSongs();
+            results.remove(source);
+            LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, results, false);
+            adapter.setHideMore(true);
+            listView.setAdapter(adapter);
+            EditText editText = dialog.findViewById(R.id.search_dialog_input);
+            editText.setOnEditorActionListener((v, actionId, event) -> {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    //close keyboard
+                    InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
-            if(object.getSources() == null || object.getSources().getLocal() == null || object instanceof Playlist)
-                popupMenu.getMenu().findItem(R.id.action_tag_edit).setVisible(false);
+                    //set content to search
+                    LibraryObjectAdapter adapter1 = new LibraryObjectAdapter(context, LibraryService.querySongs(editText.getText().toString()), false);
+                    adapter1.setHideMore(true);
+                    listView.setAdapter(adapter1);
 
-            popupMenu.show();
-        }
-    };
+                    return true;
+                }
+                return false;
+            });
+            listView.setOnItemClickListener((parent, view, position, id) -> {
+                Song clicked = (Song) listView.getAdapter().getItem(position);
+
+                LibraryService.linkSong((Song) source, clicked, true);
+                dialog.hide();
+            });
+        });
+
+        dialog.show();
+    }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         //set theme
@@ -392,53 +682,41 @@ public class MainActivity extends AppCompatActivity
         android.support.v7.widget.Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        mainListView = (ListView) findViewById(R.id.libraryList);
+        mainListView = findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);
 
-        currentPlay = (RelativeLayout) findViewById(R.id.currentPlay);
-        currentPlay.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                Intent intent = new Intent(MainActivity.this, PlayActivity.class);
-                startActivity(intent);
-            }
+        currentPlay = findViewById(R.id.currentPlay);
+        currentPlay.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, PlayActivity.class);
+            startActivity(intent);
         });
         currentPlayTitle = currentPlay.findViewById(R.id.element_title);
         currentPlaySubtitle = currentPlay.findViewById(R.id.element_subtitle);
         currentPlayImage = currentPlay.findViewById(R.id.element_image);
         currentPlayAction = currentPlay.findViewById(R.id.element_action);
-        currentPlayAction.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v)
-            {
-                if(musicPlayer == null) return;
-                if(musicPlayer.isPlaying()) PlayerConnection.musicController.getTransportControls().pause();
-                else PlayerConnection.musicController.getTransportControls().play();
-            }
+        currentPlayAction.setOnClickListener(v -> {
+            if (musicPlayer == null) return;
+            if (musicPlayer.isPlaying())
+                PlayerConnection.musicController.getTransportControls().pause();
+            else PlayerConnection.musicController.getTransportControls().play();
         });
 
         restoreInstanceState(savedInstanceState, currentObject);
 
         //delay currentPlay showing
-        mainListView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener()
-        {
+        mainListView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
-            public void onGlobalLayout()
-            {
-                if(needShowCurrentPlay)
-                {
+            public void onGlobalLayout() {
+                if (needShowCurrentPlay) {
                     showCurrentPlay(musicPlayer.getCurrentSong(), musicPlayer.isPlaying());
                     needShowCurrentPlay = false;
                     mainListView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
@@ -457,8 +735,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onStart()
-    {
+    protected void onStart() {
         super.onStart();
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
         LibraryService.configureLibrary(getApplicationContext());
@@ -466,40 +743,30 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         super.onDestroy();
         musicCallbacksRegistered = false;
     }
 
     @Override
-    public void onBackPressed()
-    {
+    public void onBackPressed() {
         // Handle drawer close
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START))
-        {
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        }
-        else if(back2Bundle != null)
-        {
+        } else if (back2Bundle != null) {
             restoreInstanceState(back2Bundle, back2Object);
             back2Bundle = null;
-        }
-        else if(backBundle != null)
-        {
+        } else if (backBundle != null) {
             restoreInstanceState(backBundle, backObject);
             backBundle = null;
-        }
-        else
-        {
+        } else {
             super.onBackPressed();
         }
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
+    public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
 
@@ -514,53 +781,34 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onNewIntent(Intent intent)
-    {
-        if(Intent.ACTION_SEARCH.equals(intent.getAction()))
-        {
+    protected void onNewIntent(Intent intent) {
+        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             final String query = intent.getStringExtra(SearchManager.QUERY);
-            if(globalSearch)
-            {
-                new Thread()
-                {
-                    public void run()
-                    {
+            if (globalSearch) {
+                new Thread() {
+                    public void run() {
                         final ArrayList<LibraryObject> objects = LibraryService.queryWeb(query);
-                        runOnUiThread(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                setContentToSearch(objects);
-                            }
-                        });
+                        runOnUiThread(() -> setContentToSearch(objects));
                     }
                 }.start();
-            }
-            else setContentToSearch(LibraryService.query(query));
+            } else setContentToSearch(LibraryService.query(query));
         }
     }
 
-
     @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
+    public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings)
-        {
+        if (id == R.id.action_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
             return true;
-        }
-        else if(id == R.id.action_sync)
-        {
-            if(LibraryService.synchronization)
-            {
+        } else if (id == R.id.action_sync) {
+            if (LibraryService.synchronization) {
                 LibraryService.syncThread.interrupt();
                 syncButton.setIcon(R.drawable.ic_sync);
                 LibraryService.registerInit();
@@ -571,37 +819,24 @@ public class MainActivity extends AppCompatActivity
             //devices with little screens : change name
             syncButton.setTitle(R.string.cancel);
 
-            LibraryService.synchronizeLibrary(new LibraryService.SynchronizeCallback()
-            {
+            LibraryService.synchronizeLibrary(new LibraryService.SynchronizeCallback() {
                 @Override
-                public void synchronizeDone()
-                {
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            syncButton.setIcon(R.drawable.ic_sync);
-                            syncButton.setTitle(R.string.sync);
-                        }
+                public void synchronizeDone() {
+                    runOnUiThread(() -> {
+                        syncButton.setIcon(R.drawable.ic_sync);
+                        syncButton.setTitle(R.string.sync);
                     });
                 }
+
                 @Override
-                public void synchronizeFail(int error)
-                {
-                    runOnUiThread(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            syncButton.setIcon(R.drawable.ic_sync);
-                            syncButton.setTitle(R.string.sync);
-                            switch (error)
-                            {
-                                case LibraryService.ERROR_LOADING_NOT_DONE:
-                                    Toast.makeText(MainActivity.this, getText(R.string.sync_fail_load), Toast.LENGTH_SHORT).show();
-                                    break;
-                            }
+                public void synchronizeFail(int error) {
+                    runOnUiThread(() -> {
+                        syncButton.setIcon(R.drawable.ic_sync);
+                        syncButton.setTitle(R.string.sync);
+                        switch (error) {
+                            case LibraryService.ERROR_LOADING_NOT_DONE:
+                                Toast.makeText(MainActivity.this, getText(R.string.sync_fail_load), Toast.LENGTH_SHORT).show();
+                                break;
                         }
                     });
                 }
@@ -613,13 +848,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item)
-    {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation drawer action
         int id = item.getItemId();
 
-        switch(id)
-        {
+        switch (id) {
             case R.id.nav_search:
                 // Enable web search
                 globalSearch = true;
@@ -627,116 +860,109 @@ public class MainActivity extends AppCompatActivity
                 searchView.setIconified(false);
                 searchView.setQueryHint(getString(R.string.search_web));
                 // Set to empty activity
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false;
+                currentObject = null;
+                backBundle = null;
+                back2Bundle = null;
                 setContentToSearch(null);
                 break;
 
             case R.id.nav_artists:
-                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                globalSearch = false;
+                searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false;
+                currentObject = null;
+                backBundle = null;
+                back2Bundle = null;
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
-                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                globalSearch = false;
+                searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false;
+                currentObject = null;
+                backBundle = null;
+                back2Bundle = null;
                 // Replace current activity content with album view
                 setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
-                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                globalSearch = false;
+                searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false;
+                currentObject = null;
+                backBundle = null;
+                back2Bundle = null;
                 // Replace current activity content with song list
                 setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
-                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                globalSearch = false;
+                searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false;
+                currentObject = null;
+                backBundle = null;
+                back2Bundle = null;
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
                 break;
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
     /* Perform permission check and read library */
-    private void checkPermission()
-    {
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M)
-        {
-            if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED)
-            {
-                if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
-                {
+    private void checkPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                     // Show an alert dialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                     builder.setMessage(getString(R.string.please_grant_permission_msg));
                     builder.setTitle(getString(R.string.please_grant_permission_title));
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener()
-                    {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i)
-                        {
-                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
-                        }
-                    });
+                    builder.setPositiveButton("OK", (dialogInterface, i) -> ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE));
                     AlertDialog dialog = builder.create();
-                    dialog.setOnShowListener(new DialogInterface.OnShowListener()
-                    {
-                        @Override
-                        public void onShow(DialogInterface arg0)
-                        {
-                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-                        }
-                    });
+                    dialog.setOnShowListener(arg0 -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK));
                     dialog.show();
-                }
-                else
-                {
+                } else {
                     // Request permission
                     ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, EXT_PERM_REQUEST_CODE);
                 }
-            }
-            else startLibService();
-        }
-        else startLibService();
+            } else startLibService();
+        } else startLibService();
     }
+
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
-    {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == EXT_PERM_REQUEST_CODE)
-        {
-            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        if (requestCode == EXT_PERM_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 startLibService();
-            else
-            {
+            else {
                 Toast.makeText(this, getString(R.string.please_grant_permission_msg), Toast.LENGTH_LONG).show();
                 finish();
             }
         }
     }
-    public void startLibService()
-    {
-        if(LibraryService.getArtists().size() == 0)
-        {
+
+    public void startLibService() {
+        if (LibraryService.getArtists().size() == 0) {
             Intent service = new Intent(this, LibraryService.class);
             startService(service);
 
             LibraryService.registerInit();
         }
-        if(currentContext == CONTEXT_NONE) setContentToArtists();
+        if (currentContext == CONTEXT_NONE) setContentToArtists();
     }
 
     /* UI Change methods (Artists/Albums/Songs/Playlists...) */
-    private void setContentToArtists()
-    {
+    private void setContentToArtists() {
         this.setTitle(getResources().getString(R.string.artists));
         currentContext = CONTEXT_ARTISTS;
 
@@ -744,38 +970,39 @@ public class MainActivity extends AppCompatActivity
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
-    private void setContentToAlbums(List<Album> albums, String title)
-    {
+
+    private void setContentToAlbums(List<Album> albums, String title) {
         this.setTitle(title);
         currentContext = CONTEXT_ALBUMS;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, albums);
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
-    private void setContentToSongs(List<Song> songs, String title)
-    {
+
+    private void setContentToSongs(List<Song> songs, String title) {
         this.setTitle(title);
         currentContext = CONTEXT_SONGS;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, songs);
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
-    private void setContentToPlaylists()
-    {
+
+    private void setContentToPlaylists() {
         this.setTitle(getResources().getString(R.string.playlists));
         currentContext = CONTEXT_PLAYLISTS;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, LibraryService.getPlaylists());
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
-    private void setContentToSearch(ArrayList<LibraryObject> searchResult)
-    {
-        currentObject = null; fromPlaylists = false;
+
+    private void setContentToSearch(ArrayList<LibraryObject> searchResult) {
+        currentObject = null;
+        fromPlaylists = false;
         this.setTitle(getResources().getString(R.string.action_search));
         currentContext = CONTEXT_SEARCH;
 
-        if(searchResult == null) searchResult = new ArrayList<>();
-        else if(searchResult.isEmpty())
+        if (searchResult == null) searchResult = new ArrayList<>();
+        else if (searchResult.isEmpty())
             Toast.makeText(this, R.string.no_results_found, Toast.LENGTH_SHORT).show();
 
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, searchResult);
@@ -785,30 +1012,28 @@ public class MainActivity extends AppCompatActivity
     }
 
     /* currently playing */
-    private void showCurrentPlay(Song song, boolean play)
-    {
-        if(song == null) return;
+    private void showCurrentPlay(Song song, boolean play) {
+        if (song == null) return;
 
-        if(!currentPlayShown)
-        {
+        if (!currentPlayShown) {
             //show
             currentPlay.setVisibility(View.VISIBLE);
             currentPlayShown = true;
         }
 
-        // update informations
+        // update information
         currentPlayTitle.setText(song.getTitle());
         currentPlaySubtitle.setText(song.getArtist().getName() + " - " + song.getAlbum().getName());
-        if(song.getAlbum().hasArt()) currentPlayImage.setImageBitmap(song.getAlbum().getArtMiniature());
+        if (song.getAlbum().hasArt())
+            currentPlayImage.setImageBitmap(song.getAlbum().getArtMiniature());
         else currentPlayImage.setImageResource(R.drawable.ic_albums);
 
-        if(play) currentPlayAction.setImageResource(R.drawable.ic_action_pause);
+        if (play) currentPlayAction.setImageResource(R.drawable.ic_action_pause);
         else currentPlayAction.setImageResource(R.drawable.ic_play_action);
     }
-    private void hideCurrentPlay()
-    {
-        if(currentPlayShown)
-        {
+
+    private void hideCurrentPlay() {
+        if (currentPlayShown) {
             currentPlay.setVisibility(View.INVISIBLE);
             mainListView.getLayoutParams().height = LinearLayout.LayoutParams.MATCH_PARENT;
             mainListView.requestLayout();
@@ -817,38 +1042,34 @@ public class MainActivity extends AppCompatActivity
     }
 
     /* actions */
-    private void setPlaylist(ArrayList<Song> songs, int currentPos)
-    {
-        if(songs.size() == 0)
-        {
+    private void setPlaylist(ArrayList<Song> songs, int currentPos) {
+        if (songs.size() == 0) {
             Toast.makeText(this, getText(R.string.empty), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if(musicPlayer == null) PlayerConnection.start(songs, currentPos);
+        if (musicPlayer == null) PlayerConnection.start(songs, currentPos);
         else musicPlayer.setCurrentPlaylist(songs, currentPos);
     }
-    private void playNext(ArrayList<Song> songs)
-    {
-        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+
+    private void playNext(ArrayList<Song> songs) {
+        if (musicPlayer == null) PlayerConnection.start(songs, 0);
         else musicPlayer.addNextToPlaylist(songs);
     }
-    private void addToPlaylist(ArrayList<Song> songs)
-    {
-        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+
+    private void addToPlaylist(ArrayList<Song> songs) {
+        if (musicPlayer == null) PlayerConnection.start(songs, 0);
         else musicPlayer.addToPlaylist(songs);
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState)
-    {
+    public void onSaveInstanceState(Bundle outState) {
         saveInstanceState(outState);
         super.onSaveInstanceState(outState);
     }
 
-    private void saveInstanceState(Bundle bundle)
-    {
-        if(bundle == null) return;
+    private void saveInstanceState(Bundle bundle) {
+        if (bundle == null) return;
 
         Log.println(Log.WARN, "BLADE-DEBUG", "SaveInstanceState : " + currentObject);
 
@@ -857,11 +1078,10 @@ public class MainActivity extends AppCompatActivity
         bundle.putInt("listSelection", mainListView.getFirstVisiblePosition());
         bundle.putBoolean("currentPlayShown", currentPlayShown);
     }
-    private void restoreInstanceState(Bundle bundle, LibraryObject currentObject)
-    {
-        if(bundle == null)
-        {
-            if(PlayerConnection.getService() != null) needShowCurrentPlay = true;
+
+    private void restoreInstanceState(Bundle bundle, LibraryObject currentObject) {
+        if (bundle == null) {
+            if (PlayerConnection.getService() != null) needShowCurrentPlay = true;
             return;
         }
 
@@ -870,21 +1090,25 @@ public class MainActivity extends AppCompatActivity
 
         MainActivity.currentObject = currentObject;
 
-        switch(restoreContext)
-        {
+        switch (restoreContext) {
             case CONTEXT_ARTISTS:
                 setContentToArtists();
                 break;
 
             case CONTEXT_ALBUMS:
-                if(currentObject == null) setContentToAlbums(LibraryService.getAlbums(), getString(R.string.albums));
-                else setContentToAlbums(((Artist) currentObject).getAlbums(), ((Artist) currentObject).getName());
+                if (currentObject == null)
+                    setContentToAlbums(LibraryService.getAlbums(), getString(R.string.albums));
+                else
+                    setContentToAlbums(((Artist) currentObject).getAlbums(), currentObject.getName());
                 break;
 
             case CONTEXT_SONGS:
-                if(currentObject == null) setContentToSongs(LibraryService.getSongs(), getString(R.string.songs));
-                else if(fromPlaylists) setContentToSongs(((Playlist) currentObject).getContent(), ((Playlist) currentObject).getName());
-                else setContentToSongs(((Album) currentObject).getSongs(), ((Album) currentObject).getName());
+                if (currentObject == null)
+                    setContentToSongs(LibraryService.getSongs(), getString(R.string.songs));
+                else if (fromPlaylists)
+                    setContentToSongs(((Playlist) currentObject).getContent(), currentObject.getName());
+                else
+                    setContentToSongs(((Album) currentObject).getSongs(), currentObject.getName());
                 break;
 
             case CONTEXT_PLAYLISTS:
@@ -894,497 +1118,12 @@ public class MainActivity extends AppCompatActivity
 
         mainListView.setSelection(bundle.getInt("listSelection"));
 
-        if((bundle.getBoolean("currentPlayShown")) && PlayerConnection.getService() != null)
-        {
+        if ((bundle.getBoolean("currentPlayShown")) && PlayerConnection.getService() != null) {
             needShowCurrentPlay = true;
         }
     }
 
-    /* shared dialogs */
-    static void showAddToPlaylist(Activity context, LibraryObject object)
-    {
-        List<Song> toAdd = new ArrayList<>();
-        if(object instanceof Song) toAdd.add((Song) object);
-        else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
-        else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
-        else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
-
-        List<Playlist> list = new ArrayList<>(LibraryService.getPlaylists());
-        for(int i = 0;i<list.size();i++)
-        {Playlist p = list.get(i); if(!p.isMine() && !p.isCollaborative()) list.remove(i);}
-        list.add(0, new Playlist(context.getString(R.string.new_playlist), null));
-
-        LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, list, false);
-        adapter.setHideMore(true);
-        AlertDialog.Builder builder = new AlertDialog.Builder(context)
-                .setTitle(context.getString(R.string.add_to_playlist))
-                .setAdapter(adapter,
-                        new DialogInterface.OnClickListener()
-                        {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which)
-                            {
-                                if(which == 0) //new playlist
-                                {
-                                    showAddPlaylist(context, new AddPlaylistCallback()
-                                    {
-                                        @Override
-                                        public void onSuccess(Playlist result)
-                                        {
-                                            result.getSources().getSourceByPriority(0).getSource().
-                                                    addSongsToPlaylist(toAdd, result, new Source.OperationCallback()
-                                                    {
-                                                        @Override
-                                                        public void onSucess(LibraryObject result0)
-                                                        {
-                                                            context.runOnUiThread(new Runnable()
-                                                            {
-                                                                @Override
-                                                                public void run()
-                                                                {
-                                                                    Toast.makeText(context, toAdd.size() + " " + context.getString(R.string.added_ok) + " " + result.getName(), Toast.LENGTH_SHORT).show();
-                                                                }
-                                                            });
-                                                        }
-                                                        @Override
-                                                        public void onFailure()
-                                                        {
-                                                            context.runOnUiThread(new Runnable()
-                                                            {
-                                                                @Override
-                                                                public void run()
-                                                                {
-                                                                    Toast.makeText(context, context.getString(R.string.added_fail) + " " + result.getName(), Toast.LENGTH_SHORT).show();
-                                                                }
-                                                            });
-                                                        }
-                                                    });
-                                        }
-                                    });
-                                    return;
-                                }
-
-                                Playlist clicked = list.get(which);
-                                clicked.getSources().getSourceByPriority(0).getSource()
-                                        .addSongsToPlaylist(toAdd, clicked, new Source.OperationCallback() {
-                                            @Override
-                                            public void onSucess(LibraryObject result)
-                                            {
-                                                context.runOnUiThread(new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        Toast.makeText(context, toAdd.size() + " " + context.getString(R.string.added_ok) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                            }
-
-                                            @Override
-                                            public void onFailure()
-                                            {
-                                                context.runOnUiThread(new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        Toast.makeText(context, context.getString(R.string.added_fail) + " " + clicked.getName(), Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
-                                            }
-                                        });
-                            }
-                        })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        dialog.cancel();
-                    }
-                });
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(new DialogInterface.OnShowListener()
-        {
-            @Override
-            public void onShow(DialogInterface arg0)
-            {
-                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-            }
-        });
-        dialog.show();
-    }
-    static void showManageLibraries(Activity context, LibraryObject object)
-    {
-        if(!(object instanceof Song)) return;
-
-        /* create special source adapter */
-        BaseAdapter sourceAdapter = new BaseAdapter()
-        {
-            class ViewHolder
-            {
-                SwitchCompat checkBox;
-            }
-
-            @Override
-            public int getCount() {return Source.SOURCES.length;}
-            @Override
-            public Object getItem(int position) {return Source.SOURCES[position];}
-            @Override
-            public long getItemId(int position) {return position;}
-
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent)
-            {
-                ViewHolder viewHolder;
-
-                if(convertView == null)
-                {
-                    viewHolder = new ViewHolder();
-
-                    //map to layout
-                    convertView = LayoutInflater.from(context).inflate(R.layout.library_list_layout, parent, false);
-
-                    //get imageview
-                    viewHolder.checkBox = convertView.findViewById(R.id.element_check);
-
-                    convertView.setTag(viewHolder);
-                }
-                else viewHolder = (ViewHolder) convertView.getTag();
-
-                viewHolder.checkBox.setText(Source.SOURCES[position].getName());
-                SongSources.SongSource thisSource = ((Song) object).getSources().getSourceByAbsolutePriority(position);
-                viewHolder.checkBox.setChecked(thisSource != null && thisSource.getLibrary());
-
-                //disable 'add to library' on local context (only allow to remove from local)
-                if(position == 0 && !viewHolder.checkBox.isChecked())
-                    viewHolder.checkBox.setEnabled(false);
-
-                //handle actions
-                viewHolder.checkBox.setOnClickListener(new View.OnClickListener()
-                {
-                    @Override
-                    public void onClick(View view)
-                    {
-                        Source source = Source.SOURCES[position];
-                        if(viewHolder.checkBox.isChecked())
-                            source.addSongToLibrary((Song) object, new Source.OperationCallback()
-                            {
-                                @Override
-                                public void onSucess(LibraryObject result)
-                                {
-                                    context.runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_added), Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
-                                @Override
-                                public void onFailure()
-                                {
-                                    context.runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_add_fail), Toast.LENGTH_SHORT).show();
-                                            viewHolder.checkBox.setChecked(false);
-                                        }
-                                    });
-                                }
-                            });
-                        else
-                            if(source == Source.SOURCE_LOCAL_LIB)
-                            {
-                                AlertDialog.Builder builder = new AlertDialog.Builder(context)
-                                        .setTitle(context.getString(R.string.delete))
-                                        .setMessage(R.string.are_you_sure_delete)
-                                        .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
-                                        {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int which)
-                                            {
-                                                viewHolder.checkBox.setChecked(true);
-                                                dialog.cancel();
-                                            }
-                                        })
-                                        .setPositiveButton(R.string.yes, new DialogInterface.OnClickListener()
-                                        {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int which)
-                                            {
-                                                source.removeSongFromLibrary((Song) object, new Source.OperationCallback()
-                                                {
-                                                    @Override
-                                                    public void onSucess(LibraryObject result)
-                                                    {
-                                                        context.runOnUiThread(new Runnable()
-                                                        {
-                                                            @Override
-                                                            public void run()
-                                                            {
-                                                                Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_removed), Toast.LENGTH_SHORT).show();
-                                                                if(source == Source.SOURCE_LOCAL_LIB) viewHolder.checkBox.setEnabled(false);
-                                                            }
-                                                        });
-                                                    }
-                                                    @Override
-                                                    public void onFailure()
-                                                    {
-                                                        context.runOnUiThread(new Runnable()
-                                                        {
-                                                            @Override
-                                                            public void run()
-                                                            {
-                                                                Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_remove_fail), Toast.LENGTH_SHORT).show();
-                                                                viewHolder.checkBox.setChecked(true);
-                                                            }
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        });
-                                AlertDialog dialog = builder.create();
-                                dialog.setOnShowListener(new DialogInterface.OnShowListener()
-                                {
-                                    @Override
-                                    public void onShow(DialogInterface arg0)
-                                    {
-                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-                                    }
-                                });
-                                dialog.show();
-                            }
-                            else
-                            source.removeSongFromLibrary((Song) object, new Source.OperationCallback()
-                            {
-                                @Override
-                                public void onSucess(LibraryObject result)
-                                {
-                                    context.runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_removed), Toast.LENGTH_SHORT).show();
-                                            if(source == Source.SOURCE_LOCAL_LIB) viewHolder.checkBox.setEnabled(false);
-                                        }
-                                    });
-                                }
-                                @Override
-                                public void onFailure()
-                                {
-                                    context.runOnUiThread(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            Toast.makeText(context, object.getName() + " " + context.getString(R.string.library_remove_fail), Toast.LENGTH_SHORT).show();
-                                            viewHolder.checkBox.setChecked(true);
-                                        }
-                                    });
-                                }
-                            });
-                    }
-                });
-
-                return convertView;
-            }
-        };
-
-        /* create dialog */
-        AlertDialog.Builder builder = new AlertDialog.Builder(context)
-                .setTitle(R.string.manage_libraries)
-                .setAdapter(sourceAdapter, new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {}
-                })
-                .setPositiveButton("OK", new DialogInterface.OnClickListener()
-                {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        dialog.dismiss();
-                    }
-                });
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(new DialogInterface.OnShowListener()
-        {
-            @Override
-            public void onShow(DialogInterface arg0)
-            {
-                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-            }
-        });
-        dialog.show();
-    }
-
-    interface AddPlaylistCallback {void onSuccess(Playlist result);}
-    static void showAddPlaylist(Activity context, AddPlaylistCallback callback)
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(R.string.new_playlist);
-        builder.setView(R.layout.add_playlist_dialog);
-        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {dialog.cancel();}
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(new DialogInterface.OnShowListener()
-        {
-            @Override
-            public void onShow(DialogInterface arg0)
-            {
-                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                Spinner listView = dialog.findViewById(R.id.playlist_source);
-                listView.setAdapter(new BaseAdapter()
-                {
-                    class ViewHolder
-                    {
-                        ImageView image;
-                        TextView title;
-                    }
-
-                    @Override
-                    public int getCount() {return Source.SOURCES.length;}
-                    @Override
-                    public Object getItem(int position) {return Source.SOURCES[position];}
-                    @Override
-                    public long getItemId(int position) {return position;}
-                    @Override
-                    public View getView(int position, View convertView, ViewGroup parent)
-                    {
-                        ViewHolder viewHolder;
-
-                        if(convertView == null)
-                        {
-                            viewHolder = new ViewHolder();
-
-                            //map to layout
-                            convertView = LayoutInflater.from(context).inflate(R.layout.mini_sources_list_layout, parent, false);
-
-                            //get imageview
-                            viewHolder.title = convertView.findViewById(R.id.element_title);
-                            viewHolder.image = convertView.findViewById(R.id.element_image);
-
-                            convertView.setTag(viewHolder);
-                        }
-                        else viewHolder = (ViewHolder) convertView.getTag();
-
-                        viewHolder.title.setText(Source.SOURCES[position].getName());
-                        viewHolder.image.setImageResource(Source.SOURCES[position].getIconImage());
-
-                        return convertView;
-                    }
-                });
-            }
-        });
-        dialog.setButton(DialogInterface.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface d, int which)
-            {
-                //create playlist
-                Spinner listView = dialog.findViewById(R.id.playlist_source);
-                Source source = Source.SOURCES[listView.getSelectedItemPosition()];
-                EditText editText = dialog.findViewById(R.id.playlist_name);
-                source.addPlaylist(editText.getText().toString(), new Source.OperationCallback()
-                {
-                    @Override
-                    public void onSucess(LibraryObject result)
-                    {
-                        if(callback != null) callback.onSuccess((Playlist) result);
-                    }
-
-                    @Override
-                    public void onFailure()
-                    {
-                        context.runOnUiThread(new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                Toast.makeText(context, context.getString(R.string.playlist_add_fail), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }, false, false);
-            }
-        });
-        dialog.show();
-    }
-
-    static void showLinkToSearchFor(Activity context, LibraryObject source)
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(R.string.link_to);
-        builder.setView(R.layout.search_dialog);
-        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {dialog.cancel();}
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(new DialogInterface.OnShowListener()
-        {
-            @Override
-            public void onShow(DialogInterface arg0)
-            {
-                dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                ListView listView = dialog.findViewById(R.id.search_dialog_results);
-                List<Song> results = LibraryService.getSongs(); results.remove(source);
-                LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, results, false);
-                adapter.setHideMore(true);
-                listView.setAdapter(adapter);
-                EditText editText = dialog.findViewById(R.id.search_dialog_input);
-                editText.setOnEditorActionListener(new TextView.OnEditorActionListener()
-                {
-                    @Override
-                    public boolean onEditorAction(TextView v, int actionId, KeyEvent event)
-                    {
-                        if(actionId == EditorInfo.IME_ACTION_DONE)
-                        {
-                            //close keyboard
-                            InputMethodManager imm = (InputMethodManager)v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                            imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-
-                            //set content to search
-                            LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, LibraryService.querySongs(editText.getText().toString()), false);
-                            adapter.setHideMore(true);
-                            listView.setAdapter(adapter);
-
-                            return true;
-                        }
-                        return false;
-                    }
-                });
-                listView.setOnItemClickListener(new ListView.OnItemClickListener()
-                {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-                    {
-                        Song clicked = (Song) ((LibraryObjectAdapter) listView.getAdapter()).getItem(position);
-
-                        LibraryService.linkSong((Song) source, clicked, true);
-                        dialog.hide();
-                    }
-                });
-            }
-        });
-
-        dialog.show();
+    interface AddPlaylistCallback {
+        void onSuccess(Playlist result);
     }
 }

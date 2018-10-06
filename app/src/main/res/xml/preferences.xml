@@ -1,19 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <CheckBoxPreference android:title="@string/save_playlists_to_library_titl"
-                        android:summary="@string/save_playlists_to_library_expl"
-                        android:key="save_playlist_to_library"
-                        android:defaultValue="false"/>
-    <CheckBoxPreference android:title="@string/register_better_sources_titl"
-                        android:summary="@string/register_better_sources_expl"
-                        android:key="register_better_sources"
-                        android:defaultValue="true"/>
-    <CheckBoxPreference android:title="@string/enable_song_change_anim"
-                        android:key="anim_0"
-                        android:defaultValue="true"/>
-    <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
-    <PreferenceScreen android:title="@string/link_manager" android:key="link_manager"/>
-    <PreferenceScreen android:title="@string/themes" android:key="themes"/>
-    <PreferenceScreen android:title="@string/sd_perm" android:key="sd_perm"/>
-    <PreferenceScreen android:title="@string/about" android:key="about_screen"/>
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="save_playlist_to_library"
+        android:summary="@string/save_playlists_to_library_expl"
+        android:title="@string/save_playlists_to_library_title" />
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="register_better_sources"
+        android:summary="@string/register_better_sources_expl"
+        android:title="@string/register_better_sources_title" />
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="anim_0"
+        android:title="@string/enable_song_change_anim" />
+    <PreferenceScreen
+        android:key="sources_screen"
+        android:title="@string/sources" />
+    <PreferenceScreen
+        android:key="link_manager"
+        android:title="@string/link_manager" />
+    <PreferenceScreen
+        android:key="themes"
+        android:title="@string/themes" />
+    <PreferenceScreen
+        android:key="sd_perm"
+        android:title="@string/sd_perm" />
+    <PreferenceScreen
+        android:key="about_screen"
+        android:title="@string/about" />
 </PreferenceScreen>
