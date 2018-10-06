@@ -1,12 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    compileOptions.encoding = 'UTF-8'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "v.blade"
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 12
         versionName "1.3"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -24,31 +25,44 @@ android {
 }
 
 dependencies {
-    implementation project(':libraries:drag-sort-listview:library')
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
+    //drag-sort-listview
+    //implementation project(':libraries:drag-sort-listview:library')
+    implementation 'com.mobeta.android.dslv:library:0.9.0' // <- TEMPORARY
+    //TODO: replace above two ^^ with implementation 'com.github.Valou3433:drag-sort-listview:[NEW_VERSION]' once a new version is tagged
+// How to do this: sign in to https://jitpack.io using github (using "connect to github").
+// Go to your account. On the left, all your repositories will be listed. Click on "drag-sort-listview" (or click on the left and right arrows until it shows up).
+// Have a new version tagged already (see "https://github.com/Valou3433/drag-sort-listview/pull/1".
+// Jitpack will automatically start building the library, which only takes around a minute.
+// Replace [NEW_VERSION] with the new library version. Huzzah, no more pesky local libraries! You did a thing :D
+
     //tags library
-    implementation 'net.jthink:jaudiotagger:2.2.3'
+    //implementation 'net.jthink:jaudiotagger:2.2.5'
+    implementation files('libs/jaudiotagger-2.2.6-SNAPSHOT.jar')
 
     //spotify
-    implementation 'com.spotify.android:auth:1.0.0-alpha' //auth
-    implementation 'com.github.kaaes:spotify-web-api-android:0.4.1' //web api access
+    implementation 'com.spotify.android:auth:1.1.0' //auth
     implementation 'com.spotify.sdk:spotify-player-24-noconnect-2.20b@aar' //playback (play sdk)
+    implementation 'com.github.kaaes:spotify-web-api-android:0.4.1' //web api access
 
     //deezer
     implementation 'com.deezer.sdk:deezer-sdk-0.11.2@aar'
 
     //acra
-    implementation "ch.acra:acra-http:5.1.3"
-    implementation "ch.acra:acra-toast:5.1.3"
+    implementation 'ch.acra:acra-http:5.2.0'
+    implementation 'ch.acra:acra-toast:5.2.0'
 
     //compat libs
-    implementation 'com.android.support:support-compat:27.1.1'
-    implementation 'com.android.support:preference-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:support-compat:28.0.0'
+    implementation 'com.android.support:preference-v7:28.0.0'
+    implementation 'com.android.support:customtabs:28.0.0'
+
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     testImplementation 'junit:junit:4.12'
 }
