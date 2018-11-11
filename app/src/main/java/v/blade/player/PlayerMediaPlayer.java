@@ -243,7 +243,7 @@ public class PlayerMediaPlayer
         if(song == null) return;
         currentSong = song;
 
-        if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
+        if(currentActivePlayer != null) currentActivePlayer.pause(null); //even if player if not playing, we pause (in case player was about to play)
 
         /* select appropriate mediaplayer and start playback */
         if(song.getSources().getSourceByPriority(0) == null)
@@ -275,7 +275,7 @@ public class PlayerMediaPlayer
                 {
                     if(currentActivePlayer == player)
                     {
-                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+                        if(context != null) Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
