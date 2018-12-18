@@ -684,7 +684,7 @@ public class LibraryService
     static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track, int year)
     {
         //if song is already registered, return song from library
-        ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems : UPDATE : checksync ?
         if(snames != null)
         {
             //check if the song is already registered
@@ -703,18 +703,21 @@ public class LibraryService
                 }
             }
         }
-        for(Song s : handles)
-            if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
-            {
-                if(source != null)
+        synchronized(handles)
+        {
+            for(Song s : handles)
+                if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
                 {
-                    s.getSources().addSource(source);
-                    s.getAlbum().getSources().addSource(source);
-                    s.getArtist().getSources().addSource(source);
+                    if(source != null)
+                    {
+                        s.getSources().addSource(source);
+                        s.getAlbum().getSources().addSource(source);
+                        s.getArtist().getSources().addSource(source);
+                    }
+                    if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
+                    return s;
                 }
-                if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
-                return s;
-            }
+        }
 
         if(source == null) return null;
 

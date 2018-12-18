@@ -90,4 +90,5 @@
     <string name="enable_song_change_anim">Activer l\'animation de changement de son</string>
     <string name="link_manager">Gérer les liens entre titres</string>
     <string name="no_results_found">Aucun résultat</string>
+    <string name="explore">Explorer</string>
 </resources>

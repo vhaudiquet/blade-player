@@ -128,7 +128,6 @@ public class TagEditorActivity extends AppCompatActivity
 
             TagOptionSingleton.getInstance().setAndroid(true);
 
-
             for(Song currentSong : songs)
             {
                 File basicFile = new File(currentSong.getPath());
@@ -165,6 +164,7 @@ public class TagEditorActivity extends AppCompatActivity
                     //OutputStream os = getContentResolver().openOutputStream(f.getUri());
                     //InputStream is = getContentResolver().openInputStream(f.getUri());
                     Toast.makeText(this, "Edition on SD Card is not supported for now", Toast.LENGTH_LONG).show();
+                    return;
                 }
                 else
                 {
