@@ -18,11 +18,15 @@
 package v.blade.player;
 
 import android.app.Notification;
-import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.MediaBrowserServiceCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -31,8 +35,9 @@ import v.blade.library.Song;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
-public class PlayerService extends Service
+public class PlayerService extends MediaBrowserServiceCompat
 {
     private static final String TAG = PlayerService.class.getSimpleName();
     private final IBinder binder = new PlayerBinder();
@@ -261,6 +266,14 @@ public class PlayerService extends Service
     {
         return binder;
     }
+
+    //MediaBrowserServiceCompat
+    @Nullable
+    @Override
+    public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid, @Nullable Bundle rootHints) {return null;}
+    @Override
+    public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaBrowserCompat.MediaItem>> result) {}
+
     @Override
     public boolean onUnbind(Intent intent) {return true;}
 
