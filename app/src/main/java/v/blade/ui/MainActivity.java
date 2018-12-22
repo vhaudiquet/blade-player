@@ -47,6 +47,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.*;
 import v.blade.R;
 import v.blade.library.*;
+import v.blade.library.sources.Source;
 import v.blade.player.PlayerService;
 import v.blade.ui.adapters.LibraryObjectAdapter;
 import v.blade.ui.settings.SettingsActivity;

@@ -21,7 +21,7 @@ import com.spotify.sdk.android.authentication.AuthenticationResponse;
 import retrofit.RetrofitError;
 import v.blade.R;
 import v.blade.library.LibraryService;
-import v.blade.library.Source;
+import v.blade.library.sources.Source;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;

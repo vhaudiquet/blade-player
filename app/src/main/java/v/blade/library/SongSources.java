@@ -1,5 +1,7 @@
 package v.blade.library;
 
+import v.blade.library.sources.Source;
+
 public class SongSources
 {
     public static class SongSource

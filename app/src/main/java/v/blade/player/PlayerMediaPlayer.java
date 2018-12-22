@@ -28,8 +28,8 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
 import v.blade.R;
 import v.blade.library.Song;
-import v.blade.library.Source;
 import v.blade.library.SourcePlayer;
+import v.blade.library.sources.Source;
 
 public class PlayerMediaPlayer
 {
