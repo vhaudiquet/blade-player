@@ -825,17 +825,17 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
-        if(musicPlayer == null) PlayerConnection.start(songs, currentPos);
+        if(musicPlayer == null) System.err.println("MusicPlayer is NULL ! Where is PlayerService??");
         else musicPlayer.setCurrentPlaylist(songs, currentPos);
     }
     private void playNext(ArrayList<Song> songs)
     {
-        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+        if(musicPlayer == null) System.err.println("MusicPlayer is NULL ! Where is PlayerService??");
         else musicPlayer.addNextToPlaylist(songs);
     }
     private void addToPlaylist(ArrayList<Song> songs)
     {
-        if(musicPlayer == null) PlayerConnection.start(songs, 0);
+        if(musicPlayer == null) System.err.println("MusicPlayer is NULL ! Where is PlayerService??");
         else musicPlayer.addToPlaylist(songs);
     }
 

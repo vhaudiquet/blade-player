@@ -21,7 +21,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaControllerCompat;
 import v.blade.library.Song;
@@ -74,9 +73,10 @@ public class PlayerConnection
         PlayerConnection.applicationContext = applicationContext;
         Intent serv = new Intent(applicationContext, PlayerService.class);
         PlayerConnection.connectionCallback = connectionCallback;
-        return applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
+        return applicationContext.bindService(serv, musicConnection, Context.BIND_AUTO_CREATE);
     }
 
+    /*
     public static void start(ArrayList<Song> songs, int currentPos)
     {
         playOnConnect = songs;
@@ -88,7 +88,7 @@ public class PlayerConnection
         else applicationContext.startService(serv);
 
         applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
-    }
+    }*/
 
     public static PlayerService getService()
     {
