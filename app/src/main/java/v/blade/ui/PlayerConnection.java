@@ -39,6 +39,7 @@ public class PlayerConnection
     private static ArrayList<Song> playOnConnect; private static int positionOnConnect;
     private static volatile PlayerService musicPlayer = null;
     public static MediaControllerCompat musicController;
+    public static boolean isServiceStarted = false;
     private static ServiceConnection musicConnection = new ServiceConnection()
     {
         @Override
@@ -74,20 +75,16 @@ public class PlayerConnection
         PlayerConnection.applicationContext = applicationContext;
         Intent serv = new Intent(applicationContext, PlayerService.class);
         PlayerConnection.connectionCallback = connectionCallback;
-        return applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
+        return applicationContext.bindService(serv, musicConnection, Context.BIND_AUTO_CREATE);
     }
 
-    public static void start(ArrayList<Song> songs, int currentPos)
+    public static void start()
     {
-        playOnConnect = songs;
-        positionOnConnect = currentPos;
-
         Intent serv = new Intent(applicationContext, PlayerService.class);
-
         if(Build.VERSION.SDK_INT >= 26) applicationContext.startForegroundService(serv);
         else applicationContext.startService(serv);
 
-        applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
+        isServiceStarted = true;
     }
 
     public static PlayerService getService()

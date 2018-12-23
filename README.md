@@ -32,13 +32,11 @@ Used to quickly search  for songs, artists or albums in the library. 2 search mo
 
 ## Releases
 
-[Latest Release (v 1.3)](https://github.com/Valou3433/blade-player/releases/download/v1.3/blade-1.3.apk)
+[Latest Release (v 1.3.1)](https://github.com/Valou3433/blade-player/releases/download/v1.3.1/blade-1.3.1.apk)
 
-[Mirror](http://valou3433.fr/blade/blade-1.3.apk)
+[Mirror](http://valou3433.fr/blade/blade-1.3.1.apk)
 
-- added song linkmanager
-- added animation and red theme
-- fixed bugs on search, mediasession, tag editor
+- multiple bugfixes
 <hr>
 
 Link to all [Blade-Player Releases](https://github.com/Valou3433/blade-player/releases)
@@ -48,11 +46,8 @@ Link to all [Blade-Player Releases](https://github.com/Valou3433/blade-player/re
 ## Informations
 
 Read Blade [Privacy Policy](https://github.com/Valou3433/blade-player/blob/master/Privacy.md)
-Read Blade [License](https://github.com/Valou3433/blade-player/blob/master/LICENSE)
+[License](https://github.com/Valou3433/blade-player/blob/master/LICENSE)
 [FAQ](https://github.com/Valou3433/blade-player/blob/master/FAQ.md)
-
-## License
-
 
 
 ## Contributors

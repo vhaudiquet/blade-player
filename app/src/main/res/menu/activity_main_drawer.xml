@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <group>
+    <group android:title="@string/explore">
+        <item android:title="@string/explore">
+        <menu>
         <item
             android:id="@+id/nav_search"
             android:icon="@drawable/ic_search"
             android:title="@string/action_search"/>
+        </menu>
+        </item>
     </group>
 
     <group android:title="@string/library">
         <item android:title="@string/library">
             <menu>
-        <item
-                android:id="@+id/nav_artists"
-                android:icon="@drawable/ic_artists"
-                android:title="@string/artists"/>
-        <item
-                android:id="@+id/nav_albums"
-                android:icon="@drawable/ic_albums"
-                android:title="@string/albums"/>
-        <item
-                android:id="@+id/nav_songs"
-                android:icon="@drawable/ic_songs"
-                android:title="@string/songs"/>
-        <item
-                android:id="@+id/nav_playlists"
-                android:icon="@drawable/ic_playlists"
-                android:title="@string/playlists"/>
+                <item android:id="@+id/nav_artists"
+                      android:icon="@drawable/ic_artists"
+                      android:title="@string/artists"/>
+                <item android:id="@+id/nav_albums"
+                      android:icon="@drawable/ic_albums"
+                      android:title="@string/albums"/>
+                <item android:id="@+id/nav_songs"
+                      android:icon="@drawable/ic_songs"
+                      android:title="@string/songs"/>
+                <item android:id="@+id/nav_playlists"
+                      android:icon="@drawable/ic_playlists"
+                      android:title="@string/playlists"/>
             </menu>
         </item>
     </group>

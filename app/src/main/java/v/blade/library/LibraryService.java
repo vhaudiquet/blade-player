@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
+import v.blade.library.sources.Source;
 import v.blade.ui.settings.SettingsActivity;
 
 import java.io.*;
@@ -22,7 +23,7 @@ public class LibraryService
 {
     private static final boolean LOG_REGISTER_SONG = false;
     private static final int BETTER_SOURCES_MAX = 20; //stop better sources after 20 registered songs (avoid query limit)
-    static final String CACHE_SEPARATOR = "##";
+    public static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
     public static boolean configured = false;
@@ -41,7 +42,7 @@ public class LibraryService
     private static final List<Song> handles = Collections.synchronizedList(new ArrayList<Song>());
     private static final List<Album> albumHandles = Collections.synchronizedList(new ArrayList<Album>());
     private static final List<Artist> artistHandles = Collections.synchronizedList(new ArrayList<Artist>());
-    static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
+    public static HashMap<String, ArrayList<Song>> songsByName = new HashMap<>();
 
     //song linkss
     public static final HashMap<Song, List<Song>> songLinks = new HashMap<>();
@@ -59,7 +60,7 @@ public class LibraryService
     public static List<Song> getSongs() {return songs;}
     public static List<Playlist> getPlaylists() {return playlists;}
 
-    static Context appContext;
+    public static Context appContext;
 
     /* synchronization notification management */
     public static volatile boolean synchronization;
@@ -681,10 +682,10 @@ public class LibraryService
         return trfinal;
     }
 
-    static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track, int year)
+    public static Song getSongHandle(String name, String album, String artist, long duration, SongSources.SongSource source, int track, int year)
     {
         //if song is already registered, return song from library
-        ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems
+        ArrayList<Song> snames = songsByName.get(name.toLowerCase()); //TODO : fix sync problems : UPDATE : checksync ?
         if(snames != null)
         {
             //check if the song is already registered
@@ -703,18 +704,21 @@ public class LibraryService
                 }
             }
         }
-        for(Song s : handles)
-            if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
-            {
-                if(source != null)
+        synchronized(handles)
+        {
+            for(Song s : handles)
+                if(s.getTitle().equalsIgnoreCase(name) && s.getArtist().getName().equalsIgnoreCase(artist) && s.getAlbum().getName().equalsIgnoreCase(album))
                 {
-                    s.getSources().addSource(source);
-                    s.getAlbum().getSources().addSource(source);
-                    s.getArtist().getSources().addSource(source);
+                    if(source != null)
+                    {
+                        s.getSources().addSource(source);
+                        s.getAlbum().getSources().addSource(source);
+                        s.getArtist().getSources().addSource(source);
+                    }
+                    if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
+                    return s;
                 }
-                if(LOG_REGISTER_SONG) System.out.println("[HANDLE] Found handled song : " + s.getTitle() + " - " + s.getAlbum().getName() + " - " + s.getArtist().getName() + " - SOURCE " + source.getSource());
-                return s;
-            }
+        }
 
         if(source == null) return null;
 
@@ -751,7 +755,7 @@ public class LibraryService
         return s;
     }
 
-    static void loadArt(LibraryObject obj, String path, boolean local)
+    public static void loadArt(LibraryObject obj, String path, boolean local)
     {
         if(local)
         {

@@ -28,8 +28,8 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import android.widget.Toast;
 import v.blade.R;
 import v.blade.library.Song;
-import v.blade.library.Source;
 import v.blade.library.SourcePlayer;
+import v.blade.library.sources.Source;
 
 public class PlayerMediaPlayer
 {
@@ -243,12 +243,15 @@ public class PlayerMediaPlayer
         if(song == null) return;
         currentSong = song;
 
-        if(currentActivePlayer != null && isPlaying()) currentActivePlayer.pause(null);
-
         /* select appropriate mediaplayer and start playback */
-        if(song.getSources().getSourceByPriority(0) == null)
-        {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
-        currentActivePlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
+        //check if the song is available
+        if(song.getSources().getSourceByPriority(0) == null) {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
+
+        //switch mediaplayers
+        //if the mediaplayer is the same, we need to use little tricks to prevent a brutal transition
+        SourcePlayer nextPlayer = song.getSources().getSourceByPriority(0).getSource().getPlayer();
+        if(currentActivePlayer != null && currentActivePlayer != nextPlayer) currentActivePlayer.pause(null); //even if player if not playing, we pause (in case player was about to play)
+        currentActivePlayer = nextPlayer;
 
         if(requestAudioFocus())
         {
@@ -275,7 +278,7 @@ public class PlayerMediaPlayer
                 {
                     if(currentActivePlayer == player)
                     {
-                        Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
+                        if(context != null) Toast.makeText(context, context.getString(R.string.playback_error), Toast.LENGTH_SHORT).show();
                         currentState = PLAYER_STATE_PAUSED;
                         listener.onStateChange();
                     }
