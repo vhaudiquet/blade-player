@@ -455,16 +455,19 @@ public class MainActivity extends AppCompatActivity
         navigationView.setItemBackgroundResource(ThemesActivity.currentColorBackground);
         navigationView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
         navigationView.getHeaderView(0).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
-    }
 
-    @Override
-    protected void onStart()
-    {
-        super.onStart();
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
         LibraryService.configureLibrary(getApplicationContext());
         checkPermission();
     }
+
+    /*
+    @Override
+    protected void onStart()
+    {
+        super.onStart();
+    }
+    */
 
     @Override
     protected void onDestroy()
@@ -826,16 +829,22 @@ public class MainActivity extends AppCompatActivity
             return;
         }
 
+        if(!PlayerConnection.isServiceStarted) PlayerConnection.start();
+
         if(musicPlayer == null) System.err.println("MusicPlayer is NULL ! Where is PlayerService??");
         else musicPlayer.setCurrentPlaylist(songs, currentPos);
     }
     private void playNext(ArrayList<Song> songs)
     {
+        if(!PlayerConnection.isServiceStarted) PlayerConnection.start();
+
         if(musicPlayer == null) System.err.println("MusicPlayer is NULL ! Where is PlayerService??");
         else musicPlayer.addNextToPlaylist(songs);
     }
     private void addToPlaylist(ArrayList<Song> songs)
     {
+        if(!PlayerConnection.isServiceStarted) PlayerConnection.start();
+
         if(musicPlayer == null) System.err.println("MusicPlayer is NULL ! Where is PlayerService??");
         else musicPlayer.addToPlaylist(songs);
     }

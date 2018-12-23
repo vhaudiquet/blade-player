@@ -21,6 +21,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.media.session.MediaControllerCompat;
 import v.blade.library.Song;
@@ -38,6 +39,7 @@ public class PlayerConnection
     private static ArrayList<Song> playOnConnect; private static int positionOnConnect;
     private static volatile PlayerService musicPlayer = null;
     public static MediaControllerCompat musicController;
+    public static boolean isServiceStarted = false;
     private static ServiceConnection musicConnection = new ServiceConnection()
     {
         @Override
@@ -76,19 +78,14 @@ public class PlayerConnection
         return applicationContext.bindService(serv, musicConnection, Context.BIND_AUTO_CREATE);
     }
 
-    /*
-    public static void start(ArrayList<Song> songs, int currentPos)
+    public static void start()
     {
-        playOnConnect = songs;
-        positionOnConnect = currentPos;
-
         Intent serv = new Intent(applicationContext, PlayerService.class);
-
         if(Build.VERSION.SDK_INT >= 26) applicationContext.startForegroundService(serv);
         else applicationContext.startService(serv);
 
-        applicationContext.bindService(serv, musicConnection, Context.BIND_ABOVE_CLIENT);
-    }*/
+        isServiceStarted = true;
+    }
 
     public static PlayerService getService()
     {
