@@ -101,4 +101,5 @@
     <string name="link_manager">Song links manager</string>
     <string name="no_results_found">No results found</string>
     <string name="explore">Explore</string>
+    <string name="theme_dark_desc">Join the dark side</string>
 </resources>

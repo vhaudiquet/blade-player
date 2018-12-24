@@ -18,7 +18,9 @@
 package v.blade.ui.adapters;
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.ImageViewCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,6 +59,11 @@ public class LibraryObjectAdapter extends BaseAdapter
         ImageView source2;
     }
 
+    //colors
+    int states[][] = {{android.R.attr.state_enabled}, {android.R.attr.state_focused}, {android.R.attr.state_pressed}, {-android.R.attr.state_enabled}};
+    int color = 0;
+    int colors[];
+
     public LibraryObjectAdapter(final Activity context, List libraryObjects)
     {this(context, libraryObjects, true);}
 
@@ -66,6 +73,9 @@ public class LibraryObjectAdapter extends BaseAdapter
         this.libraryObjects = new ArrayList<>(original);
         this.context = context;
         this.inflater = LayoutInflater.from(context);
+
+        color = ContextCompat.getColor(context, ThemesActivity.currentColorForcedText);
+        colors = new int[]{color, color, color, color};
 
         if(libraryCallback) LibraryService.currentCallback = new LibraryService.UserLibraryCallback()
         {
@@ -146,6 +156,7 @@ public class LibraryObjectAdapter extends BaseAdapter
             if(moreTouchListener != null) more.setOnTouchListener(moreTouchListener);
             if(moreImageRessource != 0) more.setImageResource(moreImageRessource);
             if(hideMore) more.setVisibility(View.INVISIBLE);
+            ImageViewCompat.setImageTintList(more, new ColorStateList(states, colors));
 
             convertView.setTag(mViewHolder);
         }
@@ -155,6 +166,7 @@ public class LibraryObjectAdapter extends BaseAdapter
         more.setTag(obj);
 
         mViewHolder.title.setText(obj.getName());
+        mViewHolder.title.setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
 
         if(obj instanceof Song)
         {
@@ -164,9 +176,15 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             //set image to song album art
             if(song.getAlbum().hasArt())
+            {
+                ImageViewCompat.setImageTintList(mViewHolder.image, null);
                 mViewHolder.image.setImageBitmap(song.getAlbum().getArtMiniature());
+            }
             else
+            {
                 mViewHolder.image.setImageResource(R.drawable.ic_albums);
+                ImageViewCompat.setImageTintList(mViewHolder.image, new ColorStateList(states, colors));
+            }
 
             if(repaintSongBackground)
                 if(position != selectedPosition)
@@ -179,8 +197,16 @@ public class LibraryObjectAdapter extends BaseAdapter
             mViewHolder.subtitle.setText(((Album)obj).getArtist().getName());
 
             //set image to art
-            if(((Album) obj).hasArt()) mViewHolder.image.setImageBitmap(((Album) obj).getArtMiniature());
-            else mViewHolder.image.setImageResource(R.drawable.ic_albums);
+            if(((Album) obj).hasArt())
+            {
+                ImageViewCompat.setImageTintList(mViewHolder.image, null);
+                mViewHolder.image.setImageBitmap(((Album) obj).getArtMiniature());
+            }
+            else
+            {
+                mViewHolder.image.setImageResource(R.drawable.ic_albums);
+                ImageViewCompat.setImageTintList(mViewHolder.image, new ColorStateList(states, colors));
+            }
         }
         else if(obj instanceof Artist)
         {
@@ -189,6 +215,7 @@ public class LibraryObjectAdapter extends BaseAdapter
 
             //set image to default artist image
             mViewHolder.image.setImageResource(R.drawable.ic_artists);
+            ImageViewCompat.setImageTintList(mViewHolder.image, new ColorStateList(states, colors));
         }
         else if(obj instanceof Playlist)
         {
@@ -200,9 +227,20 @@ public class LibraryObjectAdapter extends BaseAdapter
             else mViewHolder.subtitle.setText("");
 
             //set image to playlist image
-            if(obj.hasArt()) mViewHolder.image.setImageBitmap(obj.getArtMiniature());
-            else mViewHolder.image.setImageResource(R.drawable.ic_playlists);
+            if(obj.hasArt())
+            {
+                ImageViewCompat.setImageTintList(mViewHolder.image, null);
+                mViewHolder.image.setImageBitmap(obj.getArtMiniature());
+            }
+            else
+            {
+                mViewHolder.image.setImageResource(R.drawable.ic_playlists);
+                ImageViewCompat.setImageTintList(mViewHolder.image, new ColorStateList(states, colors));
+            }
         }
+
+        //set subtitle color
+        mViewHolder.subtitle.setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorSecondText));
 
         //set sources images
         SongSources.SongSource source0 = obj.getSources().getSourceByPriority(0);

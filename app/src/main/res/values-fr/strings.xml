@@ -91,4 +91,5 @@
     <string name="link_manager">Gérer les liens entre titres</string>
     <string name="no_results_found">Aucun résultat</string>
     <string name="explore">Explorer</string>
+    <string name="theme_dark_desc">Rejoignez le côté obscur</string>
 </resources>

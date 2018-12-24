@@ -18,14 +18,12 @@
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textAlignment="center"
-              android:textColor="#000000"
               android:textSize="22sp"
               android:textStyle="bold"
               android:text="@string/about"/>
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textAlignment="center"
-              android:textColor="#000000"
               android:textSize="18sp"
               android:text="Version "
               android:id="@+id/about_version"/>

@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -195,7 +196,8 @@ public class MainActivity extends AppCompatActivity
         {
             final LibraryObject object = (LibraryObject) v.getTag();
 
-            PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
+            Context wrapper = new ContextThemeWrapper(MainActivity.this, ThemesActivity.currentAppTheme);
+            PopupMenu popupMenu = new PopupMenu(wrapper, v);
 
             popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
             {
@@ -450,24 +452,23 @@ public class MainActivity extends AppCompatActivity
         //set theme
         mainListView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
         currentPlay.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
-        currentPlayTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
-        currentPlaySubtitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        //PRIMARY LIGHTER : recheck WHITE
+        currentPlayTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+        currentPlaySubtitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+
         navigationView.setItemBackgroundResource(ThemesActivity.currentColorBackground);
         navigationView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
         navigationView.getHeaderView(0).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
+        int states[][] = {{android.R.attr.state_enabled}, {android.R.attr.state_focused}, {android.R.attr.state_pressed}, {-android.R.attr.state_enabled}};
+        int color = ContextCompat.getColor(this, ThemesActivity.currentColorForcedText);
+        int colors[] = {color, color, color, color};
+        navigationView.setItemTextColor(new ColorStateList(states, colors));
+        navigationView.setItemIconTintList(new ColorStateList(states, colors));
 
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
         LibraryService.configureLibrary(getApplicationContext());
         checkPermission();
     }
-
-    /*
-    @Override
-    protected void onStart()
-    {
-        super.onStart();
-    }
-    */
 
     @Override
     protected void onDestroy()
@@ -1020,7 +1021,7 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
             }
         });
         dialog.show();
@@ -1064,6 +1065,7 @@ public class MainActivity extends AppCompatActivity
                 else viewHolder = (ViewHolder) convertView.getTag();
 
                 viewHolder.checkBox.setText(Source.SOURCES[position].getName());
+                viewHolder.checkBox.setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
                 SongSources.SongSource thisSource = ((Song) object).getSources().getSourceByAbsolutePriority(position);
                 viewHolder.checkBox.setChecked(thisSource != null && thisSource.getLibrary());
 
@@ -1230,7 +1232,7 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
             }
         });
         dialog.show();
@@ -1255,8 +1257,8 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
                 Spinner listView = dialog.findViewById(R.id.playlist_source);
                 listView.setAdapter(new BaseAdapter()
                 {
@@ -1288,6 +1290,7 @@ public class MainActivity extends AppCompatActivity
                             viewHolder.title = convertView.findViewById(R.id.element_title);
                             viewHolder.image = convertView.findViewById(R.id.element_image);
 
+                            convertView.setBackgroundResource(ThemesActivity.currentColorBackground);
                             convertView.setTag(viewHolder);
                         }
                         else viewHolder = (ViewHolder) convertView.getTag();
@@ -1353,7 +1356,7 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
                 ListView listView = dialog.findViewById(R.id.search_dialog_results);
                 List<Song> results = LibraryService.getSongs(); results.remove(source);
                 LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, results, false);

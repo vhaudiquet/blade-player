@@ -19,12 +19,12 @@ public class ThemesActivity extends AppCompatActivity
     public static int currentColorPrimary = R.color.nightlyColorPrimary;
     public static int currentColorPrimaryDark = R.color.nightlyColorPrimaryDark;
     public static int currentColorPrimaryLight = R.color.nightlyColorPrimaryLight;
-    public static int currentColorAccent = R.color.nightlyColorAccent;
     public static int currentColorPrimaryLighter = R.color.nightlyColorPrimaryLighter;
     public static int currentColorBackground = R.color.nightlyColorBackground;
+    public static int currentColorForcedText = R.color.nightlyColorForcedText;
+    public static int currentColorSecondText = R.color.nightlyColorSecondText;
     public static int currentAppTheme = R.style.AppTheme_NoActionBar;
     public static int currentAppThemeWithActionBar = R.style.AppTheme;
-    public static int currentControlTheme = R.style.Theme_ControlTheme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -51,7 +51,7 @@ public class ThemesActivity extends AppCompatActivity
                 ImageView more;
             }
             @Override
-            public int getCount() {return 4;}
+            public int getCount() {return 5;}
             @Override
             public Object getItem(int position) {return null;}
             @Override
@@ -117,8 +117,20 @@ public class ThemesActivity extends AppCompatActivity
                         mViewHolder.desc.setText(getText(R.string.theme_red_desc));
                         break;
                     }
+                    case 4:
+                    {
+                        //dark theme
+                        mViewHolder.img.setImageResource(0);
+                        mViewHolder.img.setBackgroundColor(ContextCompat.getColor(ThemesActivity.this, R.color.darkColorPrimary));
+                        mViewHolder.title.setText("Dark");
+                        mViewHolder.desc.setText(getText(R.string.theme_dark_desc));
+                        break;
+                    }
                 }
 
+                //set text color
+                ((TextView) mViewHolder.title).setTextColor(ContextCompat.getColor(ThemesActivity.this, currentColorForcedText));
+                ((TextView) mViewHolder.desc).setTextColor(ContextCompat.getColor(ThemesActivity.this, currentColorSecondText));
                 mViewHolder.more.setImageResource(0);
 
                 return convertView;
@@ -183,6 +195,19 @@ public class ThemesActivity extends AppCompatActivity
 
                         break;
                     }
+                    case 4:
+                    {
+                        //blade dark
+                        if(currentColorPrimary == R.color.darkColorPrimary) return;
+                        setThemeToDark();
+
+                        SharedPreferences pref = getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("theme", "dark");
+                        editor.apply();
+
+                        break;
+                    }
                 }
 
                 Intent intent = new Intent(ThemesActivity.this, MainActivity.class);
@@ -200,47 +225,59 @@ public class ThemesActivity extends AppCompatActivity
         currentColorPrimary = R.color.nightlyColorPrimary;
         currentColorPrimaryDark = R.color.nightlyColorPrimaryDark;
         currentColorPrimaryLight = R.color.nightlyColorPrimaryLight;
-        currentColorAccent = R.color.nightlyColorAccent;
         currentColorPrimaryLighter = R.color.nightlyColorPrimaryLighter;
         currentColorBackground = R.color.nightlyColorBackground;
+        currentColorForcedText = R.color.nightlyColorForcedText;
+        currentColorSecondText = R.color.nightlyColorSecondText;
         currentAppTheme = R.style.Nightly_AppTheme_NoActionBar;
         currentAppThemeWithActionBar = R.style.Nightly_AppTheme;
-        currentControlTheme = R.style.Theme_ControlTheme;
     }
     public static void setThemeToBlade()
     {
         currentColorPrimary = R.color.bladeColorPrimary;
         currentColorPrimaryDark = R.color.bladeColorPrimaryDark;
         currentColorPrimaryLight = R.color.bladeColorPrimaryLight;
-        currentColorAccent = R.color.bladeColorAccent;
         currentColorPrimaryLighter = R.color.bladeColorPrimaryLighter;
         currentColorBackground = R.color.bladeColorBackground;
+        currentColorForcedText = R.color.bladeColorForcedText;
+        currentColorSecondText = R.color.bladeColorSecondText;
         currentAppTheme = R.style.Blade_AppTheme_NoActionBar;
         currentAppThemeWithActionBar = R.style.Blade_AppTheme;
-        currentControlTheme = R.style.Theme_ControlTheme;
     }
     public static void setThemeToGreen()
     {
         currentColorPrimary = R.color.greenColorPrimary;
         currentColorPrimaryDark = R.color.greenColorPrimaryDark;
         currentColorPrimaryLight = R.color.greenColorPrimaryLight;
-        currentColorAccent = R.color.greenColorAccent;
         currentColorPrimaryLighter = R.color.greenColorPrimaryLighter;
         currentColorBackground = R.color.greenColorBackground;
+        currentColorForcedText = R.color.greenColorForcedText;
+        currentColorSecondText = R.color.greenColorSecondText;
         currentAppTheme = R.style.Green_AppTheme_NoActionBar;
         currentAppThemeWithActionBar = R.style.Green_AppTheme;
-        currentControlTheme = R.style.Theme_ControlTheme;
     }
     public static void setThemeToRed()
     {
         currentColorPrimary = R.color.redColorPrimary;
         currentColorPrimaryDark = R.color.redColorPrimaryDark;
         currentColorPrimaryLight = R.color.redColorPrimaryLight;
-        currentColorAccent = R.color.redColorAccent;
         currentColorPrimaryLighter = R.color.redColorPrimaryLighter;
         currentColorBackground = R.color.redColorBackground;
+        currentColorForcedText = R.color.redColorForcedText;
+        currentColorSecondText = R.color.redColorSecondText;
         currentAppTheme = R.style.Red_AppTheme_NoActionBar;
         currentAppThemeWithActionBar = R.style.Red_AppTheme;
-        currentControlTheme = R.style.Theme_ControlTheme;
+    }
+    public static void setThemeToDark()
+    {
+        currentColorPrimary = R.color.darkColorPrimary;
+        currentColorPrimaryDark = R.color.darkColorPrimaryDark;
+        currentColorPrimaryLight = R.color.darkColorPrimaryLight;
+        currentColorPrimaryLighter = R.color.darkColorPrimaryLighter;
+        currentColorBackground = R.color.darkColorBackground;
+        currentColorForcedText = R.color.darkColorForcedText;
+        currentColorSecondText = R.color.darkColorSecondText;
+        currentAppTheme = R.style.Dark_AppTheme_NoActionBar;
+        currentAppThemeWithActionBar = R.style.Dark_AppTheme;
     }
 }

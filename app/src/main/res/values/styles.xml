@@ -4,9 +4,15 @@
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimary">@color/nightlyColorPrimary</item>
         <item name="colorPrimaryDark">@color/nightlyColorPrimaryDark</item>
-        <item name="colorAccent">@color/nightlyColorAccent</item>
-        <item name="preferenceTheme">@style/Theme.Preferences</item>
         <item name="android:itemBackground">@color/nightlyColorBackground</item>
+
+        <item name="preferenceTheme">@style/Theme.Preferences</item>
+
+        <item name="colorAccent">@color/nightlyColorPrimary</item>
+        <item name="colorControlNormal">@color/nightlyColorPrimary</item>
+        <item name="colorControlActivated">@color/nightlyColorPrimaryLight</item>
+        <item name="colorControlHighlight">@color/nightlyColorPrimaryLight</item>
+        <item name="editTextColor">@color/nightlyColorForcedText</item>
     </style>
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -23,9 +29,15 @@
     <style name="Blade.AppTheme" parent="AppTheme">
         <item name="colorPrimary">@color/bladeColorPrimary</item>
         <item name="colorPrimaryDark">@color/bladeColorPrimaryDark</item>
-        <item name="colorAccent">@color/bladeColorAccent</item>
-        <item name="preferenceTheme">@style/Blade.Preferences</item>
         <item name="android:itemBackground">@color/bladeColorBackground</item>
+
+        <item name="preferenceTheme">@style/Blade.Preferences</item>
+
+        <item name="colorAccent">@color/bladeColorPrimary</item>
+        <item name="colorControlNormal">@color/bladeColorPrimary</item>
+        <item name="colorControlActivated">@color/bladeColorPrimaryLight</item>
+        <item name="colorControlHighlight">@color/bladeColorPrimaryLight</item>
+        <item name="editTextColor">@color/bladeColorForcedText</item>
     </style>
     <style name="Blade.AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -34,9 +46,15 @@
     <style name="Green.AppTheme" parent="AppTheme">
         <item name="colorPrimary">@color/greenColorPrimary</item>
         <item name="colorPrimaryDark">@color/greenColorPrimaryDark</item>
-        <item name="colorAccent">@color/greenColorAccent</item>
-        <item name="preferenceTheme">@style/Green.Preferences</item>
         <item name="android:itemBackground">@color/greenColorBackground</item>
+
+        <item name="preferenceTheme">@style/Green.Preferences</item>
+
+        <item name="colorAccent">@color/greenColorPrimary</item>
+        <item name="colorControlNormal">@color/greenColorPrimary</item>
+        <item name="colorControlActivated">@color/greenColorPrimaryLight</item>
+        <item name="colorControlHighlight">@color/greenColorPrimaryLight</item>
+        <item name="editTextColor">@color/greenColorForcedText</item>
     </style>
     <style name="Green.AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
@@ -45,21 +63,41 @@
     <style name="Red.AppTheme" parent="AppTheme">
         <item name="colorPrimary">@color/redColorPrimary</item>
         <item name="colorPrimaryDark">@color/redColorPrimaryDark</item>
-        <item name="colorAccent">@color/redColorAccent</item>
-        <item name="preferenceTheme">@style/Red.Preferences</item>
         <item name="android:itemBackground">@color/redColorBackground</item>
+
+        <item name="preferenceTheme">@style/Red.Preferences</item>
+
+        <item name="colorAccent">@color/redColorPrimary</item>
+        <item name="colorControlNormal">@color/redColorPrimary</item>
+        <item name="colorControlActivated">@color/redColorPrimaryLight</item>
+        <item name="colorControlHighlight">@color/redColorPrimaryLight</item>
+        <item name="editTextColor">@color/redColorForcedText</item>
     </style>
     <style name="Red.AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
+    <style name="Dark.AppTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/darkColorPrimary</item>
+        <item name="colorPrimaryDark">@color/darkColorPrimaryDark</item>
+        <item name="android:itemBackground">@color/darkColorBackground</item>
 
-    <!-- Controls (buttons, listviews, ...) theme -->
-    <style name="Theme.ControlTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorAccent">@color/nightlyColorPrimary</item>
-        <item name="colorControlNormal">@color/nightlyColorPrimary</item>
-        <item name="colorControlActivated">@color/nightlyColorPrimary</item>
-        <item name="colorControlHighlight">@color/nightlyColorPrimaryLight</item>
+        <item name="preferenceTheme">@style/Dark.Preferences</item>
+
+        <item name="android:textColorPrimary">@color/darkColorForcedText</item>
+        <item name="android:textColorSecondary">@color/darkColorSecondText</item>
+        <item name="android:textColorTertiary">@color/darkColorSecondText</item>
+        <item name="android:textColor">@color/darkColorForcedText</item>
+
+        <item name="colorControlNormal">@color/darkColorPrimary</item>
+        <item name="colorControlActivated">@color/darkColorPrimaryLight</item>
+        <item name="colorControlHighlight">@color/darkColorPrimaryLight</item>
+        <item name="colorAccent">@color/darkColorAccent</item>
+        <item name="editTextColor">@color/darkColorForcedText</item>
+    </style>
+    <style name="Dark.AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <!-- Preference theme -->
@@ -68,6 +106,8 @@
         <item name="colorControlActivated">@color/nightlyColorPrimary</item>
         <item name="android:windowBackground">@color/nightlyColorBackground</item>
         <item name="android:background">@color/nightlyColorBackground</item>
+        <item name="android:textColor">@color/nightlyColorForcedText</item>
+        <item name="android:textColorSecondary">@color/nightlyColorSecondText</item>
     </style>
 
     <style name="Nightly.Preferences" parent="Theme.Preferences"/>
@@ -76,18 +116,32 @@
         <item name="colorControlActivated">@color/bladeColorPrimary</item>
         <item name="android:windowBackground">@color/bladeColorBackground</item>
         <item name="android:background">@color/bladeColorBackground</item>
+        <item name="android:textColor">@color/bladeColorForcedText</item>
+        <item name="android:textColorSecondary">@color/bladeColorSecondText</item>
     </style>
     <style name="Green.Preferences" parent="Theme.Preferences">
         <item name="colorControlNormal">@color/greenColorPrimary</item>
         <item name="colorControlActivated">@color/greenColorPrimary</item>
         <item name="android:windowBackground">@color/greenColorBackground</item>
         <item name="android:background">@color/greenColorBackground</item>
+        <item name="android:textColor">@color/greenColorForcedText</item>
+        <item name="android:textColorSecondary">@color/greenColorSecondText</item>
     </style>
     <style name="Red.Preferences" parent="Theme.Preferences">
         <item name="colorControlNormal">@color/redColorPrimary</item>
         <item name="colorControlActivated">@color/redColorPrimary</item>
         <item name="android:windowBackground">@color/redColorBackground</item>
         <item name="android:background">@color/redColorBackground</item>
+        <item name="android:textColor">@color/redColorForcedText</item>
+        <item name="android:textColorSecondary">@color/redColorSecondText</item>
+    </style>
+    <style name="Dark.Preferences" parent="Theme.Preferences">
+        <item name="colorControlNormal">@color/darkColorPrimary</item>
+        <item name="colorControlActivated">@color/darkColorPrimary</item>
+        <item name="android:windowBackground">@color/darkColorBackground</item>
+        <item name="android:textColor">@color/darkColorForcedText</item>
+        <item name="android:textColorSecondary">@color/darkColorSecondText</item>
+        <item name="android:background">@color/darkColorBackground</item>
     </style>
 
 </resources>
