@@ -21,7 +21,6 @@
              android:id="@+id/include"/>
 
         <ListView
-                android:listSelector="@android:color/transparent"
                 android:layout_below="@id/include"
                 android:layout_above="@id/currentPlay"
                 android:id="@+id/libraryList"

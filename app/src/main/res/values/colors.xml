@@ -35,7 +35,6 @@
     <color name="darkColorPrimary">#212121</color>
     <color name="darkColorPrimaryDark">#000000</color>
     <color name="darkColorPrimaryLight">#616161</color>
-    <color name="darkColorAccent">#ffffff</color>
     <color name="darkColorPrimaryLighter">#e0e0e0</color>
     <color name="darkColorBackground">#424242</color>
     <color name="darkColorForcedText">#eeeeee</color>

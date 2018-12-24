@@ -9,9 +9,9 @@
         <item name="preferenceTheme">@style/Theme.Preferences</item>
 
         <item name="colorAccent">@color/nightlyColorPrimary</item>
-        <item name="colorControlNormal">@color/nightlyColorPrimary</item>
-        <item name="colorControlActivated">@color/nightlyColorPrimaryLight</item>
-        <item name="colorControlHighlight">@color/nightlyColorPrimaryLight</item>
+        <item name="colorControlNormal">@color/nightlyColorPrimaryLight</item>
+        <item name="colorControlActivated">@color/nightlyColorPrimaryLighter</item>
+        <item name="colorControlHighlight">@color/nightlyColorPrimaryLighter</item>
         <item name="editTextColor">@color/nightlyColorForcedText</item>
     </style>
     <style name="AppTheme.NoActionBar">
@@ -34,9 +34,9 @@
         <item name="preferenceTheme">@style/Blade.Preferences</item>
 
         <item name="colorAccent">@color/bladeColorPrimary</item>
-        <item name="colorControlNormal">@color/bladeColorPrimary</item>
-        <item name="colorControlActivated">@color/bladeColorPrimaryLight</item>
-        <item name="colorControlHighlight">@color/bladeColorPrimaryLight</item>
+        <item name="colorControlNormal">@color/bladeColorPrimaryLight</item>
+        <item name="colorControlActivated">@color/bladeColorPrimaryLighter</item>
+        <item name="colorControlHighlight">@color/bladeColorPrimaryLighter</item>
         <item name="editTextColor">@color/bladeColorForcedText</item>
     </style>
     <style name="Blade.AppTheme.NoActionBar">
@@ -51,9 +51,9 @@
         <item name="preferenceTheme">@style/Green.Preferences</item>
 
         <item name="colorAccent">@color/greenColorPrimary</item>
-        <item name="colorControlNormal">@color/greenColorPrimary</item>
-        <item name="colorControlActivated">@color/greenColorPrimaryLight</item>
-        <item name="colorControlHighlight">@color/greenColorPrimaryLight</item>
+        <item name="colorControlNormal">@color/greenColorPrimaryLight</item>
+        <item name="colorControlActivated">@color/greenColorPrimaryLighter</item>
+        <item name="colorControlHighlight">@color/greenColorPrimaryLighter</item>
         <item name="editTextColor">@color/greenColorForcedText</item>
     </style>
     <style name="Green.AppTheme.NoActionBar">
@@ -68,9 +68,9 @@
         <item name="preferenceTheme">@style/Red.Preferences</item>
 
         <item name="colorAccent">@color/redColorPrimary</item>
-        <item name="colorControlNormal">@color/redColorPrimary</item>
-        <item name="colorControlActivated">@color/redColorPrimaryLight</item>
-        <item name="colorControlHighlight">@color/redColorPrimaryLight</item>
+        <item name="colorControlNormal">@color/redColorPrimaryLight</item>
+        <item name="colorControlActivated">@color/redColorPrimaryLighter</item>
+        <item name="colorControlHighlight">@color/redColorPrimaryLighter</item>
         <item name="editTextColor">@color/redColorForcedText</item>
     </style>
     <style name="Red.AppTheme.NoActionBar">
@@ -89,11 +89,12 @@
         <item name="android:textColorTertiary">@color/darkColorSecondText</item>
         <item name="android:textColor">@color/darkColorForcedText</item>
 
-        <item name="colorControlNormal">@color/darkColorPrimary</item>
+        <item name="colorControlNormal">@color/darkColorPrimaryLight</item>
         <item name="colorControlActivated">@color/darkColorPrimaryLight</item>
-        <item name="colorControlHighlight">@color/darkColorPrimaryLight</item>
-        <item name="colorAccent">@color/darkColorAccent</item>
+        <item name="colorControlHighlight">@color/darkColorPrimaryLighter</item>
+        <item name="colorAccent">@color/darkColorPrimary</item>
         <item name="editTextColor">@color/darkColorForcedText</item>
+        <item name="android:textColorHint">@color/darkColorSecondText</item>
     </style>
     <style name="Dark.AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
