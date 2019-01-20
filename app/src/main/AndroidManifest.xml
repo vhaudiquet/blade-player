@@ -98,12 +98,20 @@
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value=".ui.settings.SettingsActivity"/>
         </activity>
-        <activity android:name=".ui.settings.LinkManagerActivity"
-                  android:label="@string/link_manager"
-                  android:parentActivityName=".ui.settings.SettingsActivity">
+        <activity
+                android:name=".ui.settings.LinkManagerActivity"
+                android:label="@string/link_manager"
+                android:parentActivityName=".ui.settings.SettingsActivity">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value=".ui.settings.SettingsActivity"/>
+        </activity>
+        <activity android:name=".ui.LyricsActivity"
+                  android:label="@string/lyrics"
+                  android:parentActivityName=".ui.PlayActivity">
+            <meta-data
+                    android:name="android.support.PARENT_ACTIVITY"
+                    android:value=".ui.PlayActivity"/>
         </activity>
     </application>
 

@@ -332,8 +332,9 @@ public class MainActivity extends AppCompatActivity
                                     @Override
                                     public void onShow(DialogInterface arg0)
                                     {
-                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                                        dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(MainActivity.this, ThemesActivity.currentColorForcedText));
+                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(MainActivity.this, ThemesActivity.currentColorForcedText));
                                     }
                                 });
                                 dialog.show();

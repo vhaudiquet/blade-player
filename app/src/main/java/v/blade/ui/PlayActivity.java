@@ -170,6 +170,12 @@ public class PlayActivity extends AppCompatActivity
 
                         case R.id.action_manage_libraries:
                             MainActivity.showManageLibraries(PlayActivity.this, PlayerConnection.getService().getCurrentSong());
+                            break;
+
+                        case R.id.action_lyrics:
+                            Intent intent = new Intent(PlayActivity.this, LyricsActivity.class);
+                            startActivity(intent);
+                            break;
                     }
                     return false;
                 }

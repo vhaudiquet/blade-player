@@ -79,7 +79,7 @@
     <TextView android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textSize="15sp"
-              android:text="JAudiotagger, license LGPL, Copyright (C) 2015 Paul Taylor,bitbucket.org/ijabz/jaudiotagger"/>
+              android:text="JAudiotagger, license LGPL, Copyright (C) 2015 Paul Taylor, bitbucket.org/ijabz/jaudiotagger"/>
 
     </LinearLayout>
     </ScrollView>
