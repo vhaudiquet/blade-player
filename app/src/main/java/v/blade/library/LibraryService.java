@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
+import v.blade.R;
 import v.blade.library.sources.Source;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -118,6 +120,15 @@ public class LibraryService
             {
                 Log.println(Log.ERROR, "[BLADE-CACHE]", "Cache restore : IOException");
                 e.printStackTrace();
+            }
+            catch(NumberFormatException e1)
+            {
+                Log.println(Log.ERROR, "[BLADE-CACHE]", "Cache restore : NumberFormatException");
+                e1.printStackTrace();
+
+                //cleaning cache
+                betterSourceFile.delete();
+                Toast.makeText(appContext, R.string.cache_cleaned, Toast.LENGTH_LONG).show();
             }
         }
 

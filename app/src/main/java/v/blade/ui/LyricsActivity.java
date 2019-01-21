@@ -60,12 +60,14 @@ public class LyricsActivity extends AppCompatActivity
                     HttpsURLConnection urlConnection = (HttpsURLConnection) searchUrl.openConnection();
                     urlConnection.setRequestMethod("GET");
                     urlConnection.addRequestProperty("Authorization", "Bearer " + CLIENT_ACCESS_TOKEN);
-                    urlConnection.addRequestProperty("User-Agent", "");
+                    urlConnection.addRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36");
 
                     urlConnection.connect();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
                     String songId = reader.readLine();
                     reader.close();
+
+                    urlConnection.disconnect();
 
                     //check if song was found on Genius or not
                     JSONObject object = new JSONObject(songId);
@@ -83,7 +85,7 @@ public class LyricsActivity extends AppCompatActivity
                         URL songUrl = new URL("https://genius.com" + path);
                         HttpsURLConnection urlConnection2 = (HttpsURLConnection) songUrl.openConnection();
                         urlConnection2.setRequestMethod("GET");
-                        urlConnection2.addRequestProperty("User-Agent", "");
+                        urlConnection2.addRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36");
 
                         urlConnection2.connect();
                         System.out.println("LyricsRequest response : " + urlConnection2.getResponseCode() + " : " + urlConnection2.getResponseMessage());
@@ -98,6 +100,7 @@ public class LyricsActivity extends AppCompatActivity
                             if(reached) if(str.contains("</div>")) break;
                         }
                         reader2.close();
+                        urlConnection2.disconnect();
 
                         if(!reached)
                         {
@@ -106,7 +109,7 @@ public class LyricsActivity extends AppCompatActivity
                                 @Override
                                 public void run()
                                 {
-                                    songLyrics.setText("Error while parsing lyrics.");
+                                    songLyrics.setText(R.string.lyrics_parsing_error);
                                 }
                             });
                         }
@@ -131,7 +134,7 @@ public class LyricsActivity extends AppCompatActivity
                             @Override
                             public void run()
                             {
-                                songLyrics.setText("Song lyrics not found. Sorry...");
+                                songLyrics.setText(R.string.lyrics_not_found);
                             }
                         });
                     }
@@ -144,7 +147,7 @@ public class LyricsActivity extends AppCompatActivity
                         @Override
                         public void run()
                         {
-                            songLyrics.setText("Error occurred while getting song lyrics.");
+                            songLyrics.setText(R.string.lyrics_obtention_err);
                         }
                     });
                 }
