@@ -97,4 +97,7 @@
     <string name="lyrics_not_found">Paroles non trouvées. Désolé...</string>
     <string name="lyrics_parsing_error">Erreur durant la mise en forme des paroles.</string>
     <string name="cache_cleaned">Le cache était corrompu et a été vidé. Vous devrez peut-être re-synchroniser.</string>
+    <string name="folders">Dossiers</string>
+    <string name="internal_storage">Stockage interne</string>
+    <string name="external_storage">Stockage externe</string>
 </resources>

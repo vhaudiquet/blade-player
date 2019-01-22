@@ -28,6 +28,7 @@ public class LibraryService
     public static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
+    public static final boolean FOLDER_VIEW_ENABLED = false;
     public static boolean configured = false;
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;

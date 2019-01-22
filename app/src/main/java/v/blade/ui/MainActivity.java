@@ -113,6 +113,7 @@ public class MainActivity extends AppCompatActivity
     private static final int CONTEXT_SONGS = 3;
     private static final int CONTEXT_PLAYLISTS = 4;
     private static final int CONTEXT_SEARCH = 5;
+    private static final int CONTEXT_FOLDERS = 6;
     private int currentContext = CONTEXT_NONE;
 
     /* specific context (back button) handling */
@@ -166,9 +167,23 @@ public class MainActivity extends AppCompatActivity
                 case CONTEXT_PLAYLISTS:
                     fromPlaylists = true;
                     backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
-                    Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
+                    Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     currentObject = currentPlaylist;
                     setContentToSongs(currentPlaylist.getContent(), currentPlaylist.getName());
+                    break;
+                case CONTEXT_FOLDERS:
+                    LibraryObject currentElement = ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
+                    if(currentElement instanceof Folder)
+                    {
+                        backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
+                        currentObject = currentElement;
+                        setContentToFolder((Folder) currentElement);
+                    }
+                    else
+                    {
+                        Folder f = ((Folder) currentObject);
+                        setPlaylist(f.getSongContent(), f.getSongPosition((Song) currentElement));
+                    }
                     break;
                 case CONTEXT_SEARCH:
                     currentObject = null;
@@ -212,6 +227,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist.addAll(((Playlist) object).getContent());
+                            else if(object instanceof Folder) playlist.addAll(((Folder) object).getSongContent());
                             setPlaylist(playlist, 0);
                             break;
 
@@ -221,6 +237,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist1.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist1.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist1.addAll(((Playlist) object).getContent());
+                            else if(object instanceof Folder) playlist1.addAll(((Folder) object).getSongContent());
                             playNext(playlist1);
                             Toast.makeText(MainActivity.this, playlist1.size() + " " + getString(R.string.added_next_ok), Toast.LENGTH_SHORT).show();
                             break;
@@ -231,6 +248,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist2.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist2.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist2.addAll(((Playlist) object).getContent());
+                            else if(object instanceof Folder) playlist2.addAll(((Folder) object).getSongContent());
                             addToPlaylist(playlist2);
                             Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
                             break;
@@ -404,6 +422,9 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        MenuItem fmenuitem = navigationView.getMenu().findItem(R.id.nav_folders);
+        if(!LibraryService.FOLDER_VIEW_ENABLED) fmenuitem.setVisible(false);
 
         mainListView = (ListView) findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);
@@ -664,6 +685,13 @@ public class MainActivity extends AppCompatActivity
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
                 break;
+
+            case R.id.nav_folders:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                // Replace current activity content with folder list
+                setContentToFolder(Folder.root);
+                break;
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -771,6 +799,14 @@ public class MainActivity extends AppCompatActivity
         this.setTitle(getResources().getString(R.string.playlists));
         currentContext = CONTEXT_PLAYLISTS;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, LibraryService.getPlaylists());
+        adapter.registerMoreClickListener(mainListViewMoreListener);
+        mainListView.setAdapter(adapter);
+    }
+    private void setContentToFolder(Folder f)
+    {
+        this.setTitle(f.getName());
+        currentContext = CONTEXT_FOLDERS;
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, f.getContent());
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
@@ -902,6 +938,11 @@ public class MainActivity extends AppCompatActivity
             case CONTEXT_PLAYLISTS:
                 setContentToPlaylists();
                 break;
+
+            case CONTEXT_FOLDERS:
+                if(currentObject == null) setContentToFolder(Folder.root);
+                else setContentToFolder((Folder) currentObject);
+                break;
         }
 
         mainListView.setSelection(bundle.getInt("listSelection"));
@@ -920,6 +961,7 @@ public class MainActivity extends AppCompatActivity
         else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
         else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
         else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
+        else if(object instanceof Folder) toAdd.addAll(((Folder) object).getSongContent());
 
         List<Playlist> list = new ArrayList<>(LibraryService.getPlaylists());
         for(int i = 0;i<list.size();i++)

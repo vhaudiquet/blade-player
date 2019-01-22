@@ -238,6 +238,14 @@ public class LibraryObjectAdapter extends BaseAdapter
                 ImageViewCompat.setImageTintList(mViewHolder.image, new ColorStateList(states, colors));
             }
         }
+        else if(obj instanceof Folder)
+        {
+            mViewHolder.subtitle.setText("");
+
+            //set image to folder image
+            mViewHolder.image.setImageResource(R.drawable.ic_folders);
+            ImageViewCompat.setImageTintList(mViewHolder.image, new ColorStateList(states, colors));
+        }
 
         //set subtitle color
         mViewHolder.subtitle.setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorSecondText));

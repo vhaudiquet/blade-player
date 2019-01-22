@@ -107,4 +107,7 @@
     <string name="lyrics_not_found">Song lyrics not found. Sorry...</string>
     <string name="lyrics_parsing_error">Error occurred while parsing lyrics.</string>
     <string name="cache_cleaned">Cache was corrupted, Blade cleaned it. You might want to re-sync.</string>
+    <string name="folders">Folders</string>
+    <string name="internal_storage">Internal storage</string>
+    <string name="external_storage">External storage</string>
 </resources>
