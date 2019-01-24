@@ -117,8 +117,8 @@ public class MainActivity extends AppCompatActivity
     private int currentContext = CONTEXT_NONE;
 
     /* specific context (back button) handling */
-    private static Bundle backBundle, back2Bundle;
-    private static LibraryObject backObject, back2Object;
+    private static ArrayList<Bundle> backBundles = new ArrayList<>();
+    private static ArrayList<LibraryObject> backObjects = new ArrayList<>();
     private static boolean fromPlaylists;
     private static boolean globalSearch = false;
     private static LibraryObject currentObject = null;
@@ -150,15 +150,14 @@ public class MainActivity extends AppCompatActivity
                     setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = null;
+                    Bundle b = new Bundle(); saveInstanceState(b); backBundles.add(b); backObjects.add(null);
                     Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Album> albums = currentArtist.getAlbums();
                     currentObject = currentArtist;
                     setContentToAlbums(albums, currentArtist.getName());
                     break;
                 case CONTEXT_ALBUMS:
-                    if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;}
-                    else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle); back2Object = currentObject;}
+                    Bundle b1 = new Bundle(); saveInstanceState(b1); backBundles.add(b1); backObjects.add(currentObject);
                     Album currentAlbum = (Album) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> asongs = currentAlbum.getSongs();
                     currentObject = currentAlbum;
@@ -166,7 +165,7 @@ public class MainActivity extends AppCompatActivity
                     break;
                 case CONTEXT_PLAYLISTS:
                     fromPlaylists = true;
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
+                    Bundle b2 = new Bundle(); saveInstanceState(b2); backBundles.add(b2); backObjects.add(currentObject);
                     Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     currentObject = currentPlaylist;
                     setContentToSongs(currentPlaylist.getContent(), currentPlaylist.getName());
@@ -175,7 +174,7 @@ public class MainActivity extends AppCompatActivity
                     LibraryObject currentElement = ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     if(currentElement instanceof Folder)
                     {
-                        backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
+                        Bundle b3 = new Bundle(); saveInstanceState(b3); backBundles.add(b3); backObjects.add(currentObject);
                         currentObject = currentElement;
                         setContentToFolder((Folder) currentElement);
                     }
@@ -508,15 +507,11 @@ public class MainActivity extends AppCompatActivity
         {
             drawer.closeDrawer(GravityCompat.START);
         }
-        else if(back2Bundle != null)
+        else if(backBundles.size() != 0)
         {
-            restoreInstanceState(back2Bundle, back2Object);
-            back2Bundle = null;
-        }
-        else if(backBundle != null)
-        {
-            restoreInstanceState(backBundle, backObject);
-            backBundle = null;
+            restoreInstanceState(backBundles.get(backBundles.size()-1), backObjects.get(backObjects.size()-1));
+            backBundles.remove(backBundles.size()-1);
+            backObjects.remove(backObjects.size()-1);
         }
         else
         {
@@ -654,41 +649,41 @@ public class MainActivity extends AppCompatActivity
                 searchView.setIconified(false);
                 searchView.setQueryHint(getString(R.string.search_web));
                 // Set to empty activity
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 setContentToSearch(null);
                 break;
 
             case R.id.nav_artists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with album view
                 setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with song list
                 setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
                 break;
 
             case R.id.nav_folders:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with folder list
                 setContentToFolder(Folder.root);
                 break;
