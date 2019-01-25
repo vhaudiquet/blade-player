@@ -4,6 +4,8 @@
 
 Blade is a free and open source simple music player built for Android devices. Blade is developed to allow songs to be played from local user libraries and other third-party sources which includes Spotify and Deezer.
 
+Blade is now available on [Google Play](https://play.google.com/store/apps/details?id=v.blade)
+
 <img src="Images/screen0.png" width="275"/> <img src="Images/screen1.png" width="275"/> <img src="Images/screen2.png" width="275"/>
 
 ## Blade-Player features
@@ -32,11 +34,15 @@ Used to quickly search  for songs, artists or albums in the library. 2 search mo
 
 ## Releases
 
-[Latest Release (v 1.3.1)](https://github.com/Valou3433/blade-player/releases/download/v1.3.1/blade-1.3.1.apk)
+[Latest Release (Google Play)](https://play.google.com/store/apps/details?id=v.blade)
+[Latest Release (v 1.4) (APK)](https://github.com/Valou3433/blade-player/releases/download/1.4/blade-1.4.apk)
+[Mirror (APK)](http://valou3433.fr/blade/blade-1.4.apk)
 
-[Mirror](http://valou3433.fr/blade/blade-1.3.1.apk)
 
-- multiple bugfixes
++ Dark theme
++ Lyrics viewer
++ Folder explorer
+* Bugfixes
 <hr>
 
 Link to all [Blade-Player Releases](https://github.com/Valou3433/blade-player/releases)
@@ -56,4 +62,4 @@ Read Blade [Privacy Policy](https://github.com/Valou3433/blade-player/blob/maste
 - HarryHeights and olayhemi made documentation
 
 Contributions to Blade-Player are welcomed. If you want to work on it, you can send me a mail at vhaudiquet343@hotmail.fr or talk to me on GitHub.
-You can pen an issue for suggestions or bug reports.
+You can open an issue for suggestions or bug reports.
