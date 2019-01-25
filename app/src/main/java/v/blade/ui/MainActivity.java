@@ -181,7 +181,7 @@ public class MainActivity extends AppCompatActivity
                     else
                     {
                         Folder f = ((Folder) currentObject);
-                        setPlaylist(f.getSongContent(), f.getSongPosition((Song) currentElement));
+                        setPlaylist(Folder.getSongContent(f), f.getSongPosition((Song) currentElement));
                     }
                     break;
                 case CONTEXT_SEARCH:
@@ -226,7 +226,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist.addAll(((Playlist) object).getContent());
-                            else if(object instanceof Folder) playlist.addAll(((Folder) object).getSongContent());
+                            else if(object instanceof Folder) playlist.addAll(Folder.getSongContent((Folder) object));
                             setPlaylist(playlist, 0);
                             break;
 
@@ -236,7 +236,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist1.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist1.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist1.addAll(((Playlist) object).getContent());
-                            else if(object instanceof Folder) playlist1.addAll(((Folder) object).getSongContent());
+                            else if(object instanceof Folder) playlist1.addAll(Folder.getSongContent((Folder) object));
                             playNext(playlist1);
                             Toast.makeText(MainActivity.this, playlist1.size() + " " + getString(R.string.added_next_ok), Toast.LENGTH_SHORT).show();
                             break;
@@ -247,7 +247,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist2.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist2.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist2.addAll(((Playlist) object).getContent());
-                            else if(object instanceof Folder) playlist2.addAll(((Folder) object).getSongContent());
+                            else if(object instanceof Folder) playlist2.addAll(Folder.getSongContent((Folder) object));
                             addToPlaylist(playlist2);
                             Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
                             break;
@@ -956,7 +956,7 @@ public class MainActivity extends AppCompatActivity
         else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
         else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
         else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
-        else if(object instanceof Folder) toAdd.addAll(((Folder) object).getSongContent());
+        else if(object instanceof Folder) toAdd.addAll(Folder.getSongContent((Folder) object));
 
         List<Playlist> list = new ArrayList<>(LibraryService.getPlaylists());
         for(int i = 0;i<list.size();i++)

@@ -256,16 +256,12 @@ public abstract class Source
                     s.setFormat(musicCursor.getString(formatColumn));
                     s.setPath(thisPath);
                     idsorted_songs.put(thisId, s);
-                    if(LibraryService.FOLDER_VIEW_ENABLED) Folder.addToFolder(thisPath, s);
                     if(loadAlbumArts)
                         if(idsorted_albums.get(albumId) == null) idsorted_albums.put(albumId, s.getAlbum());
                 }
                 while (musicCursor.moveToNext());
                 musicCursor.close();
             }
-
-            //sort Folders
-            if(LibraryService.FOLDER_VIEW_ENABLED) Folder.sortFolders(Folder.root);
 
             /* we also need to get playlists on device */
             local_playlists = new ArrayList<>();
