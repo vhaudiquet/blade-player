@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -112,11 +113,12 @@ public class MainActivity extends AppCompatActivity
     private static final int CONTEXT_SONGS = 3;
     private static final int CONTEXT_PLAYLISTS = 4;
     private static final int CONTEXT_SEARCH = 5;
+    private static final int CONTEXT_FOLDERS = 6;
     private int currentContext = CONTEXT_NONE;
 
     /* specific context (back button) handling */
-    private static Bundle backBundle, back2Bundle;
-    private static LibraryObject backObject, back2Object;
+    private static ArrayList<Bundle> backBundles = new ArrayList<>();
+    private static ArrayList<LibraryObject> backObjects = new ArrayList<>();
     private static boolean fromPlaylists;
     private static boolean globalSearch = false;
     private static LibraryObject currentObject = null;
@@ -148,15 +150,14 @@ public class MainActivity extends AppCompatActivity
                     setPlaylist(songs, position);
                     break;
                 case CONTEXT_ARTISTS:
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = null;
+                    Bundle b = new Bundle(); saveInstanceState(b); backBundles.add(b); backObjects.add(null);
                     Artist currentArtist = (Artist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Album> albums = currentArtist.getAlbums();
                     currentObject = currentArtist;
                     setContentToAlbums(albums, currentArtist.getName());
                     break;
                 case CONTEXT_ALBUMS:
-                    if(backBundle == null) {backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;}
-                    else {back2Bundle = new Bundle(); saveInstanceState(back2Bundle); back2Object = currentObject;}
+                    Bundle b1 = new Bundle(); saveInstanceState(b1); backBundles.add(b1); backObjects.add(currentObject);
                     Album currentAlbum = (Album) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
                     ArrayList<Song> asongs = currentAlbum.getSongs();
                     currentObject = currentAlbum;
@@ -164,10 +165,24 @@ public class MainActivity extends AppCompatActivity
                     break;
                 case CONTEXT_PLAYLISTS:
                     fromPlaylists = true;
-                    backBundle = new Bundle(); saveInstanceState(backBundle); backObject = currentObject;
-                    Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter)mainListView.getAdapter()).getObjects().get(position);
+                    Bundle b2 = new Bundle(); saveInstanceState(b2); backBundles.add(b2); backObjects.add(currentObject);
+                    Playlist currentPlaylist = (Playlist) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
                     currentObject = currentPlaylist;
                     setContentToSongs(currentPlaylist.getContent(), currentPlaylist.getName());
+                    break;
+                case CONTEXT_FOLDERS:
+                    LibraryObject currentElement = ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
+                    if(currentElement instanceof Folder)
+                    {
+                        Bundle b3 = new Bundle(); saveInstanceState(b3); backBundles.add(b3); backObjects.add(currentObject);
+                        currentObject = currentElement;
+                        setContentToFolder((Folder) currentElement);
+                    }
+                    else
+                    {
+                        Folder f = ((Folder) currentObject);
+                        setPlaylist(Folder.getSongContent(f), f.getSongPosition((Song) currentElement));
+                    }
                     break;
                 case CONTEXT_SEARCH:
                     currentObject = null;
@@ -195,7 +210,8 @@ public class MainActivity extends AppCompatActivity
         {
             final LibraryObject object = (LibraryObject) v.getTag();
 
-            PopupMenu popupMenu = new PopupMenu(MainActivity.this, v);
+            Context wrapper = new ContextThemeWrapper(MainActivity.this, ThemesActivity.currentAppTheme);
+            PopupMenu popupMenu = new PopupMenu(wrapper, v);
 
             popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener()
             {
@@ -210,6 +226,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist.addAll(((Playlist) object).getContent());
+                            else if(object instanceof Folder) playlist.addAll(Folder.getSongContent((Folder) object));
                             setPlaylist(playlist, 0);
                             break;
 
@@ -219,6 +236,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist1.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist1.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist1.addAll(((Playlist) object).getContent());
+                            else if(object instanceof Folder) playlist1.addAll(Folder.getSongContent((Folder) object));
                             playNext(playlist1);
                             Toast.makeText(MainActivity.this, playlist1.size() + " " + getString(R.string.added_next_ok), Toast.LENGTH_SHORT).show();
                             break;
@@ -229,6 +247,7 @@ public class MainActivity extends AppCompatActivity
                             else if(object instanceof Album) playlist2.addAll(((Album) object).getSongs());
                             else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) playlist2.addAll(a.getSongs());
                             else if(object instanceof Playlist) playlist2.addAll(((Playlist) object).getContent());
+                            else if(object instanceof Folder) playlist2.addAll(Folder.getSongContent((Folder) object));
                             addToPlaylist(playlist2);
                             Toast.makeText(MainActivity.this, playlist2.size() + " " + getString(R.string.added_ok), Toast.LENGTH_SHORT).show();
                             break;
@@ -330,8 +349,9 @@ public class MainActivity extends AppCompatActivity
                                     @Override
                                     public void onShow(DialogInterface arg0)
                                     {
-                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
-                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                                        dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+                                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(MainActivity.this, ThemesActivity.currentColorForcedText));
+                                        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(MainActivity.this, ThemesActivity.currentColorForcedText));
                                     }
                                 });
                                 dialog.show();
@@ -402,6 +422,9 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        MenuItem fmenuitem = navigationView.getMenu().findItem(R.id.nav_folders);
+        if(!LibraryService.FOLDER_VIEW_ENABLED) fmenuitem.setVisible(false);
+
         mainListView = (ListView) findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);
 
@@ -450,24 +473,23 @@ public class MainActivity extends AppCompatActivity
         //set theme
         mainListView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
         currentPlay.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
-        currentPlayTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
-        currentPlaySubtitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+        //PRIMARY LIGHTER : recheck WHITE
+        currentPlayTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+        currentPlaySubtitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+
         navigationView.setItemBackgroundResource(ThemesActivity.currentColorBackground);
         navigationView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
         navigationView.getHeaderView(0).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
+        int states[][] = {{android.R.attr.state_enabled}, {android.R.attr.state_focused}, {android.R.attr.state_pressed}, {-android.R.attr.state_enabled}};
+        int color = ContextCompat.getColor(this, ThemesActivity.currentColorForcedText);
+        int colors[] = {color, color, color, color};
+        navigationView.setItemTextColor(new ColorStateList(states, colors));
+        navigationView.setItemIconTintList(new ColorStateList(states, colors));
 
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
         LibraryService.configureLibrary(getApplicationContext());
         checkPermission();
     }
-
-    /*
-    @Override
-    protected void onStart()
-    {
-        super.onStart();
-    }
-    */
 
     @Override
     protected void onDestroy()
@@ -485,15 +507,11 @@ public class MainActivity extends AppCompatActivity
         {
             drawer.closeDrawer(GravityCompat.START);
         }
-        else if(back2Bundle != null)
+        else if(backBundles.size() != 0)
         {
-            restoreInstanceState(back2Bundle, back2Object);
-            back2Bundle = null;
-        }
-        else if(backBundle != null)
-        {
-            restoreInstanceState(backBundle, backObject);
-            backBundle = null;
+            restoreInstanceState(backBundles.get(backBundles.size()-1), backObjects.get(backObjects.size()-1));
+            backBundles.remove(backBundles.size()-1);
+            backObjects.remove(backObjects.size()-1);
         }
         else
         {
@@ -631,36 +649,43 @@ public class MainActivity extends AppCompatActivity
                 searchView.setIconified(false);
                 searchView.setQueryHint(getString(R.string.search_web));
                 // Set to empty activity
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 setContentToSearch(null);
                 break;
 
             case R.id.nav_artists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with artist list
                 setContentToArtists();
                 break;
 
             case R.id.nav_albums:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with album view
                 setContentToAlbums(LibraryService.getAlbums(), getResources().getString(R.string.albums));
                 break;
 
             case R.id.nav_songs:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with song list
                 setContentToSongs(LibraryService.getSongs(), getResources().getString(R.string.songs));
                 break;
 
             case R.id.nav_playlists:
                 globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
-                fromPlaylists = false; currentObject = null; backBundle = null; back2Bundle = null;
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
                 // Replace current activity content with playlist list
                 setContentToPlaylists();
+                break;
+
+            case R.id.nav_folders:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
+                // Replace current activity content with folder list
+                setContentToFolder(Folder.root);
                 break;
         }
 
@@ -769,6 +794,14 @@ public class MainActivity extends AppCompatActivity
         this.setTitle(getResources().getString(R.string.playlists));
         currentContext = CONTEXT_PLAYLISTS;
         LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, LibraryService.getPlaylists());
+        adapter.registerMoreClickListener(mainListViewMoreListener);
+        mainListView.setAdapter(adapter);
+    }
+    private void setContentToFolder(Folder f)
+    {
+        this.setTitle(f.getName());
+        currentContext = CONTEXT_FOLDERS;
+        LibraryObjectAdapter adapter = new LibraryObjectAdapter(this, f.getContent());
         adapter.registerMoreClickListener(mainListViewMoreListener);
         mainListView.setAdapter(adapter);
     }
@@ -900,6 +933,11 @@ public class MainActivity extends AppCompatActivity
             case CONTEXT_PLAYLISTS:
                 setContentToPlaylists();
                 break;
+
+            case CONTEXT_FOLDERS:
+                if(currentObject == null) setContentToFolder(Folder.root);
+                else setContentToFolder((Folder) currentObject);
+                break;
         }
 
         mainListView.setSelection(bundle.getInt("listSelection"));
@@ -918,6 +956,7 @@ public class MainActivity extends AppCompatActivity
         else if(object instanceof Album) toAdd.addAll(((Album) object).getSongs());
         else if(object instanceof Artist) for(Album a : ((Artist) object).getAlbums()) toAdd.addAll(a.getSongs());
         else if(object instanceof Playlist) toAdd.addAll(((Playlist) object).getContent());
+        else if(object instanceof Folder) toAdd.addAll(Folder.getSongContent((Folder) object));
 
         List<Playlist> list = new ArrayList<>(LibraryService.getPlaylists());
         for(int i = 0;i<list.size();i++)
@@ -1020,7 +1059,7 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
             }
         });
         dialog.show();
@@ -1064,6 +1103,7 @@ public class MainActivity extends AppCompatActivity
                 else viewHolder = (ViewHolder) convertView.getTag();
 
                 viewHolder.checkBox.setText(Source.SOURCES[position].getName());
+                viewHolder.checkBox.setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
                 SongSources.SongSource thisSource = ((Song) object).getSources().getSourceByAbsolutePriority(position);
                 viewHolder.checkBox.setChecked(thisSource != null && thisSource.getLibrary());
 
@@ -1230,7 +1270,7 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
             }
         });
         dialog.show();
@@ -1255,8 +1295,8 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLACK);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
                 Spinner listView = dialog.findViewById(R.id.playlist_source);
                 listView.setAdapter(new BaseAdapter()
                 {
@@ -1288,6 +1328,7 @@ public class MainActivity extends AppCompatActivity
                             viewHolder.title = convertView.findViewById(R.id.element_title);
                             viewHolder.image = convertView.findViewById(R.id.element_image);
 
+                            convertView.setBackgroundResource(ThemesActivity.currentColorBackground);
                             convertView.setTag(viewHolder);
                         }
                         else viewHolder = (ViewHolder) convertView.getTag();
@@ -1353,7 +1394,7 @@ public class MainActivity extends AppCompatActivity
             public void onShow(DialogInterface arg0)
             {
                 dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
-                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.BLACK);
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(ContextCompat.getColor(context, ThemesActivity.currentColorForcedText));
                 ListView listView = dialog.findViewById(R.id.search_dialog_results);
                 List<Song> results = LibraryService.getSongs(); results.remove(source);
                 LibraryObjectAdapter adapter = new LibraryObjectAdapter(context, results, false);

@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
+import v.blade.R;
 import v.blade.library.sources.Source;
 import v.blade.ui.settings.SettingsActivity;
 
@@ -26,6 +28,7 @@ public class LibraryService
     public static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
+    public static final boolean FOLDER_VIEW_ENABLED = true ;
     public static boolean configured = false;
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
@@ -119,6 +122,15 @@ public class LibraryService
                 Log.println(Log.ERROR, "[BLADE-CACHE]", "Cache restore : IOException");
                 e.printStackTrace();
             }
+            catch(NumberFormatException e1)
+            {
+                Log.println(Log.ERROR, "[BLADE-CACHE]", "Cache restore : NumberFormatException");
+                e1.printStackTrace();
+
+                //cleaning cache
+                betterSourceFile.delete();
+                Toast.makeText(appContext, R.string.cache_cleaned, Toast.LENGTH_LONG).show();
+            }
         }
 
         registerSongLinks();
@@ -166,6 +178,9 @@ public class LibraryService
 
         //setup each source
         for(Source s : Source.SOURCES) s.initConfig(accountsPrefs);
+
+        //init folders
+        Folder.initFolders();
 
         configured = true;
     }

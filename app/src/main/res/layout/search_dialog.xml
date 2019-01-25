@@ -6,12 +6,10 @@
     <EditText android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:id="@+id/search_dialog_input"
-              android:theme="@style/Theme.ControlTheme"
               android:hint="@string/search_lib"
               android:singleLine="true"/>
 
     <ListView android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:id="@+id/search_dialog_results"
-              android:theme="@style/Theme.ControlTheme"/>
+              android:id="@+id/search_dialog_results"/>
 </LinearLayout>

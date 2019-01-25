@@ -13,7 +13,6 @@
     <com.mobeta.android.dslv.DragSortListView android:layout_width="match_parent"
                                               android:layout_height="match_parent"
                                               android:layout_marginTop="55dp"
-                                              android:id="@+id/sources_listview"
-                                              android:theme="@style/Theme.ControlTheme"/>
+                                              android:id="@+id/sources_listview"/>
 
 </android.support.design.widget.CoordinatorLayout>

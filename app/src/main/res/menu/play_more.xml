@@ -4,4 +4,6 @@
           android:title="@string/add_to_playlist"/>
     <item android:id="@+id/action_manage_libraries"
           android:title="@string/manage_libraries"/>
+    <item android:id="@+id/action_lyrics"
+          android:title="@string/lyrics"/>
 </menu>

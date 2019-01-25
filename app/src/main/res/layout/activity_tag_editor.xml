@@ -19,51 +19,43 @@
                        android:layout_height="170dp"
                        app:srcCompat="@drawable/ic_cancel_black"
                        android:id="@+id/image_edit"/>
-            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
-                                                           android:theme="@style/Theme.ControlTheme">
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent">
                 <EditText android:id="@+id/name_edit"
                           android:layout_width="match_parent"
                           android:layout_height="wrap_content"
                           android:layout_margin="5dp"
-                          android:theme="@style/Theme.ControlTheme"
                           android:hint="@string/name"/>
             </android.support.design.widget.TextInputLayout>
-            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
-                                                           android:theme="@style/Theme.ControlTheme">
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent">
             <EditText android:id="@+id/album_edit"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
                       android:layout_margin="5dp"
-                      android:theme="@style/Theme.ControlTheme"
                       android:hint="@string/album"/>
             </android.support.design.widget.TextInputLayout>
-            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent"
-                                                           android:theme="@style/Theme.ControlTheme">
+            <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="match_parent">
             <EditText android:id="@+id/artist_edit"
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
                       android:layout_margin="5dp"
-                      android:theme="@style/Theme.ControlTheme"
                       android:hint="@string/artist"/>
             </android.support.design.widget.TextInputLayout>
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
                 <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="wrap_content"
-                                                               android:theme="@style/Theme.ControlTheme" android:layout_weight="1.0">
+                                                               android:layout_weight="1.0">
                 <EditText android:id="@+id/year_edit"
                           android:layout_width="match_parent"
                           android:layout_height="wrap_content"
                           android:layout_margin="5dp"
-                          android:theme="@style/Theme.ControlTheme"
                           android:hint="@string/year"/>
                 </android.support.design.widget.TextInputLayout>
                 <android.support.design.widget.TextInputLayout android:layout_height="wrap_content" android:layout_width="wrap_content"
-                                                               android:theme="@style/Theme.ControlTheme" android:layout_weight="1.0">
+                                                               android:layout_weight="1.0">
                 <EditText android:id="@+id/track_edit"
                           android:layout_width="match_parent"
                           android:layout_height="wrap_content"
                           android:layout_margin="5dp"
-                          android:theme="@style/Theme.ControlTheme"
                           android:hint="@string/track"/>
                 </android.support.design.widget.TextInputLayout>
             </LinearLayout>

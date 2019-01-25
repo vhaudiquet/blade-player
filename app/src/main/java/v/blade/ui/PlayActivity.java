@@ -170,6 +170,12 @@ public class PlayActivity extends AppCompatActivity
 
                         case R.id.action_manage_libraries:
                             MainActivity.showManageLibraries(PlayActivity.this, PlayerConnection.getService().getCurrentSong());
+                            break;
+
+                        case R.id.action_lyrics:
+                            Intent intent = new Intent(PlayActivity.this, LyricsActivity.class);
+                            startActivity(intent);
+                            break;
                     }
                     return false;
                 }
@@ -301,11 +307,13 @@ public class PlayActivity extends AppCompatActivity
         //set theme
         findViewById(R.id.play_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimary));
         playlistView.setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
-        playlistPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
-        songTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
-        songArtistAlbum.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
-        songCurrentPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
-        songDuration.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorAccent));
+
+        //PRIMARY LIGHTER : recheck WHITE
+        playlistPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+        songTitle.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+        songArtistAlbum.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+        songCurrentPosition.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
+        songDuration.setTextColor(ContextCompat.getColor(this, ThemesActivity.currentColorPrimaryLighter));
     }
 
     @Override

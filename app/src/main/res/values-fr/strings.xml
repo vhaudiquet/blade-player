@@ -91,4 +91,13 @@
     <string name="link_manager">Gérer les liens entre titres</string>
     <string name="no_results_found">Aucun résultat</string>
     <string name="explore">Explorer</string>
+    <string name="theme_dark_desc">Rejoignez le côté obscur</string>
+    <string name="lyrics">Paroles</string>
+    <string name="lyrics_obtention_err">Erreur durant l\'obtention des paroles.</string>
+    <string name="lyrics_not_found">Paroles non trouvées. Désolé...</string>
+    <string name="lyrics_parsing_error">Erreur durant la mise en forme des paroles.</string>
+    <string name="cache_cleaned">Le cache était corrompu et a été vidé. Vous devrez peut-être re-synchroniser.</string>
+    <string name="folders">Dossiers</string>
+    <string name="internal_storage">Stockage interne</string>
+    <string name="external_storage">Stockage externe</string>
 </resources>

@@ -101,4 +101,13 @@
     <string name="link_manager">Song links manager</string>
     <string name="no_results_found">No results found</string>
     <string name="explore">Explore</string>
+    <string name="theme_dark_desc">Join the dark side</string>
+    <string name="lyrics">Lyrics</string>
+    <string name="lyrics_obtention_err">Error occurred while getting song lyrics.</string>
+    <string name="lyrics_not_found">Song lyrics not found. Sorry...</string>
+    <string name="lyrics_parsing_error">Error occurred while parsing lyrics.</string>
+    <string name="cache_cleaned">Cache was corrupted, Blade cleaned it. You might want to re-sync.</string>
+    <string name="folders">Folders</string>
+    <string name="internal_storage">Internal storage</string>
+    <string name="external_storage">External storage</string>
 </resources>
