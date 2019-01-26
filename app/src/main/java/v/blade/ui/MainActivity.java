@@ -422,9 +422,6 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        MenuItem fmenuitem = navigationView.getMenu().findItem(R.id.nav_folders);
-        if(!LibraryService.FOLDER_VIEW_ENABLED) fmenuitem.setVisible(false);
-
         mainListView = (ListView) findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);
 
@@ -488,6 +485,11 @@ public class MainActivity extends AppCompatActivity
 
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
         LibraryService.configureLibrary(getApplicationContext());
+
+        //enable / disable folder view depending on preferences
+        MenuItem fmenuitem = navigationView.getMenu().findItem(R.id.nav_folders);
+        if(!LibraryService.FOLDER_VIEW_ENABLED) fmenuitem.setVisible(false);
+
         checkPermission();
     }
 

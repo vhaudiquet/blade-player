@@ -7,8 +7,8 @@ android {
         applicationId "v.blade.nightly"
         minSdkVersion 16
         targetSdkVersion 27
-        versionCode 190120
-        versionName "1.4-InDev"
+        versionCode 190126
+        versionName "1.5-InDev"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     compileOptions {

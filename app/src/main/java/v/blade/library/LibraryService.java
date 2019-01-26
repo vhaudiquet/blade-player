@@ -28,12 +28,12 @@ public class LibraryService
     public static final String CACHE_SEPARATOR = "##";
 
     /* user preferences */
-    public static final boolean FOLDER_VIEW_ENABLED = true ;
     public static boolean configured = false;
     public static boolean SAVE_PLAYLISTS_TO_LIBRARY;
     public static boolean REGISTER_SONGS_BETTER_SOURCES;
     public static Uri TREE_URI;
     public static boolean ENABLE_SONG_CHANGE_ANIM;
+    public static boolean FOLDER_VIEW_ENABLED;
 
     /* library */
     private static final List<Artist> artists = Collections.synchronizedList(new ArrayList<Artist>());
@@ -175,6 +175,7 @@ public class LibraryService
 
         SAVE_PLAYLISTS_TO_LIBRARY = generalPrefs.getBoolean("save_playlist_to_library", false);
         REGISTER_SONGS_BETTER_SOURCES = generalPrefs.getBoolean("register_better_sources", true);
+        FOLDER_VIEW_ENABLED = generalPrefs.getBoolean("enable_folder_view", true);
 
         //setup each source
         for(Source s : Source.SOURCES) s.initConfig(accountsPrefs);
