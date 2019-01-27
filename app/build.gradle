@@ -7,8 +7,8 @@ android {
         applicationId "v.blade"
         minSdkVersion 16
         targetSdkVersion 27
-        versionCode 14
-        versionName "1.4"
+        versionCode 16
+        versionName "1.4.0.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
