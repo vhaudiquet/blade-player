@@ -102,4 +102,5 @@
     <string name="external_storage">Stockage externe</string>
     <string name="enable_folder_view">Activer la vue dossier</string>
     <string name="folder_view_summary">Active l\'onglet Dossiers dans la bibliothèque</string>
+    <string name="spotify_connection_error">Erreur de connection Spotify...</string>
 </resources>

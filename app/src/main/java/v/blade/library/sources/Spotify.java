@@ -865,6 +865,13 @@ public class Spotify extends Source
         params.put("collaborative", isCollaborative);
         //params.put("description", desc);
 
+        //check connection
+        if(mePrivate == null)
+        {
+            Toast.makeText(LibraryService.appContext, R.string.spotify_connection_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         new Thread()
         {
             public void run()
