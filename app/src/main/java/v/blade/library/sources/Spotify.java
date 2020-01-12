@@ -201,6 +201,7 @@ public class Spotify extends Source
             {
                 public void run()
                 {
+                    Looper.prepare();
                     try
                     {
                         mePrivate = spotifyApi.getService().getMe();
@@ -211,7 +212,16 @@ public class Spotify extends Source
                         {
                             Log.println(Log.INFO, "[BLADE-SPOTIFY]", "Actualizing token.");
                             refreshSpotifyToken();
-                            mePrivate = spotifyApi.getService().getMe();
+                            try
+                            {
+                                mePrivate = spotifyApi.getService().getMe();
+                            }
+                            catch(RetrofitError e1)
+                            {
+                                setAvailable(false);
+                                Toast.makeText(LibraryService.appContext, "Could not connect to your Spotify account.", Toast.LENGTH_LONG).show();
+                                return;
+                            }
                         }
                     }
 
