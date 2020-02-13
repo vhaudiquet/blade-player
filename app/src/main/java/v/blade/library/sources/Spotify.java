@@ -39,6 +39,7 @@ public class Spotify extends Source
     private File spotifyPlaylistsCache;
 
     private ArrayList<LibraryObject> spotifyCachedToLoadArt;
+    private HashMap<LibraryObject, String> spotifyCachedToLoadArtUris;
 
     public SourcePlayer player = new SourcePlayer()
     {
@@ -266,6 +267,7 @@ public class Spotify extends Source
         if(!LibraryService.configured) return;
 
         spotifyCachedToLoadArt = new ArrayList<>();
+        spotifyCachedToLoadArtUris = new HashMap<>();
         System.out.println("[BLADE-SPOTIFY] Registering cached songs...");
         try
         {
@@ -273,9 +275,34 @@ public class Spotify extends Source
             {
                 //spotify library
                 BufferedReader spr = new BufferedReader(new FileReader(spotifyCacheFile));
+                String tp[] = spr.readLine().split(CACHE_SEPARATOR);
+
+                int cache_version = 0;
+                if(tp[0].equals("Blade") && tp[1].equals("edalB") && tp[2].equals("SPCACHE"))
+                {
+                    //We have cache file from Blade >= 1.5, retrieve version from file to know how to read it
+                    cache_version = Integer.parseInt(tp[3]);
+                }
+                else
+                {
+                    //cache version is 1 : < Blade 1.5
+                    cache_version = 1;
+
+                    //register first song
+                    Song song = LibraryService.registerSong(tp[2],  tp[1],
+                            Integer.parseInt(tp[4]), 0, Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
+                    song.setFormat(tp[3]);
+
+                    if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
+                    {
+                        spotifyCachedToLoadArt.add(song.getAlbum());
+                        song.getAlbum().setArtLoading();
+                    }
+                }
+
                 while(spr.ready())
                 {
-                    String[] tp = spr.readLine().split(CACHE_SEPARATOR);
+                    tp = spr.readLine().split(CACHE_SEPARATOR);
                     Song song = LibraryService.registerSong(tp[2],  tp[1],
                             Integer.parseInt(tp[4]), 0, Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY));
                     song.setFormat(tp[3]);
@@ -283,7 +310,14 @@ public class Spotify extends Source
                     if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
                     {
                         //the image is supposed to be cached locally, so no need to provide URL
+                        //if user removed cache, this fails ; cache version 2 should take care of that
                         spotifyCachedToLoadArt.add(song.getAlbum());
+
+                        if(cache_version == 2)
+                            spotifyCachedToLoadArtUris.put(song.getAlbum(), tp[7]);
+                        else
+                            spotifyCachedToLoadArtUris.put(song.getAlbum(), "");
+
                         song.getAlbum().setArtLoading();
                     }
                 }
@@ -303,7 +337,7 @@ public class Spotify extends Source
                         boolean isCollab = Boolean.parseBoolean(sppr.readLine());
                         while(sppr.ready())
                         {
-                            String[] tp = sppr.readLine().split(CACHE_SEPARATOR);
+                            tp = sppr.readLine().split(CACHE_SEPARATOR);
                             Song song = LibraryService.SAVE_PLAYLISTS_TO_LIBRARY ?
                                     LibraryService.registerSong(tp[2],  tp[1],  Integer.parseInt(tp[4]), 0,
                                             Long.parseLong(tp[5]), tp[0], new SongSources.SongSource(tp[6], SOURCE_SPOTIFY))
@@ -315,6 +349,12 @@ public class Spotify extends Source
                             if(!song.getAlbum().hasArt() && !song.getAlbum().getArtLoading())
                             {
                                 //the image is supposed to be cached locally, so no need to provide URL
+
+                                if(cache_version == 2)
+                                    spotifyCachedToLoadArtUris.put(song.getAlbum(), tp[7]);
+                                else
+                                    spotifyCachedToLoadArtUris.put(song.getAlbum(), "");
+
                                 spotifyCachedToLoadArt.add(song.getAlbum());
                                 song.getAlbum().setArtLoading();
                             }
@@ -347,7 +387,7 @@ public class Spotify extends Source
 
         for(LibraryObject alb : spotifyCachedToLoadArt)
         {
-            LibraryService.loadArt(alb, "", false);
+            LibraryService.loadArt(alb, spotifyCachedToLoadArtUris.get(alb), false);
         }
 
         spotifyCachedToLoadArt = null;
@@ -362,6 +402,7 @@ public class Spotify extends Source
         // list used for spotify cache
         ArrayList<Song> spotifySongs = new ArrayList<>();
         ArrayList<Playlist> spotifyPlaylists = new ArrayList<>();
+        HashMap<Album, String> albumImagesUrls = new HashMap<>();
 
         SpotifyService service = spotifyApi.getService();
         try
@@ -390,6 +431,7 @@ public class Spotify extends Source
                         {
                             Image albumImage = t.album.images.get(0);
                             LibraryService.loadArt(s.getAlbum(), albumImage.url, false);
+                            albumImagesUrls.put(s.getAlbum(), albumImage.url);
                         }
                     }
                 }
@@ -430,6 +472,7 @@ public class Spotify extends Source
                         {
                             Image albumImage = alb.images.get(0);
                             LibraryService.loadArt(savedAlbum, albumImage.url, false);
+                            albumImagesUrls.put(savedAlbum, albumImage.url);
                         }
                     }
                 }
@@ -483,6 +526,7 @@ public class Spotify extends Source
                                 {
                                     Image albumImage = t.album.images.get(0);
                                     LibraryService.loadArt(s.getAlbum(), albumImage.url, false);
+                                    albumImagesUrls.put(s.getAlbum(), albumImage.url);
                                 }
                             }
 
@@ -518,11 +562,17 @@ public class Spotify extends Source
             {
                 //library songs
                 BufferedWriter bw = new BufferedWriter(new FileWriter((spotifyCacheFile)));
+
+                //cache version
+                bw.write("Blade" + CACHE_SEPARATOR + "edalB" + CACHE_SEPARATOR + "SPCACHE" + CACHE_SEPARATOR + "2");
+                bw.newLine();
+
                 for(Song song : spotifySongs)
                 {
                     bw.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
                             + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
-                            + CACHE_SEPARATOR);
+                            + CACHE_SEPARATOR + albumImagesUrls.get(song.getAlbum()) + CACHE_SEPARATOR);
+                    //todo : find a better way to cache album image urls : this is caching url once per song....
                     bw.newLine();
                 }
                 bw.close();
@@ -858,7 +908,8 @@ public class Spotify extends Source
             {
                 pwriter.write(song.getTitle() + CACHE_SEPARATOR + song.getAlbum().getName() + CACHE_SEPARATOR + song.getArtist().getName() + CACHE_SEPARATOR
                         + song.getFormat() + CACHE_SEPARATOR + song.getTrackNumber() + CACHE_SEPARATOR + song.getDuration() + CACHE_SEPARATOR + song.getSources().getSpotify().getId()
-                        + CACHE_SEPARATOR);
+                        + CACHE_SEPARATOR + "" + CACHE_SEPARATOR);
+                //todo : find a way to cache album image url for playlists
                 pwriter.newLine();
             }
             pwriter.close();

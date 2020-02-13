@@ -113,4 +113,5 @@
     <string name="enable_folder_view">Enable folder view</string>
     <string name="folder_view_summary">Enable the Folder tab in library</string>
     <string name="spotify_connection_error">Spotify connection error...</string>
+    <string name="artwork_edit">Artwork edit</string>
 </resources>

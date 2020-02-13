@@ -829,6 +829,7 @@ public class LibraryService
                 {
                     Log.println(Log.WARN, "[BLADE]", "Exception on decoding art for object " + obj.getName() + " : " + path);
                     e.printStackTrace();
+                    Log.println(Log.WARN, "[BLADE] ", "PATH/URL was : " + path);
                     return;
                 }
             }

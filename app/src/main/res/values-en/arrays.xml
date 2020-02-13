@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="artwork_edit_options">
+        <item>Change artwork</item>
+        <item>Reset artwork</item>
+    </string-array>
+</resources>

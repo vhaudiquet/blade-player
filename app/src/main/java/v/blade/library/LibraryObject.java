@@ -49,11 +49,19 @@ public abstract class LibraryObject implements Serializable
         this.artPath = path;
         this.artLoad = false;
     }
+    public void removeArt()
+    {
+        this.hasArt = false;
+        this.miniatureArt = null;
+        this.artPath = null;
+        this.artLoad = false;
+    }
     public void setArtLoading() {this.artLoad = true;}
     public boolean getArtLoading() {return this.artLoad;}
     public Bitmap getArtMiniature() {return miniatureArt;}
     public Bitmap getArt() {return BitmapFactory.decodeFile(artPath);}
     public Uri getArtUri() {return artPath == null ? null : Uri.parse(artPath);}
+    public String getArtPath(){return artPath;}
     public boolean hasArt() {return hasArt;}
 
     public String getType() {return this.getClass().getSimpleName();}
