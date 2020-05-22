@@ -107,6 +107,8 @@
         <item name="colorAccent">@color/darkColorPrimary</item>
         <item name="editTextColor">@color/darkColorForcedText</item>
         <item name="android:textColorHint">@color/darkColorSecondText</item>
+
+        <item name="textColorAlertDialogListItem">@color/darkColorForcedText</item>
     </style>
     <style name="Dark.AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>

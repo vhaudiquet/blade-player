@@ -245,7 +245,7 @@ public class PlayerMediaPlayer
 
         /* select appropriate mediaplayer and start playback */
         //check if the song is available
-        if(song.getSources().getSourceByPriority(0) == null) {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
+        if(song.getSources().getSourceByPriority(0) == null || song.getSources().getSourceByPriority(0).getSource() == null) {currentState = PLAYER_STATE_PAUSED; listener.onStateChange();}
 
         //switch mediaplayers
         //if the mediaplayer is the same, we need to use little tricks to prevent a brutal transition

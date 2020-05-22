@@ -459,7 +459,7 @@ public abstract class Source
         {
             if(list.getSources().getSourceByPriority(0).getSource() != SOURCE_LOCAL_LIB) {callback.onFailure(); return;}
 
-            if(!list.getPath().equals("")) new File(list.getPath()).delete();
+            if(list.getPath() != null && !list.getPath().equals("")) new File(list.getPath()).delete();
 
             ContentResolver contentResolver = LibraryService.appContext.getContentResolver();
             String where = MediaStore.Audio.Playlists._ID + "=?";

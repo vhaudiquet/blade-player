@@ -11,6 +11,10 @@
     <CheckBoxPreference android:title="@string/enable_song_change_anim"
                         android:key="anim_0"
                         android:defaultValue="true"/>
+    <CheckBoxPreference android:title="@string/enable_folder_view"
+                        android:summary="@string/folder_view_summary"
+                        android:key="enable_folder_view"
+                        android:defaultValue="true"/>
     <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
     <PreferenceScreen android:title="@string/link_manager" android:key="link_manager"/>
     <PreferenceScreen android:title="@string/themes" android:key="themes"/>

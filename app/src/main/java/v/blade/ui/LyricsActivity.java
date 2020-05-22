@@ -85,10 +85,10 @@ public class LyricsActivity extends AppCompatActivity
                         URL songUrl = new URL("https://genius.com" + path);
                         HttpsURLConnection urlConnection2 = (HttpsURLConnection) songUrl.openConnection();
                         urlConnection2.setRequestMethod("GET");
-                        urlConnection2.addRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36");
+                        //urlConnection2.addRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36");
 
                         urlConnection2.connect();
-                        System.out.println("LyricsRequest response : " + urlConnection2.getResponseCode() + " : " + urlConnection2.getResponseMessage());
+                        System.out.println("LyricsRequest (to " + songUrl.toString() + ") response : " + urlConnection2.getResponseCode() + " : " + urlConnection2.getResponseMessage());
                         BufferedReader reader2 = new BufferedReader(new InputStreamReader(urlConnection2.getInputStream()));
                         String div = "";
                         boolean reached = false;

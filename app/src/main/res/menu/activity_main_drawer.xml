@@ -8,6 +8,11 @@
             android:id="@+id/nav_search"
             android:icon="@drawable/ic_search"
             android:title="@string/action_search"/>
+        <item
+            android:id="@+id/nav_spotify"
+            android:icon="@drawable/ic_spotify"
+            android:title="Spotify"
+            android:visible="false"/>
         </menu>
         </item>
     </group>

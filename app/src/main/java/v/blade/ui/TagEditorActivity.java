@@ -1,10 +1,14 @@
 package v.blade.ui;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.provider.DocumentFile;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -16,6 +20,7 @@ import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
 import org.jaudiotagger.tag.Tag;
 import org.jaudiotagger.tag.TagOptionSingleton;
+import org.jaudiotagger.tag.images.ArtworkFactory;
 import v.blade.R;
 import v.blade.library.*;
 import v.blade.ui.settings.ThemesActivity;
@@ -25,9 +30,12 @@ import java.util.ArrayList;
 
 public class TagEditorActivity extends AppCompatActivity
 {
+    private static int REQUEST_CODE_IMAGE_SELECT = 12;
+
     private LibraryObject currentObject;
     EditText nameEdit, albumEdit, artistEdit, yearEdit, trackEdit;
     ImageView imageEdit;
+    String selectedImagePath = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -88,10 +96,72 @@ public class TagEditorActivity extends AppCompatActivity
             imageEdit.setEnabled(false);
         }
 
+        //setup imageEdit
+        if(currentObject instanceof Album || currentObject instanceof Song)
+        {
+            imageEdit.setOnClickListener(new View.OnClickListener()
+            {
+                @Override
+                public void onClick(View v)
+                {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(TagEditorActivity.this);
+                    builder.setTitle(R.string.artwork_edit).setItems(R.array.artwork_edit_options, new DialogInterface.OnClickListener()
+                    {
+                        public void onClick(DialogInterface dialog, int which)
+                        {
+                            if(which == 0)
+                            {
+                                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                                startActivityForResult(intent, REQUEST_CODE_IMAGE_SELECT);
+                            }
+                            else if(which == 1)
+                            {
+                                imageEdit.setImageResource(R.drawable.ic_albums);
+                                selectedImagePath = "null";
+                            }
+                        }
+                    });
+                    AlertDialog dialog = builder.create();
+                    dialog.setOnShowListener(new DialogInterface.OnShowListener()
+                    {
+                        @Override
+                        public void onShow(DialogInterface d)
+                        {
+                            dialog.getWindow().setBackgroundDrawableResource(ThemesActivity.currentColorBackground);
+                        }
+                    });
+                    dialog.show();
+                }
+            });
+        }
+
         //set theme
         findViewById(R.id.tag_editor_layout).setBackgroundColor(ContextCompat.getColor(this, ThemesActivity.currentColorBackground));
     }
 
+    protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent)
+    {
+        super.onActivityResult(requestCode, resultCode, imageReturnedIntent);
+
+        if(requestCode == REQUEST_CODE_IMAGE_SELECT)
+        {
+            if(resultCode == RESULT_OK)
+            {
+                Uri selectedImage = imageReturnedIntent.getData();
+                imageEdit.setImageURI(selectedImage);
+
+                String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+                Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+                cursor.moveToFirst();
+                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                String filePath = cursor.getString(columnIndex);
+                cursor.close();
+
+                selectedImagePath = filePath;
+            }
+        }
+    }
 
     /*
     * Called by cancel button, cancel this activity and returns to MainActivity
@@ -177,6 +247,7 @@ public class TagEditorActivity extends AppCompatActivity
                 boolean artistEditE = artistEdit.isEnabled() && !artistEdit.getText().toString().equals("");
                 boolean yearEditE = yearEdit.isEnabled() && !yearEdit.getText().toString().equals("");
                 boolean trackEditE = trackEdit.isEnabled() && !trackEdit.getText().toString().equals("");
+                boolean imgEditE = imageEdit.isEnabled() && (selectedImagePath != null) && !selectedImagePath.equals("");
 
                 Tag currentTag = currentFile.getTagOrCreateAndSetDefault();
                 if(nameEditE)
@@ -189,10 +260,38 @@ public class TagEditorActivity extends AppCompatActivity
                     currentTag.setField(FieldKey.YEAR, yearEdit.getText().toString());
                 if(trackEditE)
                     currentTag.setField(FieldKey.TRACK, trackEdit.getText().toString());
+                if(imgEditE)
+                {
+                    if(selectedImagePath.equals("null"))
+                    {
+                        //reset image
+                        currentTag.deleteArtworkField();
+                    }
+                    else currentTag.setField(ArtworkFactory.createArtworkFromFile(new File(selectedImagePath)));
+                }
 
                 currentFile.commit();
 
                 //actualize contentprovider
+                /*
+                //note : Is this useful ?
+                if(imgEditE)
+                {
+                    ContentResolver contentResolver = getContentResolver();
+                    long id = (long) currentSong.getAlbum().getSources().getLocal().getId();
+                    Uri uri = Uri.parse("content://media/external/audio/albumart");
+                    contentResolver.delete(ContentUris.withAppendedId(uri, id), null, null);
+                    if(!selectedImagePath.equals("null"))
+                    {
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Audio.Albums._ID, id);
+                        values.put(MediaStore.Audio.Albums.ALBUM_ART, selectedImagePath);
+                        contentResolver.insert(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, values);
+                    }
+                    contentResolver.notifyChange(Uri.parse("content://media"), null);
+                }
+                */
+
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(currentFile.getFile())));
 
                 //actualize song in library
@@ -205,6 +304,20 @@ public class TagEditorActivity extends AppCompatActivity
                         currentSong.getDuration(),
                         nameEditE ? nameEdit.getText().toString() : currentSong.getName(),
                         localOld);
+                if(imgEditE)
+                {
+                    if(!selectedImagePath.equals("null"))
+                    {
+                        LibraryService.loadArt(newSong, selectedImagePath, true);
+                        //TODO : fix that, will load art for each song in album, really not efficient...
+                        LibraryService.loadArt(newSong.getAlbum(), selectedImagePath, true);
+                    }
+                    else
+                    {
+                        newSong.removeArt();
+                        newSong.getAlbum().removeArt();
+                    }
+                }
                 newSong.setFormat(currentSong.getFormat());
                 newSong.setPath(currentSong.getPath());
             }

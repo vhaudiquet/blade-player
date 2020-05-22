@@ -29,6 +29,7 @@ import android.support.v7.preference.PreferenceFragmentCompat;
 import android.widget.Toast;
 import v.blade.R;
 import v.blade.library.LibraryService;
+import v.blade.ui.MainActivity;
 
 public class SettingsActivity extends AppCompatActivity
 {
@@ -146,6 +147,15 @@ public class SettingsActivity extends AppCompatActivity
             {
                 SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
                 LibraryService.ENABLE_SONG_CHANGE_ANIM = generalPrefs.getBoolean("anim_0", true);
+            }
+            else if(preference.getKey().equals("enable_folder_view"))
+            {
+                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                LibraryService.FOLDER_VIEW_ENABLED = generalPrefs.getBoolean("enable_folder_view", true);
+
+                Intent intent = new Intent(getActivity(), MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
             }
 
             return super.onPreferenceTreeClick(preference);

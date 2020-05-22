@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity
     private static final int CONTEXT_PLAYLISTS = 4;
     private static final int CONTEXT_SEARCH = 5;
     private static final int CONTEXT_FOLDERS = 6;
+    private static final int CONTEXT_SPOTIFY = 7;
     private int currentContext = CONTEXT_NONE;
 
     /* specific context (back button) handling */
@@ -199,6 +200,12 @@ public class MainActivity extends AppCompatActivity
                         playlist.add((Song) selected);
                         setPlaylist(playlist, 0);
                     }
+                    break;
+                case CONTEXT_SPOTIFY:
+                    Bundle b6 = new Bundle(); saveInstanceState(b6); backBundles.add(b6); backObjects.add(currentObject);
+                    Playlist currentSPlaylist = (Playlist) ((LibraryObjectAdapter) mainListView.getAdapter()).getObjects().get(position);
+                    currentObject = currentSPlaylist;
+                    setContentToSongs(currentSPlaylist.getContent(), currentSPlaylist.getName());
                     break;
             }
         }
@@ -422,9 +429,6 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        MenuItem fmenuitem = navigationView.getMenu().findItem(R.id.nav_folders);
-        if(!LibraryService.FOLDER_VIEW_ENABLED) fmenuitem.setVisible(false);
-
         mainListView = (ListView) findViewById(R.id.libraryList);
         mainListView.setOnItemClickListener(mainListViewListener);
 
@@ -488,6 +492,15 @@ public class MainActivity extends AppCompatActivity
 
         PlayerConnection.init(connectionCallbacks, getApplicationContext());
         LibraryService.configureLibrary(getApplicationContext());
+
+        //enable / disable folder view depending on preferences
+        MenuItem fmenuitem = navigationView.getMenu().findItem(R.id.nav_folders);
+        if(!LibraryService.FOLDER_VIEW_ENABLED) fmenuitem.setVisible(false);
+
+        //enable / disable spotify navigation view depending on spotify connected
+        MenuItem spotifyMenuItem = navigationView.getMenu().findItem(R.id.nav_spotify);
+        if(Source.SOURCE_SPOTIFY.isAvailable()) spotifyMenuItem.setVisible(true);
+
         checkPermission();
     }
 
@@ -687,6 +700,13 @@ public class MainActivity extends AppCompatActivity
                 // Replace current activity content with folder list
                 setContentToFolder(Folder.root);
                 break;
+
+            case R.id.nav_spotify:
+                globalSearch = false; searchView.setQueryHint(getString(R.string.search_lib));
+                fromPlaylists = false; currentObject = null; backBundles = new ArrayList<>(); backObjects = new ArrayList<>();
+                setContentToSpotify();
+                break;
+
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -820,6 +840,31 @@ public class MainActivity extends AppCompatActivity
 
         mainListView.setAdapter(adapter);
     }
+    private void setContentToSpotify()
+    {
+        currentObject = null; fromPlaylists = false;
+        this.setTitle("Spotify");
+        currentContext = CONTEXT_SPOTIFY;
+        mainListView.setAdapter(new LibraryObjectAdapter(this, new ArrayList()));
+
+        new Thread()
+        {
+            public void run()
+            {
+                List<LibraryObject> featuredContent = Source.SOURCE_SPOTIFY.getFeaturedContent();
+                LibraryObjectAdapter adapter = new LibraryObjectAdapter(MainActivity.this, featuredContent);
+                runOnUiThread(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        adapter.registerMoreClickListener(mainListViewMoreListener);
+                        mainListView.setAdapter(adapter);
+                    }
+                });
+            }
+        }.start();
+    }
 
     /* currently playing */
     private void showCurrentPlay(Song song, boolean play)
@@ -937,6 +982,10 @@ public class MainActivity extends AppCompatActivity
             case CONTEXT_FOLDERS:
                 if(currentObject == null) setContentToFolder(Folder.root);
                 else setContentToFolder((Folder) currentObject);
+                break;
+
+            case CONTEXT_SPOTIFY:
+                setContentToSpotify();
                 break;
         }
 
