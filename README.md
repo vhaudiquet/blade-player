@@ -12,6 +12,10 @@ Blade is now available on [Google Play](https://play.google.com/store/apps/detai
 
 Blade-Player contain features that makes it an ideal simple music player.
 
+- **Themes**
+
+Blade has several themes out of the box : classic, nightly, dark, red, green...
+
 - **Categorized Lists**
 
 Song list contains the list of all the songs in your library.
@@ -35,8 +39,8 @@ Used to quickly search  for songs, artists or albums in the library. 2 search mo
 ## Releases
 
 [Latest Release (Google Play)](https://play.google.com/store/apps/details?id=v.blade)
-[Latest Release (v 1.4) (APK)](https://github.com/Valou3433/blade-player/releases/download/1.4/blade-1.4.apk)
-[Mirror (APK)](http://valou3433.fr/blade/blade-1.4.apk)
+[Latest Release (v 1.5) (APK)](https://github.com/Valou3433/blade-player/releases/download/1.5/blade-1.5.apk)
+[Mirror (APK)](http://valou3433.fr/blade/blade-1.5.apk)
 
 
 + Dark theme
