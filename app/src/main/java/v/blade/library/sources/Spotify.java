@@ -313,7 +313,7 @@ public class Spotify extends Source
                         //if user removed cache, this fails ; cache version 2 should take care of that
                         spotifyCachedToLoadArt.add(song.getAlbum());
 
-                        if(cache_version == 2)
+                        if(cache_version == 2 && tp.length > 7)
                             spotifyCachedToLoadArtUris.put(song.getAlbum(), tp[7]);
                         else
                             spotifyCachedToLoadArtUris.put(song.getAlbum(), "");
@@ -350,7 +350,7 @@ public class Spotify extends Source
                             {
                                 //the image is supposed to be cached locally, so no need to provide URL
 
-                                if(cache_version == 2)
+                                if(cache_version == 2 && tp.length > 7)
                                     spotifyCachedToLoadArtUris.put(song.getAlbum(), tp[7]);
                                 else
                                     spotifyCachedToLoadArtUris.put(song.getAlbum(), "");
@@ -1117,5 +1117,42 @@ public class Spotify extends Source
     public void removeAlbumFromLibrary(Album album, OperationCallback callback)
     {
         callback.onFailure();
+    }
+
+    public List<LibraryObject> getFeaturedContent()
+    {
+        ArrayList<LibraryObject> tr = new ArrayList<>();
+
+        for(PlaylistSimple playlistSimple : spotifyApi.getService().getFeaturedPlaylists().playlists.items)
+        {
+            ArrayList<Song> thisList = new ArrayList<>();
+            HashMap<String, Object> map = new HashMap<>();
+            int trackNbr = playlistSimple.tracks.total;
+
+            int poffset = 0;
+            while(trackNbr > 0)
+            {
+                map.put("offset", poffset);
+                Pager<PlaylistTrack> tracks = spotifyApi.getService().getPlaylistTracks(playlistSimple.owner.id, playlistSimple.id, map);
+
+                for(PlaylistTrack pt : tracks.items)
+                {
+                    Track t = pt.track;
+                    if(t == null) continue;
+
+                    Song s = LibraryService.getSongHandle(t.name, t.album.name, t.artists.get(0).name, t.duration_ms, new SongSources.SongSource(t.id, SOURCE_SPOTIFY),
+                                t.track_number, 0);
+
+                    thisList.add(s);
+                }
+
+                poffset+=100;
+                trackNbr-=100;
+            }
+
+            tr.add(new Playlist(playlistSimple.name, thisList));
+        }
+
+        return tr;
     }
 }
