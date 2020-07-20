@@ -10,16 +10,20 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.util.LongSparseArray;
+import android.util.Size;
 import android.widget.Toast;
 import v.blade.R;
 import v.blade.library.*;
 import v.blade.player.PlayerMediaPlayer;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public abstract class Source
 {
@@ -314,25 +318,59 @@ public abstract class Source
             if(idsorted_albums == null) return;
             LongSparseArray<v.blade.library.Album> thisArray = idsorted_albums.clone(); //avoid sync problems
 
-            Cursor albumCursor = LibraryService.appContext.getContentResolver().
-                    query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
-            if(albumCursor!=null && albumCursor.moveToFirst())
+            if(Build.VERSION.SDK_INT >= 29)
             {
-                int idCol = albumCursor.getColumnIndex(MediaStore.Audio.Albums._ID);
-                int artCol = albumCursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART);
-
-                do
+                Cursor albumCursor = LibraryService.appContext.getContentResolver().
+                        query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
+                if(albumCursor!=null && albumCursor.moveToFirst())
                 {
-                    long thisId = albumCursor.getLong(idCol);
-                    String path = albumCursor.getString(artCol);
+                    int idCol = albumCursor.getColumnIndex(MediaStore.Audio.Albums._ID);
 
-                    v.blade.library.Album a = thisArray.get(thisId);
-                    if(a != null)
+                    do
                     {
-                        LibraryService.loadArt(a, path, true);
-                    }
-                } while (albumCursor.moveToNext());
-                albumCursor.close();
+                        long thisId = albumCursor.getLong(idCol);
+                        v.blade.library.Album a = thisArray.get(thisId);
+                        Uri imageUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, thisId);
+                        Bitmap image = null;
+                        try
+                        {
+                            image = LibraryService.appContext.getContentResolver().loadThumbnail(imageUri, new Size(Album.minatureSize, Album.minatureSize), null);
+                        }
+                        catch (IOException e)
+                        {
+                            System.out.println("[BLADE] Could not load local image for album " + a.getName() + " : IOException");
+                        }
+
+                        if(a != null && image != null)
+                        {
+                            a.setArt(imageUri.getPath(), image);
+                        }
+                    } while (albumCursor.moveToNext());
+                    albumCursor.close();
+                }
+            }
+            else
+            {
+                Cursor albumCursor = LibraryService.appContext.getContentResolver().
+                        query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, null, null, null, null, null);
+                if(albumCursor!=null && albumCursor.moveToFirst())
+                {
+                    int idCol = albumCursor.getColumnIndex(MediaStore.Audio.Albums._ID);
+                    int artCol = albumCursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART);
+
+                    do
+                    {
+                        long thisId = albumCursor.getLong(idCol);
+                        String path = albumCursor.getString(artCol);
+
+                        v.blade.library.Album a = thisArray.get(thisId);
+                        if(a != null)
+                        {
+                            LibraryService.loadArt(a, path, true);
+                        }
+                    } while (albumCursor.moveToNext());
+                    albumCursor.close();
+                }
             }
 
             thisArray = null;

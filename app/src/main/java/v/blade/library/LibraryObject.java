@@ -20,7 +20,10 @@ package v.blade.library;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
+import android.util.Size;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 public abstract class LibraryObject implements Serializable
@@ -59,7 +62,21 @@ public abstract class LibraryObject implements Serializable
     public void setArtLoading() {this.artLoad = true;}
     public boolean getArtLoading() {return this.artLoad;}
     public Bitmap getArtMiniature() {return miniatureArt;}
-    public Bitmap getArt() {return BitmapFactory.decodeFile(artPath);}
+    public Bitmap getArt()
+    {
+        if(artPath.startsWith("content://") && Build.VERSION.SDK_INT >= 29)
+            //todo : hardcoded size to get max for screen, change that ?
+            try
+            {
+                return LibraryService.appContext.getContentResolver().loadThumbnail(Uri.parse(artPath), new Size(1000, 1000), null);
+            }
+            catch(IOException e)
+            {
+                System.out.println("[BLADE] Could not load full art image for " + getName() + " : IOException");
+                return null;
+            }
+        else return BitmapFactory.decodeFile(artPath);
+    }
     public Uri getArtUri() {return artPath == null ? null : Uri.parse(artPath);}
     public String getArtPath(){return artPath;}
     public boolean hasArt() {return hasArt;}
