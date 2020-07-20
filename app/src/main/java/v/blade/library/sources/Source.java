@@ -329,8 +329,9 @@ public abstract class Source
                     do
                     {
                         long thisId = albumCursor.getLong(idCol);
+
                         v.blade.library.Album a = thisArray.get(thisId);
-                        Uri imageUri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, thisId);
+                        Uri imageUri = ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, thisId);
                         Bitmap image = null;
                         try
                         {
@@ -338,12 +339,14 @@ public abstract class Source
                         }
                         catch (IOException e)
                         {
-                            System.out.println("[BLADE] Could not load local image for album " + a.getName() + " : IOException");
+                            System.out.println("[BLADE] Could not load local image for album " + a.getName() + " : IOException (URI was " + imageUri + ")");
+                            e.printStackTrace();
                         }
 
                         if(a != null && image != null)
                         {
-                            a.setArt(imageUri.getPath(), image);
+                            System.out.println(imageUri.getPath());
+                            a.setArt(imageUri.toString(), image);
                         }
                     } while (albumCursor.moveToNext());
                     albumCursor.close();
