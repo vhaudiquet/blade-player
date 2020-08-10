@@ -30,7 +30,7 @@ import static v.blade.library.LibraryService.CACHE_SEPARATOR;
 public class Spotify extends Source
 {
     public final String SPOTIFY_CLIENT_ID = "2f95bc7168584e7aa67697418a684bae";
-    public final String SPOTIFY_REDIRECT_URI = "http://valou3433.fr/";
+    public final String SPOTIFY_REDIRECT_URI = "https://valou3433.fr/";
     public String SPOTIFY_USER_TOKEN;
     public String SPOTIFY_REFRESH_TOKEN;
     public final SpotifyApi spotifyApi = new SpotifyApi();
