@@ -2,11 +2,15 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="blade-player/app" />
       <module fileurl="file://$PROJECT_DIR$/blade-player.iml" filepath="$PROJECT_DIR$/blade-player.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/libraries/blade-player-libraries.iml" filepath="$PROJECT_DIR$/.idea/modules/libraries/blade-player-libraries.iml" group="blade-player/libraries" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/libraries/drag-sort-listview/blade-player.libraries-drag-sort-listview.iml" filepath="$PROJECT_DIR$/.idea/modules/libraries/drag-sort-listview/blade-player.libraries-drag-sort-listview.iml" group="blade-player/libraries/drag-sort-listview" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/libraries/drag-sort-listview/library/blade-player.libraries.drag-sort-listview-library.iml" filepath="$PROJECT_DIR$/.idea/modules/libraries/drag-sort-listview/library/blade-player.libraries.drag-sort-listview-library.iml" group="blade-player/libraries/drag-sort-listview/library" />
       <module fileurl="file://$PROJECT_DIR$/libraries/drag-sort-listview/drag-sort-listview.iml" filepath="$PROJECT_DIR$/libraries/drag-sort-listview/drag-sort-listview.iml" />
       <module fileurl="file://$PROJECT_DIR$/libraries/libraries.iml" filepath="$PROJECT_DIR$/libraries/libraries.iml" />
       <module fileurl="file://$PROJECT_DIR$/libraries/drag-sort-listview/library/library.iml" filepath="$PROJECT_DIR$/libraries/drag-sort-listview/library/library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/prjs-blade-player.iml" filepath="$PROJECT_DIR$/.idea/modules/prjs-blade-player.iml" group="blade-player" />
     </modules>
   </component>
 </project>
