@@ -13,6 +13,7 @@ import com.deezer.sdk.network.connect.SessionStore;
 import com.deezer.sdk.network.request.DeezerRequest;
 import com.deezer.sdk.network.request.DeezerRequestFactory;
 import com.deezer.sdk.network.request.JsonUtils;
+import com.deezer.sdk.player.PlayerWrapper;
 import com.deezer.sdk.player.TrackPlayer;
 import com.deezer.sdk.player.event.OnPlayerStateChangeListener;
 import com.deezer.sdk.player.event.PlayerState;
@@ -105,6 +106,10 @@ public class Deezer extends Source
         @Override
         public void playSong(Song song, PlayerCallback callback)
         {
+            //handle data saver mode
+            if(LibraryService.DATA_SAVER_MODE) deezerPlayer.setPreferredFormat(PlayerWrapper.TrackFormat.MP3_64);
+            else deezerPlayer.setPreferredFormat(PlayerWrapper.TrackFormat.MP3_128);
+
             SongSources.SongSource deezer = song.getSources().getDeezer();
             if(deezer == null) {if(callback != null) callback.onFailure(player); return;}
             if(deezerPlayer == null) {if(callback != null) callback.onFailure(player); return;}

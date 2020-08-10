@@ -157,6 +157,11 @@ public class SettingsActivity extends AppCompatActivity
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
             }
+            else if(preference.getKey().equals("data_saver_mode"))
+            {
+                SharedPreferences generalPrefs = getActivity().getSharedPreferences(SettingsActivity.PREFERENCES_GENERAL_FILE_NAME, Context.MODE_PRIVATE);
+                LibraryService.FOLDER_VIEW_ENABLED = generalPrefs.getBoolean("data_saver_mode", false);
+            }
 
             return super.onPreferenceTreeClick(preference);
         }

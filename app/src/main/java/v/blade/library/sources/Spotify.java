@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
+import com.spotify.sdk.android.player.Error;
 import com.spotify.sdk.android.player.*;
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyError;
@@ -44,6 +45,7 @@ public class Spotify extends Source
     public SourcePlayer player = new SourcePlayer()
     {
         SpotifyPlayer spotifyPlayer;
+        PlaybackBitrate currentBitrate;
 
         @Override
         public void init()
@@ -135,6 +137,46 @@ public class Spotify extends Source
         @Override
         public void playSong(Song song, PlayerCallback callback)
         {
+            //handle data saver mode
+            //TODO remove circle StackOverflow on error
+            if(currentBitrate == null || (currentBitrate == PlaybackBitrate.BITRATE_LOW && LibraryService.DATA_SAVER_MODE == false) || (currentBitrate == PlaybackBitrate.BITRATE_HIGH && LibraryService.DATA_SAVER_MODE == true))
+            {
+                if(LibraryService.DATA_SAVER_MODE)
+                {
+                    currentBitrate = PlaybackBitrate.BITRATE_LOW;
+                    spotifyPlayer.setPlaybackBitrate(new Player.OperationCallback() {
+                        @Override
+                        public void onSuccess() {playSong(song, callback);}
+
+                        @Override
+                        public void onError(Error error)
+                        {
+                            System.out.println("[BLADE-SPOTIFY] Could not set bitrate quality to low : " + error.name());
+                            currentBitrate = PlaybackBitrate.BITRATE_HIGH;
+                            playSong(song, callback);
+                        }
+                    }, PlaybackBitrate.BITRATE_LOW);
+                    return;
+                }
+                else
+                {
+                    currentBitrate = PlaybackBitrate.BITRATE_HIGH;
+                    spotifyPlayer.setPlaybackBitrate(new Player.OperationCallback() {
+                        @Override
+                        public void onSuccess() {playSong(song, callback);}
+
+                        @Override
+                        public void onError(Error error)
+                        {
+                            System.out.println("[BLADE-SPOTIFY] Could not set bitrate quality to high : " + error.name());
+                            currentBitrate = PlaybackBitrate.BITRATE_LOW;
+                            playSong(song, callback);
+                        }
+                    }, PlaybackBitrate.BITRATE_HIGH);
+                    return;
+                }
+            }
+
             SongSources.SongSource spot = song.getSources().getSpotify();
             if(spot == null) {if(callback != null) callback.onFailure(player); return;}
 

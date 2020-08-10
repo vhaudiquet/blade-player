@@ -64,7 +64,7 @@ public abstract class LibraryObject implements Serializable
     public Bitmap getArtMiniature() {return miniatureArt;}
     public Bitmap getArt()
     {
-        if(artPath.startsWith("content://") && Build.VERSION.SDK_INT >= 29)
+        if(artPath != null && artPath.startsWith("content://") && Build.VERSION.SDK_INT >= 29)
             //todo : hardcoded size to get max for screen, change that ?
             try
             {

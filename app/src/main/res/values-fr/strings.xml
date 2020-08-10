@@ -104,4 +104,5 @@
     <string name="folder_view_summary">Active l\'onglet Dossiers dans la bibliothèque</string>
     <string name="spotify_connection_error">Erreur de connection Spotify...</string>
     <string name="artwork_edit">Éditer l\'image</string>
+    <string name="data_saver_mode">Mode consommation de données réduite</string>
 </resources>

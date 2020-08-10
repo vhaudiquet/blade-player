@@ -15,6 +15,10 @@
                         android:summary="@string/folder_view_summary"
                         android:key="enable_folder_view"
                         android:defaultValue="true"/>
+    <CheckBoxPreference android:title="@string/data_saver_mode"
+                        android:summary="@string/data_saver_mode"
+                        android:key="data_saver_mode"
+                        android:defaultValue="false"/>
     <PreferenceScreen android:title="@string/sources" android:key="sources_screen"/>
     <PreferenceScreen android:title="@string/link_manager" android:key="link_manager"/>
     <PreferenceScreen android:title="@string/themes" android:key="themes"/>

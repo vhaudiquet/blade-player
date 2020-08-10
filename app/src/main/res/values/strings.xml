@@ -114,4 +114,5 @@
     <string name="folder_view_summary">Enable the Folder tab in library</string>
     <string name="spotify_connection_error">Spotify connection error...</string>
     <string name="artwork_edit">Artwork edit</string>
+    <string name="data_saver_mode">Data saver mode</string>
 </resources>

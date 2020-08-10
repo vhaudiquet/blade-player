@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion '29.0.2'
+    compileSdkVersion 30
+    buildToolsVersion '30'
     defaultConfig {
         applicationId "v.blade"
         minSdkVersion 16
-        targetSdkVersion 29
-        versionCode 19
-        versionName "1.5.2"
+        targetSdkVersion 30
+        versionCode 20
+        versionName "1.5.3"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
