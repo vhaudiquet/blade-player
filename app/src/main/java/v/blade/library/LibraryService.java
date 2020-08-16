@@ -793,7 +793,7 @@ public class LibraryService
 
             if(toSet != null) obj.setArt(path, toSet);
         }
-        else
+        else if(!DATA_SAVER_MODE)
         {
             String fileName = obj.getName();
             if(obj instanceof Album) fileName += "." + ((Album) obj).getArtist().getName();
