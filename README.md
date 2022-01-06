@@ -1,3 +1,12 @@
+# Important notice
+**This repository contains OLD versions of BladePlayer that will not be updated**
+
+**Version 2.0+ development is going on : https://github.com/vhaudiquet/BladePlayer**
+
+This repository is kept here for archive purposes, but might be deleted some day
+
+Please do not use this code at all, it was my first android app and is poorly written**
+
 # Blade Player
 ![logo](Images/horizontal.png)
 
